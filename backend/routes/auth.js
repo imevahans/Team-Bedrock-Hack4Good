@@ -168,4 +168,10 @@ router.get("/logout", (req, res) => {
   });
 });
 
+
+router.get("/resident/vouchers", (req, res) => {
+  res.status(200).json({ vouchers: [] }); // Return dummy data for now
+});
+
+
 export default router;

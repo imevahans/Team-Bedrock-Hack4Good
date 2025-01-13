@@ -5,8 +5,6 @@ import useAuth from "../hooks/useAuth"; // Hook to access AuthContext
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
 
-  console.log("ProtectedRoute - User:", user);
-
   if (!user) {
     console.log("ProtectedRoute - Redirecting to login.");
     return <Navigate to="/" replace />;

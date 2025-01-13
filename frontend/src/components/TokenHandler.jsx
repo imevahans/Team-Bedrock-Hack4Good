@@ -1,5 +1,4 @@
-// src/components/TokenHandler.jsx
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,6 +14,7 @@ const decodeJwt = (token) => {
 };
 
 const TokenHandler = () => {
+  const [tokenProcessed, setTokenProcessed] = useState(false); // Track if the token is already processed
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -23,23 +23,31 @@ const TokenHandler = () => {
     const params = new URLSearchParams(location.search);
     const token = params.get("token");
 
-    if (token) {
+    if (token && !tokenProcessed) {
       console.log("TokenHandler: Received token:", token);
 
       const payload = decodeJwt(token);
       console.log("TokenHandler: Decoded token payload:", payload);
 
-      login(token);
+      if (payload) {
+        login(token);
+        setTokenProcessed(true); // Mark the token as processed
 
-      if (payload?.role === "admin") {
-        navigate("/admin-dashboard");
-      } else if (payload?.role === "resident") {
-        navigate("/resident-dashboard");
+        if (payload.role === "admin") {
+          navigate("/admin-dashboard", { replace: true });
+        } else if (payload.role === "resident") {
+          navigate("/resident-dashboard", { replace: true });
+        }
+
+        // Clean the query parameters
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("token");
+        window.history.replaceState({}, document.title, newUrl.toString());
       }
     }
-  }, [location.search, login, navigate]);
+  }, [location.search, login, navigate, tokenProcessed]);
 
-  return null; // No UI, just logic
+  return null;
 };
 
 export default TokenHandler;
