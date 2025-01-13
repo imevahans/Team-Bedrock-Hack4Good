@@ -1,0 +1,17 @@
+{
+    "name": "team-bedrock-hack4good",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "concurrently \"npm run dev-backend\" \"npm run dev-frontend\"",
+        "dev-backend": "nodemon backend/server.js",
+        "dev-frontend": "npm --prefix frontend run dev"
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.2"
+    },
+    "dependencies": {
+        "bcrypt": "^5.1.1",
+        "express": "^4.21.2",
+        "neo4j-driver": "^5.27.0"
+    }
+}
