@@ -4,6 +4,16 @@ import driver from "../database/neo4j.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Format timestamp in GMT+8
+const formatTimestamp = (timestamp) => {
+  const date = new Date(timestamp);
+  // Adjust for GMT+8 (8 hours ahead of UTC)
+  const gmt8Offset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+  const gmt8Date = new Date(date.getTime() + gmt8Offset);
+
+  return gmt8Date.toISOString().replace("T", " ").split(".")[0]; // Format: YYYY-MM-DD HH:mm:ss
+};
+
 // Register a user
 export const registerUser = async (email, password, role) => {
   const session = driver.session();
@@ -14,6 +24,10 @@ export const registerUser = async (email, password, role) => {
     // Hash the password with the salt
     const passwordHash = await bcrypt.hash(password, salt);
 
+    // Generate formatted timestamps
+    const createdAt = formatTimestamp(Date.now());
+    const updatedAt = createdAt;
+
     // Create a user node with the salt stored
     const result = await session.run(
       `
@@ -22,12 +36,12 @@ export const registerUser = async (email, password, role) => {
         passwordHash: $passwordHash, 
         salt: $salt, 
         role: $role, 
-        createdAt: timestamp(), 
-        updatedAt: timestamp()
+        createdAt: $createdAt, 
+        updatedAt: $updatedAt
       })
       RETURN u
       `,
-      { email, passwordHash, salt, role }
+      { email, passwordHash, salt, role, createdAt, updatedAt }
     );
 
     // Return the created user's properties
