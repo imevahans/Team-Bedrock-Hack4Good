@@ -7,30 +7,41 @@ import api from "../services/api";
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(""); // Error/Success message
+  const [error, setError] = useState(false); // Error state
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // Use login from AuthContext
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    console.log("LoginPage: Attempting login with email:", email);
+
     try {
       const response = await api.post("/auth/login", { email, password });
+      console.log("LoginPage: Login successful, response:", response.data);
+
       login(response.data.token); // Set user in AuthContext
       setMessage("Login successful!");
+      setError(false); // Reset error state on success
+
       // Redirect to the appropriate dashboard
       if (response.data.role === "admin") {
+        console.log("LoginPage: Redirecting to admin dashboard...");
         navigate("/admin-dashboard");
       } else {
+        console.log("LoginPage: Redirecting to resident dashboard...");
         navigate("/resident-dashboard");
       }
     } catch (error) {
-      setMessage(error.response?.data?.error || "Login failed");
+      console.error("LoginPage: Login failed:", error.response?.data || error.message);
+      setMessage(error.response?.data?.error || "Login failed. Please try again.");
+      setError(true); // Set error state to true
     }
   };
 
-  const goToRegister = () => {
-    navigate("/register");
-  };
+  console.log("Rendering LoginPage component...");
+  console.log("Login message:", message);
+  console.log("Error state:", error);
 
   return (
     <div>
@@ -49,10 +60,24 @@ const LoginPage = () => {
           onChange={(e) => setPassword(e.target.value)}
         />
         <button type="submit">Login</button>
-        {message && <p>{message}</p>}
+        {/* Display error or success message */}
+        {message && (
+          <p style={{ color: error ? "red" : "green", marginTop: "10px" }}>
+            {message}
+          </p>
+        )}
       </form>
       <p>Don't have an account?</p>
-      <button onClick={goToRegister}>Register</button>
+      <button onClick={() => navigate("/register")}>Register</button>
+      <p>
+        Forgot your password?{" "}
+        <button
+          onClick={() => navigate("/reset-password")}
+          style={{ color: "blue", cursor: "pointer", border: "none", background: "none" }}
+        >
+          Reset it here
+        </button>
+      </p>
     </div>
   );
 };

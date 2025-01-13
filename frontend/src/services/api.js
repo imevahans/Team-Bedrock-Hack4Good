@@ -26,12 +26,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response, // Return the response if successful
   (error) => {
-    // Handle unauthorized errors
+    const originalRequest = error.config;
+
+    // Handle unauthorized errors (401) differently for login vs. other requests
     if (error.response?.status === 401) {
-      console.error("Unauthorized: Logging out...");
-      localStorage.removeItem("token"); // Clear token on unauthorized error
-      window.location.href = "/"; // Redirect to login page
+      console.error("Unauthorized error detected:", originalRequest.url);
+
+      // If the request is NOT the login request, handle logout
+      if (originalRequest.url !== "/auth/login") {
+        console.warn("Unauthorized: Logging out...");
+        localStorage.removeItem("token"); // Clear token on unauthorized error
+        window.location.href = "/"; // Redirect to login page
+      }
     }
+
     return Promise.reject(error);
   }
 );

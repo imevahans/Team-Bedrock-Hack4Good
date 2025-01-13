@@ -1,39 +1,47 @@
 import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage"; // Import RegisterPage
+import RegisterPage from "./pages/RegisterPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage"; // Import Reset Password Page
 import ResidentDashboard from "./pages/ResidentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-import useAuth from "./hooks/useAuth";
-
-const ProtectedRoute = ({ children, role }) => {
-  const { user } = useAuth();
-
-  console.log("ProtectedRoute - User:", user); // Debug log
-
-  if (!user) {
-    console.log("ProtectedRoute - User not logged in, redirecting to login.");
-    return <Navigate to="/" replace />;
-  }
-
-  if (role && user.role !== role) {
-    console.log(`ProtectedRoute - Role mismatch (${user.role}), redirecting to login.`);
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
-
-
+import LogoutPage from "./pages/LogoutPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
 
 const App = () => {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} /> {/* Add this route */}
+          {/* Public Routes */}
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <RegisterPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/reset-password" // New Reset Password route
+            element={
+              <PublicRoute>
+                <ResetPasswordPage />
+              </PublicRoute>
+            }
+          />
+
+          {/* Protected Routes */}
           <Route
             path="/resident-dashboard"
             element={
@@ -50,6 +58,9 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Logout */}
+          <Route path="/logout" element={<LogoutPage />} />
         </Routes>
       </Router>
     </AuthProvider>
