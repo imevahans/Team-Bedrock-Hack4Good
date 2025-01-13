@@ -1,4 +1,8 @@
-# README: Muhammadiyah Welfare Home Minimart and Voucher System
+### **Updated README**
+
+---
+
+# **README: Muhammadiyah Welfare Home Minimart and Voucher System**
 
 ## **Project Overview**
 This project is a web-based Minimart and Voucher System for Muhammadiyah Welfare Home (MWH). It enables:
@@ -26,112 +30,164 @@ The system is designed to be secure, user-friendly, and scalable. It includes op
 ---
 
 ## **Project Structure**
+
 ```plaintext
-.
-├── node_modules/             # Dependencies
-├── public/                   # Static files
-├── src/
-│   ├── assets/               # Images, icons, etc.
-│   ├── components/           # Reusable components
-│   │   ├── Admin/            # Admin-specific components
-│   │   │   ├── ManageUsers.jsx
-│   │   │   ├── SuspendUserModal.jsx
-│   │   │   ├── ResetPasswordModal.jsx
-│   │   └── Residents/        # Resident-specific components
-│   │       ├── Login.jsx
-│   │       ├── PasswordReset.jsx
-│   ├── context/              # Global context for state management
-│   │   └── AuthContext.jsx
-│   ├── pages/                # Main pages of the app
-│   │   ├── AdminDashboard.jsx
-│   │   ├── ResidentDashboard.jsx
-│   │   ├── LoginPage.jsx
-│   │   ├── ResetPasswordPage.jsx
-│   ├── services/             # Backend integrations
-│   │   ├── neo4j.js          # Neo4j database configuration
-│   │   ├── authService.js    # Authentication and user-related services
-│   ├── styles/               # CSS files
-│   │   ├── app.css
-│   │   ├── index.css
-│   ├── App.jsx               # Root React component
-│   ├── main.jsx              # Entry point for React
-├── .gitignore                # Ignored files for Git
-├── eslint.config.js          # Linting configuration
-├── index.html                # HTML template
-├── package-lock.json         # Lockfile for dependencies
-├── package.json              # Project metadata and dependencies
-├── readme.md                 # Project documentation
-├── vite.config.js            # Vite configuration
+project-root/
+├── backend/                   # Backend application
+│   ├── node_modules/          # Backend dependencies
+│   ├── .env                   # Backend environment variables
+│   ├── app.js                 # Entry point for backend
+│   ├── package.json           # Backend package metadata
+│   ├── package-lock.json      # Backend lockfile
+│   ├── database/              # Database configuration
+│   │   └── neo4j.js           # Neo4j driver setup
+│   ├── middlewares/           # Middleware logic
+│   │   └── authMiddleware.js  # Authentication middleware
+│   ├── routes/                # Backend routes
+│   │   └── auth.js            # Authentication routes
+│   ├── services/              # Service layer for backend logic
+│   │   └── authService.js     # Authentication and user services
+│   └── README.md              # Backend-specific documentation
+│
+├── frontend/                  # Frontend application
+│   ├── node_modules/          # Frontend dependencies
+│   ├── public/                # Static files
+│   │   └── index.html         # HTML entry point
+│   ├── src/                   # Frontend source code
+│   │   ├── assets/            # Static assets (images, icons, etc.)
+│   │   ├── components/        # Reusable components
+│   │   │   ├── Admin/         # Admin-specific components
+│   │   │   └── Residents/     # Resident-specific components
+│   │   ├── context/           # Global context for state management
+│   │   ├── hooks/             # Custom hooks
+│   │   ├── pages/             # Pages for routes
+│   │   ├── services/          # Axios configuration for backend API calls
+│   │   ├── styles/            # CSS styles
+│   │   ├── App.jsx            # Root React component
+│   │   ├── main.jsx           # React entry point
+│   └── README.md              # Frontend-specific documentation
+│
+└── README.md                  # Project-level documentation
 ```
 
 ---
 
 ## **Getting Started**
 
-### **Prerequisites**
-1. **Node.js:** Ensure Node.js (v14 or later) is installed.
-2. **Neo4j Database:**
+### **1. Prerequisites**
+1. **Node.js**: Ensure Node.js (v14 or later) is installed.
+2. **Neo4j Database**:
    - Install and start a Neo4j instance.
-   - Configure the `.env` file with your database details.
+   - Use the Neo4j Browser to ensure the database is running.
 
-### **Installation**
-1. Clone the repository:
+---
+
+### **2. Backend Setup**
+1. Navigate to the backend folder:
    ```bash
-   git clone <repository-url>
-   cd <project-directory>
+   cd backend
    ```
 2. Install dependencies:
    ```bash
    npm install
    ```
-
-3. Set up a `.env` file in the root directory:
+3. Set up the `.env` file:
    ```plaintext
-   VITE_NEO4J_URI=neo4j://localhost:7687
-   VITE_NEO4J_USER=your_neo4j_username
-   VITE_NEO4J_PASSWORD=your_neo4j_password
+   NEO4J_URI=neo4j://localhost:7687
+   NEO4J_USER=your_neo4j_username
+   NEO4J_PASSWORD=your_neo4j_password
+   JWT_SECRET=your_jwt_secret_key
+   PORT=3000
+   ```
+4. Start the backend server:
+   ```bash
+   nodemon app.js
    ```
 
-4. Start the development server:
+---
+
+### **3. Frontend Setup**
+1. Navigate to the frontend folder:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up the `.env` file:
+   ```plaintext
+   VITE_API_URL=http://localhost:3000/api
+   ```
+4. Start the frontend development server:
    ```bash
    npm run dev
    ```
 
-5. Access the app at `http://localhost:5173`.
+---
+
+### **4. Accessing the Application**
+- **Frontend (React):** Open `http://localhost:5173` in your browser.
+- **Backend (Node.js):** Ensure the backend is running on `http://localhost:3000`.
 
 ---
 
 ## **Usage Guide**
 
 ### **Residents**
-1. Navigate to the login page (`/`).
-2. Log in with your email and password.
-3. Access your dashboard to:
+1. Navigate to `http://localhost:5173`.
+2. Log in using resident credentials.
+3. Access the Resident Dashboard to:
    - View voucher balance and transaction history.
-   - Request or preorder items.
-   - Reset your password if necessary (`/reset-password`).
+   - Request products or preorder out-of-stock items.
 
 ### **Admins**
-1. Log in and access the admin dashboard (`/admin-dashboard`).
-2. Manage users:
-   - Add, suspend, or reset user accounts.
-3. Track inventory and approve/reject voucher tasks.
-4. Generate reports for weekly or monthly summaries.
+1. Log in using admin credentials.
+2. Access the Admin Dashboard to:
+   - Manage users (add, suspend, reset passwords).
+   - Track inventory and approve/reject tasks.
+   - Generate reports.
 
 ---
 
-## **Development Phases**
-1. **Prototype:**
-   - Core features for residents and admins.
-   - Basic dashboards, login, and voucher management.
+## **Development Workflow**
 
-2. **Enhanced Features:**
-   - Inventory tracking and reporting tools.
-   - Password reset and audit logs.
+### **Frontend Development**
+- Modify frontend files in `frontend/src/`.
+  - **Components:** Add or update reusable UI elements in `src/components/`.
+  - **Pages:** Update route-specific components in `src/pages/`.
 
-3. **Optional Features:**
-   - Auction system for residents.
-   - AI-powered product recommendations.
+### **Backend Development**
+- Modify backend files in `backend/`.
+  - **Routes:** Add or update API routes in `backend/routes/`.
+  - **Services:** Add or update business logic in `backend/services/`.
+
+---
+
+## **Commands**
+
+### **Frontend**
+- Install dependencies: `npm install`
+- Start the development server: `npm run dev`
+
+### **Backend**
+- Install dependencies: `npm install`
+- Start the server: `nodemon app.js`
+
+---
+
+## **How to See Changes**
+
+### **Frontend Changes**
+1. Update a frontend file (e.g., `src/pages/LoginPage.jsx`).
+2. Save the file, and Vite’s hot reloading will reflect changes automatically.
+
+### **Backend Changes**
+1. Update a backend file (e.g., `routes/auth.js`).
+2. Restart the backend server:
+   ```bash
+   nodemon app.js
+   ```
 
 ---
 
@@ -141,11 +197,12 @@ The system is designed to be secure, user-friendly, and scalable. It includes op
    ```bash
    git checkout -b feature-name
    ```
-3. Make your changes and commit:
+3. Commit and push your changes:
    ```bash
    git commit -m "Add feature-name"
+   git push origin feature-name
    ```
-4. Push your branch and open a pull request.
+4. Open a pull request.
 
 ---
 
@@ -156,9 +213,4 @@ The system is designed to be secure, user-friendly, and scalable. It includes op
 
 ---
 
-## **License**
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-Feel free to reach out for further support or contributions!
+Let me know if you need further clarification or assistance! 🚀
