@@ -39,9 +39,10 @@ const LoginPage = () => {
     }
   };
 
-  console.log("Rendering LoginPage component...");
-  console.log("Login message:", message);
-  console.log("Error state:", error);
+  const handleGoogleLogin = () => {
+    // Redirect the user to the backend Google login route
+    window.location.href = "http://localhost:3000/api/auth/google";
+  };
 
   return (
     <div>
@@ -78,6 +79,21 @@ const LoginPage = () => {
           Reset it here
         </button>
       </p>
+      <hr />
+      <button
+        onClick={handleGoogleLogin}
+        style={{
+          background: "#4285F4",
+          color: "white",
+          padding: "10px",
+          border: "none",
+          borderRadius: "5px",
+          marginTop: "20px",
+          cursor: "pointer",
+        }}
+      >
+        Login with Google
+      </button>
     </div>
   );
 };

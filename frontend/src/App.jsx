@@ -1,65 +1,27 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage"; // Import Reset Password Page
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ResidentDashboard from "./pages/ResidentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import LogoutPage from "./pages/LogoutPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import TokenHandler from "./components/TokenHandler"; // Import the TokenHandler
 
 const App = () => {
   return (
     <AuthProvider>
       <Router>
+        <TokenHandler /> {/* Add TokenHandler here */}
         <Routes>
-          {/* Public Routes */}
-          <Route
-            path="/"
-            element={
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                <RegisterPage />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/reset-password" // New Reset Password route
-            element={
-              <PublicRoute>
-                <ResetPasswordPage />
-              </PublicRoute>
-            }
-          />
-
-          {/* Protected Routes */}
-          <Route
-            path="/resident-dashboard"
-            element={
-              <ProtectedRoute role="resident">
-                <ResidentDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin-dashboard"
-            element={
-              <ProtectedRoute role="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Logout */}
+          <Route path="/" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+          <Route path="/resident-dashboard" element={<ProtectedRoute role="resident"><ResidentDashboard /></ProtectedRoute>} />
+          <Route path="/admin-dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/logout" element={<LogoutPage />} />
         </Routes>
       </Router>
