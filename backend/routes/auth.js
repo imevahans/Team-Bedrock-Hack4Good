@@ -1,5 +1,4 @@
 import express from "express";
-import passport from "../config/passportConfig.js"; // Passport configuration
 import {
   registerUser,
   loginUser,
@@ -7,6 +6,12 @@ import {
   verifyOtp,
   resetPassword,
   sendOtpReset,
+  getAllUsers,
+  addUser,
+  suspendUser,
+  resetPasswordByAdmin,
+  updateUser,
+  searchUsersByEmail,
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -124,38 +129,6 @@ router.post("/reset-password/verify", async (req, res) => {
 });
 
 /**
- * Google Authentication Routes
- */
-
-// Google Login Route
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-
-// Google Callback Route
-router.get(
-  "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/api/auth/login-failed" }),
-  (req, res) => {
-    const frontendBaseUrl = process.env.FRONTEND_URL || "http://localhost:5173"; // Default to frontend
-    const token = req.user.token; // JWT token generated in passportConfig.js
-    const role = req.user.role; // User role from Google or database
-
-    // Redirect based on the role
-    const redirectUrl =
-      role === "admin"
-        ? `${frontendBaseUrl}/admin-dashboard?token=${token}`
-        : `${frontendBaseUrl}/resident-dashboard?token=${token}`;
-
-    console.log("Login successful. Redirecting to:", redirectUrl);
-    res.redirect(redirectUrl); // Redirect to the appropriate frontend dashboard
-  }
-);
-
-// Optional: Handle login failure
-router.get("/login-failed", (req, res) => {
-  res.status(401).json({ message: "Google login failed. Please try again." });
-});
-
-/**
  * Route: Logout the user
  * Method: GET
  */
@@ -171,6 +144,90 @@ router.get("/logout", (req, res) => {
 
 router.get("/resident/vouchers", (req, res) => {
   res.status(200).json({ vouchers: [] }); // Return dummy data for now
+});
+
+// Get all users
+router.get("/users", async (req, res) => {
+  try {
+    const users = await getAllUsers();
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch users." });
+  }
+});
+
+// Add new user
+router.post("/add-user", async (req, res) => {
+  const { email, role } = req.body;
+  if (!email || !role) {
+    return res.status(400).json({ error: "Email and role are required." });
+  }
+  try {
+    const user = await addUser(email, role);
+    res.status(201).json({ message: "User added successfully.", user });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add user." });
+  }
+});
+
+// Suspend user
+router.post("/suspend-user", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+  try {
+    await suspendUser(email);
+    res.status(200).json({ message: "User suspended successfully." });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to suspend user." });
+  }
+});
+
+// Reset password by admin
+router.post("/reset-password-admin", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+  try {
+    const newPassword = await resetPasswordByAdmin(email);
+    res.status(200).json({ message: `Password reset successfully. New password: ${newPassword}` });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to reset password." });
+  }
+});
+
+// Update user role and phone number
+router.post("/update-user", async (req, res) => {
+  const { email, role, phoneNumber, confirmation } = req.body;
+
+  if (!email || confirmation !== "yes") {
+    return res.status(400).json({ error: "Email and confirmation are required." });
+  }
+
+  try {
+    await updateUser(email, role, phoneNumber);
+    res.status(200).json({ message: "User details updated successfully." });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Failed to update user details." });
+  }
+});
+
+
+// Search users by email
+router.get("/search-users", async (req, res) => {
+  const { term } = req.query;
+  if (!term) {
+    return res.status(400).json({ error: "Search term is required." });
+  }
+  try {
+    const users = await searchUsersByEmail(term);
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to search users." });
+  }
 });
 
 

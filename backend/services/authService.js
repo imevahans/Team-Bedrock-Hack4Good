@@ -8,6 +8,8 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const serviceSID = process.env.TWILIO_SERVICE_SID;
 const client = twilio(accountSid, authToken);
 
+const JWT_SECRET = process.env.JWT_SECRET;
+
 async function createVerification(phoneNumber) {
   const verification = await client.verify.v2
     .services(serviceSID)
@@ -31,8 +33,6 @@ async function createVerificationCheck(userCode, phoneNumber) {
   console.log(verificationCheck.status);
   return verificationCheck;
 }
-
-const JWT_SECRET = process.env.JWT_SECRET;
 
 // Format timestamp in GMT+8
 const formatTimestamp = (timestamp) => {
@@ -68,7 +68,8 @@ export const registerUser = async (email, password, phoneNumber, role) => {
         phoneNumber: $phoneNumber,
         role: $role, 
         createdAt: $createdAt, 
-        updatedAt: $updatedAt
+        updatedAt: $updatedAt,
+        suspended: false
       })
       RETURN u
       `,
@@ -216,6 +217,129 @@ export const resetPassword = async (phoneNumber, otp, newPassword) => {
 
     console.log("Resetting for.... ", result.records);
     console.log("Password reset successfully.");
+  } finally {
+    await session.close();
+  }
+};
+
+export const getAllUsers = async () => {
+  const session = driver.session();
+  try {
+    const result = await session.run("MATCH (u:User) RETURN u");
+    return result.records.map((record) => {
+      const user = record.get("u").properties;
+      delete user.passwordHash; // Ensure password hash is not exposed
+      delete user.salt; // Remove sensitive information
+      return user;
+    });
+  } finally {
+    await session.close();
+  }
+};
+
+export const addUser = async (email, password, phoneNumber, role) => {
+  const session = driver.session();
+  try {
+    const salt = await bcrypt.genSalt(12); // Stronger hash
+    const passwordHash = await bcrypt.hash(password, salt);
+    const createdAt = formatTimestamp(Date.now());
+    const updatedAt = createdAt;
+
+    const result = await session.run(
+      `
+      CREATE (u:User {
+        email: $email, 
+        passwordHash: $passwordHash, 
+        salt: $salt, 
+        phoneNumber: $phoneNumber,
+        role: $role, 
+        createdAt: $createdAt, 
+        updatedAt: $updatedAt,
+        suspended: false
+      })
+      RETURN u
+      `,
+      { email, passwordHash, salt, phoneNumber, role, createdAt, updatedAt }
+    );
+    const user = result.records[0].get("u").properties;
+    delete user.passwordHash;
+    delete user.salt;
+    return user;
+  } finally {
+    await session.close();
+  }
+};
+
+export const suspendUser = async (email) => {
+  const session = driver.session();
+  try {
+    await session.run("MATCH (u:User {email: $email}) SET u.suspended = true", { email });
+  } finally {
+    await session.close();
+  }
+};
+
+export const resetPasswordByAdmin = async (email) => {
+  const session = driver.session();
+  try {
+    const newPassword = Math.random().toString(36).slice(-8); // Generate a random password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const updatedAt = formatTimestamp(Date.now());
+    await session.run(
+      "MATCH (u:User {email: $email}) SET u.passwordHash = $passwordHash, u.updatedAt = $updatedAt",
+      { email, passwordHash, updatedAt }
+    );
+    return newPassword;
+  } finally {
+    await session.close();
+  }
+};
+
+export const updateUser = async (email, role, phoneNumber) => {
+  const session = driver.session();
+  try {
+    const updatedAt = formatTimestamp(Date.now());
+
+    const result = await session.run(
+      `
+      MATCH (u:User {email: $email})
+      SET 
+        u.role = COALESCE($role, u.role),
+        u.phoneNumber = COALESCE($phoneNumber, u.phoneNumber),
+        u.updatedAt = $updatedAt
+      RETURN u
+      `,
+      { email, role, phoneNumber, updatedAt }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error("User not found.");
+    }
+
+    return result.records[0].get("u").properties;
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const searchUsersByEmail = async (searchTerm) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      `
+      MATCH (u:User) 
+      WHERE u.email CONTAINS $searchTerm
+      RETURN u
+      `,
+      { searchTerm }
+    );
+    return result.records.map((record) => {
+      const user = record.get("u").properties;
+      delete user.passwordHash;
+      delete user.salt;
+      return user;
+    });
   } finally {
     await session.close();
   }

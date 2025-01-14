@@ -39,11 +39,6 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Redirect the user to the backend Google login route
-    window.location.href = "http://localhost:3000/api/auth/google";
-  };
-
   return (
     <div>
       <form onSubmit={handleLogin}>
@@ -68,8 +63,6 @@ const LoginPage = () => {
           </p>
         )}
       </form>
-      <p>Don't have an account?</p>
-      <button onClick={() => navigate("/register")}>Register</button>
       <p>
         Forgot your password?{" "}
         <button
@@ -80,20 +73,6 @@ const LoginPage = () => {
         </button>
       </p>
       <hr />
-      <button
-        onClick={handleGoogleLogin}
-        style={{
-          background: "#4285F4",
-          color: "white",
-          padding: "10px",
-          border: "none",
-          borderRadius: "5px",
-          marginTop: "20px",
-          cursor: "pointer",
-        }}
-      >
-        Login with Google
-      </button>
     </div>
   );
 };
