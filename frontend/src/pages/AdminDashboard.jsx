@@ -11,6 +11,8 @@ const AdminDashboard = () => {
   const [confirmPopup, setConfirmPopup] = useState(false);
   const [popupAction, setPopupAction] = useState(""); // Action for confirmation popup
   const [bulkFile, setBulkFile] = useState(null); // File for bulk upload
+  const [failedEntries, setFailedEntries] = useState([]); // Track failed entries
+
 
   // Fetch all users
   useEffect(() => {
@@ -146,6 +148,13 @@ const handleBulkUpload = async () => {
 
   const formData = new FormData();
   formData.append("file", bulkFile);
+  console.log("formData = ", formData);
+
+  // Debugging: Log FormData content
+  console.log("Bulk file to upload:", bulkFile);
+  for (const [key, value] of formData.entries()) {
+    console.log(`${key}:`, value);
+  }
 
   try {
     const response = await api.post("/auth/bulk-add-users", formData, {
@@ -153,10 +162,14 @@ const handleBulkUpload = async () => {
     });
     setMessage(response.data.message);
     setUsers((prev) => [...prev, ...response.data.users]);
+    setFailedEntries(response.data.failedEntries); // Store failed entries
   } catch (error) {
+    console.error("Error during bulk upload:", error);
     setMessage(error.response?.data?.error || "Failed to upload users.");
   }
 };
+
+
 
   return (
     <div>
@@ -188,6 +201,26 @@ const handleBulkUpload = async () => {
         style={{ display: "block", marginBottom: "10px" }}
       />
       <button onClick={handleBulkUpload}>Bulk Add Users</button>
+
+      {/* Display Failed Entries */}
+      {failedEntries.length > 0 && (
+        <div style={{ marginTop: "20px", color: "red" }}>
+          <h3>Failed Entries</h3>
+          <ul>
+            {failedEntries.map((entry, index) => (
+              <li key={index} style={{ marginBottom: "10px" }}>
+                <p>
+                  <strong>{index + 1}.</strong> <br />
+                  <strong>Name:</strong> {entry.row.Name} <br />
+                  <strong>Email:</strong> {entry.row.Email} <br />
+                  <strong>Phone Number:</strong> {entry.row["Phone Number (without +65 and spaces)"]} <br />
+                  <strong>Error:</strong> {entry.error}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Search Users Section */}
       <h3>Search Users</h3>

@@ -424,6 +424,7 @@ export const searchUsersByEmail = async (searchTerm) => {
 // Bulk add users from Excel
 export const bulkAddUsers = async (filePath) => {
   const session = driver.session();
+  const failedEntries = []; // List to track failed entries
 
   try {
     const workbook = xlsx.readFile(filePath);
@@ -432,49 +433,70 @@ export const bulkAddUsers = async (filePath) => {
 
     const users = [];
     for (const row of data) {
-      console.log("Raw row = ", row);
+      
+      try {
 
-      // Normalize column names
-      const name = row["Name"];
-      const email = row["Email"];
-      const phoneNumber = row["Phone Number (without +65 and spaces)"];
+        console.log("Raw row = ", row);
 
-      if (!name || !email || !phoneNumber) {
-        throw new Error("Invalid data format in Excel.");
+        // Normalize column names
+        const name = row["Name"];
+        const email = row["Email"];
+        const phoneNumber = row["Phone Number (without +65 and spaces)"];
+
+        if (!name || !email || !phoneNumber) {
+          failedEntries.push({ row, error: "Invalid data format." });
+          continue;
+        }
+
+        // Check for duplicate email in the database
+        const existingUser = await session.run(
+          "MATCH (u:User {email: $email}) RETURN u",
+          { email }
+        );
+
+        if (existingUser.records.length > 0) {
+          failedEntries.push({ row, error: `Email ${email} already exists.` });
+          continue;
+        }
+
+        // Save user to database
+        const createdAt = formatTimestamp(Date.now());
+        const updatedAt = createdAt;
+
+        const result = await session.run(
+          `
+          CREATE (u:User {
+            name: $name,
+            email: $email,
+            phoneNumber: $phoneNumber,
+            role: "resident",
+            invitationAccepted: false,
+            createdAt: $createdAt,
+            updatedAt: $updatedAt
+          })
+          RETURN u
+          `,
+          { name, email, phoneNumber, createdAt, updatedAt }
+        );
+
+        const user = result.records[0].get("u").properties;
+        users.push(user);
+
+        // Send invitation email
+        await sendInvitationEmail(email, name);
+      } catch (error) {
+        console.error("Error processing row:", row, error.message);
+        failedEntries.push({ row, error: error.message });
       }
-
-      // Save user to database with a temporary status
-      const createdAt = formatTimestamp(Date.now());
-      const updatedAt = createdAt;
-      // const result = await session.run(
-      //   `
-      //   CREATE (u:User {
-      //     name: $name,
-      //     email: $email,
-      //     phoneNumber: $phoneNumber,
-      //     role: "resident",
-      //     invitationAccepted: false,
-      //     createdAt: $createdAt,
-      //     updatedAt: $updatedAt
-      //   })
-      //   RETURN u
-      //   `,
-      //   { name, email, phoneNumber, createdAt, updatedAt }
-      // );
-
-      // const user = result.records[0].get("u").properties;
-      // users.push(user);
-
-      // Send invitation email
-      await sendInvitationEmail(email, name);
     }
 
     fs.unlinkSync(filePath); // Clean up uploaded file
-    return users;
+    return { users, failedEntries };
   } finally {
     await session.close();
   }
 };
+
 
 // Send invitation email
 const sendInvitationEmail = async (email, name) => {
@@ -534,9 +556,9 @@ export const acceptInvitation = async (email, password) => {
 // Generate Excel Template
 export const generateExcelTemplate = () => {
   const headers = [["Name", "Email", "Phone Number (without +65 and spaces)"]];
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.aoa_to_sheet(headers);
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+  const workbook = xlsx.utils.book_new();
+  const worksheet = xlsx.utils.aoa_to_sheet(headers);
+  xlsx.utils.book_append_sheet(workbook, worksheet, "Template");
 
   const tempDir = path.join(__dirname, "..", "temp");
   if (!fs.existsSync(tempDir)) {
@@ -544,7 +566,7 @@ export const generateExcelTemplate = () => {
   }
 
   const filePath = path.join(tempDir, `user_template_${Date.now()}.xlsx`);
-  XLSX.writeFile(workbook, filePath);
+  xlsx.writeFile(workbook, filePath);
 
   return filePath;
 };

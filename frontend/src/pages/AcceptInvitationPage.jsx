@@ -58,7 +58,7 @@ const AcceptInvitationPage = () => {
         setRedirectCountdown((prev) => {
           if (prev === 1) {
             clearInterval(countdown);
-            navigate("/resident-dashboard"); // Redirect to dashboard
+            navigate("/"); // Redirect to dashboard
           }
           return prev - 1;
         });

@@ -25,8 +25,18 @@ import {
 
 const router = express.Router();
 
-// Multer configuration for file upload
-const upload = multer({ dest: "uploads/" });
+// Configure Multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./uploads/"); // Ensure this directory exists
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+// Multer instance
+const upload = multer({ storage });
 
 /**
  * Route: Send OTP to a phone number
@@ -274,20 +284,25 @@ router.get("/download-template", (req, res) => {
   }
 });
 
-// Bulk add users
+// Apply Multer to the route
 router.post("/bulk-add-users", upload.single("file"), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: "File is required." });
+    return res.status(400).json({ error: "No file uploaded." });
   }
 
   try {
-    const result = await bulkAddUsers(req.file.path);
-    res.status(200).json({ message: "Users added successfully.", users: result });
+    const result = await bulkAddUsers(req.file.path); // Corrected: req.file.path
+    res.status(200).json({
+      message: `${result.users.length} users added successfully.`,
+      users: result.users,
+      failedEntries: result.failedEntries,
+    });
   } catch (error) {
     console.error("Error bulk adding users:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Failed to process bulk upload." });
   }
 });
+
 
 // Accept invitation and set password
 router.post("/accept-invitation", async (req, res) => {
