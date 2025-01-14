@@ -123,6 +123,7 @@ const AdminDashboard = () => {
 
   // Handle confirmation
   const handleConfirm = () => {
+    console.log("editedUser = ", editedUser);
     if (popupAction === "suspend") {
       handleSuspendUser(editedUser.email);
     } else if (popupAction === "unsuspend") {
@@ -233,80 +234,165 @@ const handleBulkUpload = async () => {
 
       {/* All Users List */}
       <h3>All Users</h3>
-      {users.map((user) => (
-        <div key={user.email} style={{ marginBottom: "10px" }}>
-          <p>
-            {user.email} - {user.phoneNumber || "N/A"} {user.suspended && "(Suspended)"}
-          </p>
-          <div>
-            <label>Role:</label>
-            <select
-              value={editedUser?.email === user.email ? editedUser.role : user.role || ""}
-              onChange={(e) =>
-                setEditedUser({
-                  ...user,
-                  role: e.target.value,
-                  phoneNumber: user.phoneNumber || "",
-                })
-              }
-            >
-              <option value="resident">Resident</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div>
-            <label>Phone Number:</label>
-            <input
-              type="text"
-              value={
-                editedUser?.email === user.email
-                  ? editedUser.phoneNumber || ""
-                  : user.phoneNumber || ""
-              }
-              onChange={(e) =>
-                setEditedUser({
-                  ...user,
-                  phoneNumber: e.target.value,
-                  role: user.role,
-                })
-              }
-            />
-          </div>
-          <div>
-            <button
-              onClick={() => {
-                setConfirmPopup(true);
-                setPopupAction("save");
-                setEditedUser(user);
-              }}
-            >
-              Save
-            </button>
-            {!user.suspended ? (
+      {users.map((user) => {
+        // Helper to safely handle Neo4j integer properties
+        const safeNeo4jInt = (value) => {
+          if (typeof value === "object" && value.low !== undefined && value.high !== undefined) {
+            return value.low; // Use `low` as the actual value
+          }
+          return value; // Return as-is if it's not a Neo4j integer
+        };
+
+        return (
+          <div
+            key={user.email}
+            style={{
+              border: "1px solid #ccc",
+              padding: "15px",
+              borderRadius: "5px",
+              marginBottom: "15px",
+            }}
+          >
+            <h4 style={{ marginBottom: "10px" }}>{user.name || "No Name Provided"}</h4>
+            <p>
+              <strong>Email:</strong> {user.email} <br />
+              <strong>Phone Number:</strong> {user.phoneNumber || "N/A"} <br />
+              <strong>Role:</strong> {user.role} <br />
+              <strong>Invitation Accepted:</strong>{" "}
+              {user.invitationAccepted ? "Yes" : "No"} <br />
+              <strong>Created At:</strong> {safeNeo4jInt(user.createdAt)} <br />
+              <strong>Updated At:</strong> {safeNeo4jInt(user.updatedAt)} <br />
+              {user.suspended && (
+                <strong style={{ color: "red" }}>Status: Suspended</strong>
+              )}
+            </p>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px" }}>
+                <strong>Change Role:</strong>
+              </label>
+              <select
+                value={editedUser?.email === user.email ? editedUser.role : user.role || ""}
+                onChange={(e) =>
+                  setEditedUser({
+                    ...user,
+                    role: e.target.value,
+                    phoneNumber: user.phoneNumber || "",
+                  })
+                }
+                style={{
+                  padding: "5px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  marginBottom: "10px",
+                }}
+              >
+                <option value="resident">Resident</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "5px" }}>
+                <strong>Phone Number:</strong>
+              </label>
+              <input
+                type="text"
+                value={
+                  editedUser?.email === user.email
+                    ? editedUser.phoneNumber || ""
+                    : user.phoneNumber || ""
+                }
+                onChange={(e) =>
+                  setEditedUser({
+                    ...user,
+                    phoneNumber: e.target.value,
+                    role: user.role,
+                  })
+                }
+                style={{
+                  padding: "5px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  marginBottom: "10px",
+                  width: "100%",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
               <button
                 onClick={() => {
                   setConfirmPopup(true);
-                  setPopupAction("suspend");
+                  setPopupAction("save");
                   setEditedUser(user);
                 }}
+                style={{
+                  backgroundColor: "#007BFF",
+                  color: "#fff",
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
               >
-                Suspend
+                Save
               </button>
-            ) : (
+              {!user.suspended ? (
+                <button
+                  onClick={() => {
+                    setConfirmPopup(true);
+                    setPopupAction("suspend");
+                    setEditedUser(user);
+                  }}
+                  style={{
+                    backgroundColor: "#DC3545",
+                    color: "#fff",
+                    border: "none",
+                    padding: "10px 20px",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Suspend
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setConfirmPopup(true);
+                    setPopupAction("unsuspend");
+                    setEditedUser(user);
+                  }}
+                  style={{
+                    backgroundColor: "#28A745",
+                    color: "#fff",
+                    border: "none",
+                    padding: "10px 20px",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Unsuspend
+                </button>
+              )}
               <button
-                onClick={() => {
-                  setConfirmPopup(true);
-                  setPopupAction("unsuspend");
-                  setEditedUser(user);
+                onClick={() => handleResetPassword(user.email)}
+                style={{
+                  backgroundColor: "#FFC107",
+                  color: "#fff",
+                  border: "none",
+                  padding: "10px 20px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
                 }}
               >
-                Unsuspend
+                Reset Password
               </button>
-            )}
-            <button onClick={() => handleResetPassword(user.email)}>Reset Password</button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
+
 
       {/* Confirmation Popup */}
       {confirmPopup && (
@@ -350,7 +436,7 @@ const handleBulkUpload = async () => {
               <button
                 onClick={() => {
                   setConfirmPopup(false);
-                  setEditedUser(null);
+                  setEditedUser(editedUser);
                 }}
               >
                 Cancel
