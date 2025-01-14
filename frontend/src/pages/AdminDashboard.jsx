@@ -10,6 +10,7 @@ const AdminDashboard = () => {
   const [editedUser, setEditedUser] = useState(null);
   const [confirmPopup, setConfirmPopup] = useState(false);
   const [popupAction, setPopupAction] = useState(""); // Action for confirmation popup
+  const [bulkFile, setBulkFile] = useState(null); // File for bulk upload
 
   // Fetch all users
   useEffect(() => {
@@ -131,6 +132,32 @@ const AdminDashboard = () => {
     setEditedUser(null);
   };
 
+// Download Excel Template
+const handleDownloadTemplate = () => {
+  window.open("/api/auth/download-template", "_blank");
+};
+
+// Bulk upload users
+const handleBulkUpload = async () => {
+  if (!bulkFile) {
+    setMessage("Please upload a valid Excel file.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", bulkFile);
+
+  try {
+    const response = await api.post("/auth/bulk-add-users", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    setMessage(response.data.message);
+    setUsers((prev) => [...prev, ...response.data.users]);
+  } catch (error) {
+    setMessage(error.response?.data?.error || "Failed to upload users.");
+  }
+};
+
   return (
     <div>
       <h2>Admin Dashboard</h2>
@@ -148,6 +175,19 @@ const AdminDashboard = () => {
         <option value="admin">Admin</option>
       </select>
       <button onClick={handleAddUser}>Add User</button>
+
+      {/* Bulk Upload Section */}
+      <h3>Bulk Upload Users</h3>
+      <button onClick={handleDownloadTemplate} style={{ marginBottom: "10px" }}>
+        Download Template
+      </button>
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={(e) => setBulkFile(e.target.files[0])}
+        style={{ display: "block", marginBottom: "10px" }}
+      />
+      <button onClick={handleBulkUpload}>Bulk Add Users</button>
 
       {/* Search Users Section */}
       <h3>Search Users</h3>

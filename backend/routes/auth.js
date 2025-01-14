@@ -1,20 +1,32 @@
 import express from "express";
+import multer from "multer";
+import fs from "fs";
 import {
   registerUser,
   loginUser,
   sendOtp,
   verifyOtp,
+  sendOtpEmail,
+  verifyOtpEmail,
   resetPassword,
   sendOtpReset,
   getAllUsers,
   addUser,
   suspendUser,
+  unsuspendUser,
   resetPasswordByAdmin,
   updateUser,
   searchUsersByEmail,
+  bulkAddUsers,
+  acceptInvitation,
+  generateExcelTemplate,
+  getUserByEmail
 } from "../services/authService.js";
 
 const router = express.Router();
+
+// Multer configuration for file upload
+const upload = multer({ dest: "uploads/" });
 
 /**
  * Route: Send OTP to a phone number
@@ -184,6 +196,20 @@ router.post("/suspend-user", async (req, res) => {
   }
 });
 
+// Suspend user
+router.post("/unsuspend-user", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+  try {
+    await unsuspendUser(email);
+    res.status(200).json({ message: "User suspended successfully." });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to suspend user." });
+  }
+});
+
 // Reset password by admin
 router.post("/reset-password-admin", async (req, res) => {
   const { email } = req.body;
@@ -227,6 +253,101 @@ router.get("/search-users", async (req, res) => {
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ error: "Failed to search users." });
+  }
+});
+
+// Generate Excel Template
+router.get("/download-template", (req, res) => {
+  try {
+    const filePath = generateExcelTemplate();
+    res.download(filePath, "user_template.xlsx", (err) => {
+      if (err) {
+        console.error("Error downloading template:", err);
+        res.status(500).json({ error: "Failed to download template." });
+      } else {
+        fs.unlink(filePath, () => {}); // Clean up temporary file
+      }
+    });
+  } catch (error) {
+    console.error("Error generating template:", error.message);
+    res.status(500).json({ error: "Failed to generate template." });
+  }
+});
+
+// Bulk add users
+router.post("/bulk-add-users", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "File is required." });
+  }
+
+  try {
+    const result = await bulkAddUsers(req.file.path);
+    res.status(200).json({ message: "Users added successfully.", users: result });
+  } catch (error) {
+    console.error("Error bulk adding users:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Accept invitation and set password
+router.post("/accept-invitation", async (req, res) => {
+  const { email, password, confirmPassword, otp } = req.body;
+
+  if (!email || !password || !confirmPassword || !otp) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ error: "Passwords do not match." });
+  }
+
+  try {
+    // Verify OTP
+    await verifyOtpEmail(email, otp);
+
+    // Accept invitation and set password
+    await acceptInvitation(email, password);
+    res.status(200).json({ message: "Invitation accepted successfully." });
+  } catch (error) {
+    console.error("Error accepting invitation:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Send OTP for invitation acceptance
+router.post("/accept-invitation/send-otp", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  try {
+    await sendOtpEmail(email);
+    res.status(200).json({ message: "OTP sent to registered phone number." });
+  } catch (error) {
+    console.error("Error sending OTP:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fetch user details by email
+router.get("/user-details", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  try {
+    const user = await getUserByEmail(email); // Ensure this function exists in your authService
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    res.status(200).json({ name: user.name });
+  } catch (error) {
+    console.error("Error fetching user details:", error.message);
+    res.status(500).json({ error: "Failed to fetch user details." });
   }
 });
 

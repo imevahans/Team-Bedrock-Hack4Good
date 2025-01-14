@@ -6,6 +6,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ResidentDashboard from "./pages/ResidentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import LogoutPage from "./pages/LogoutPage";
+import AcceptInvitationPage from "./pages/AcceptInvitationPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import TokenHandler from "./components/TokenHandler"; // Import the TokenHandler
@@ -21,6 +22,7 @@ const App = () => {
           <Route path="/resident-dashboard" element={<ProtectedRoute role="resident"><ResidentDashboard /></ProtectedRoute>} />
           <Route path="/admin-dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/logout" element={<LogoutPage />} />
+          <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
         </Routes>
       </Router>
     </AuthProvider>

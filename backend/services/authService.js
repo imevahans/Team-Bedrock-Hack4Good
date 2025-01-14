@@ -2,6 +2,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import driver from "../database/neo4j.js";
 import twilio from "twilio";
+import xlsx from "xlsx";
+import fs from "fs";
+import nodemailer from "nodemailer";
+import path from "path";
+import { fileURLToPath } from "url";
+
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -9,6 +15,10 @@ const serviceSID = process.env.TWILIO_SERVICE_SID;
 const client = twilio(accountSid, authToken);
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+// Fix for __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function createVerification(phoneNumber) {
   const verification = await client.verify.v2
@@ -147,6 +157,63 @@ export const verifyOtp = async (phoneNumber, otp) => {
   }
 };
 
+export const sendOtpEmail = async (email) => {
+  const session = driver.session();
+  try {
+    // Fetch user's phone number based on email
+    const result = await session.run(
+      "MATCH (u:User {email: $email}) RETURN u.phoneNumber AS phoneNumber",
+      { email }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error("User not found.");
+    }
+
+    const phoneNumber = result.records[0].get("phoneNumber");
+    const fullPhoneNumber = `+65${phoneNumber}`;
+
+    const verification = await createVerification(fullPhoneNumber); // Send OTP via Twilio
+    console.log(`OTP sent to ${fullPhoneNumber}:`, verification.status);
+    return { success: true, message: "OTP sent successfully." };
+  } catch (error) {
+    console.error("Error sending OTP:", error.message);
+    throw new Error("Failed to send OTP. Please try again.");
+  }
+};
+
+export const verifyOtpEmail = async (email, otp) => {
+  const session = driver.session();
+  try {
+
+    // Fetch user's phone number based on email
+    const result = await session.run(
+      "MATCH (u:User {email: $email}) RETURN u.phoneNumber AS phoneNumber",
+      { email }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error("User not found.");
+    }
+
+    const phoneNumber = result.records[0].get("phoneNumber");
+    const fullPhoneNumber = `+65${phoneNumber}`;
+    const verificationCheck = await createVerificationCheck(otp, fullPhoneNumber);
+    console.log(`OTP verification status for ${fullPhoneNumber}:`, verificationCheck.status);
+
+    if (verificationCheck.status !== "approved") {
+      throw new Error("Invalid or expired OTP.");
+    }
+
+    return { success: true, message: "OTP verified successfully." };
+  } catch (error) {
+    console.error("Error verifying OTP:", error.message);
+    throw new Error("Invalid or expired OTP.");
+  }
+};
+
+
+
 export const sendOtpReset = async (phoneNumber) => {
   const session = driver.session();
   try {
@@ -279,6 +346,15 @@ export const suspendUser = async (email) => {
   }
 };
 
+export const unsuspendUser = async (email) => {
+  const session = driver.session();
+  try {
+    await session.run("MATCH (u:User {email: $email}) SET u.suspended = false", { email });
+  } finally {
+    await session.close();
+  }
+};
+
 export const resetPasswordByAdmin = async (email) => {
   const session = driver.session();
   try {
@@ -340,6 +416,152 @@ export const searchUsersByEmail = async (searchTerm) => {
       delete user.salt;
       return user;
     });
+  } finally {
+    await session.close();
+  }
+};
+
+// Bulk add users from Excel
+export const bulkAddUsers = async (filePath) => {
+  const session = driver.session();
+
+  try {
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    const users = [];
+    for (const row of data) {
+      console.log("Raw row = ", row);
+
+      // Normalize column names
+      const name = row["Name"];
+      const email = row["Email"];
+      const phoneNumber = row["Phone Number (without +65 and spaces)"];
+
+      if (!name || !email || !phoneNumber) {
+        throw new Error("Invalid data format in Excel.");
+      }
+
+      // Save user to database with a temporary status
+      const createdAt = formatTimestamp(Date.now());
+      const updatedAt = createdAt;
+      // const result = await session.run(
+      //   `
+      //   CREATE (u:User {
+      //     name: $name,
+      //     email: $email,
+      //     phoneNumber: $phoneNumber,
+      //     role: "resident",
+      //     invitationAccepted: false,
+      //     createdAt: $createdAt,
+      //     updatedAt: $updatedAt
+      //   })
+      //   RETURN u
+      //   `,
+      //   { name, email, phoneNumber, createdAt, updatedAt }
+      // );
+
+      // const user = result.records[0].get("u").properties;
+      // users.push(user);
+
+      // Send invitation email
+      await sendInvitationEmail(email, name);
+    }
+
+    fs.unlinkSync(filePath); // Clean up uploaded file
+    return users;
+  } finally {
+    await session.close();
+  }
+};
+
+// Send invitation email
+const sendInvitationEmail = async (email, name) => {
+  const transporter = nodemailer.createTransport({
+    host:'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+  const mailOptions = {
+    to: email,
+    subject: "Welcome to the Minimart!",
+    html: `
+      <p>Hello ${name},</p>
+      <p>Welcome to the Minimart! Please click the link below to accept your invitation and set your password:</p>
+      <a href="${frontendUrl}/accept-invitation?email=${encodeURIComponent(email)}">Accept Invitation</a>
+    `,
+  };
+
+  const info = await transporter.sendMail(mailOptions);
+
+  console.log("Message sent: %s", info.messageId);
+};
+
+// Accept invitation and set password
+export const acceptInvitation = async (email, password) => {
+  const session = driver.session();
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+    const updatedAt = formatTimestamp(Date.now());
+
+    const result = await session.run(
+      `
+      MATCH (u:User {email: $email, invitationAccepted: false})
+      SET u.passwordHash = $passwordHash, u.invitationAccepted = true, u.updatedAt = $updatedAt
+      RETURN u
+      `,
+      { email, passwordHash, updatedAt }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error("Invalid invitation or user already accepted.");
+    }
+  } finally {
+    await session.close();
+  }
+};
+
+// Generate Excel Template
+export const generateExcelTemplate = () => {
+  const headers = [["Name", "Email", "Phone Number (without +65 and spaces)"]];
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.aoa_to_sheet(headers);
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+
+  const tempDir = path.join(__dirname, "..", "temp");
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true }); // Ensure the temp directory exists
+  }
+
+  const filePath = path.join(tempDir, `user_template_${Date.now()}.xlsx`);
+  XLSX.writeFile(workbook, filePath);
+
+  return filePath;
+};
+
+export const getUserByEmail = async (email) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      "MATCH (u:User {email: $email}) RETURN u.name AS name",
+      { email }
+    );
+
+    if (result.records.length === 0) {
+      return null; // User not found
+    }
+
+    return { name: result.records[0].get("name") };
   } finally {
     await session.close();
   }
