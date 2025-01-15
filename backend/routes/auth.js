@@ -25,7 +25,8 @@ import {
   getDashboardStats,
   createBasicAdminAccount,
   sendEmailOtp,
-  verifyEmailOtp
+  verifyEmailOtp,
+  getAllProducts
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -465,5 +466,14 @@ router.post("/accept-invitation/send-email-otp", async (req, res) => {
   }
 });
 
+router.get("/products", async (req, res) => {
+  try {
+    const products = await getAllProducts();
+    res.status(200).json({ products });
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    res.status(500).json({ error: "Failed to fetch products." });
+  }
+});
 
 export default router;

@@ -19,13 +19,17 @@ const AdminProduct = () => {
   const [popupAction, setPopupAction] = useState(""); // Action for confirmation popup
   const [bulkFile, setBulkFile] = useState(null); // File for bulk upload
   const [failedEntries, setFailedEntries] = useState([]); // Track failed entries
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
       fetchDashboardStats();
     } else if (activeTab === "Users") {
       fetchUsers();
+    } else if (activeTab === "Products") {
+      fetchProducts();
     }
+  
   }, [activeTab]);
 
   const fetchDashboardStats = async () => {
@@ -203,6 +207,16 @@ const AdminProduct = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const response = await api.get("/auth/products"); // Make sure this route matches your Express route
+      setProducts(response.data.products); // Store the products in the state
+    } catch (error) {
+      console.error("Error fetching products:", error.message);
+    }
+  };
+  
+
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -257,6 +271,34 @@ const AdminProduct = () => {
               <p>Invitations Not Accepted: {dashboardStats.invitationsNotAccepted}</p>
               <p>Pending Voucher Approvals: {dashboardStats.voucherTasksPending}</p>
               <p>Pending Product Requests: {dashboardStats.productRequestsPending}</p>
+            </div>
+          </div>
+        )}
+        
+        {activeTab === "Products" && (
+          <div>
+            <h2>Manage Products</h2>
+            <div className="rounded-section">
+              <h3>Product List</h3>
+              {products.length > 0 ? (
+                products.map((product, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      border: "1px solid #ccc",
+                      padding: "10px",
+                      marginBottom: "10px",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <p><strong>Name:</strong> {product.name}</p>
+                    <p><strong>Price:</strong> ${product.price}</p>
+                    <p><strong>Quantity:</strong> {product.quantity}</p>
+                  </div>
+                ))
+              ) : (
+                <p>No products available.</p>
+              )}
             </div>
           </div>
         )}

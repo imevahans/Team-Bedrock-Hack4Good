@@ -763,4 +763,29 @@ export const verifyEmailOtp = (email, submittedOtp) => {
   } else {
     return { valid: false, message: "Invalid OTP. Please try again." };
   }
+
+  
+};
+
+export const getAllProducts = async () => {
+  const session = driver.session();
+  try {
+    // Run the Cypher query to get all Product nodes
+    const result = await session.run(`
+      MATCH (p:Product)
+      RETURN p.name AS name, p.price AS price, p.quantity AS quantity
+    `);
+
+    // Map the result to return a list of products
+    const products = result.records.map(record => ({
+      name: record.get('name'),
+      price: record.get('price').toInt(),  // Ensure price is a number
+      quantity: record.get('quantity').toInt(), // Ensure quantity is a number
+    }));
+
+    return products;
+  } finally {
+    // Close the session to release resources
+    await session.close();
+  }
 };
