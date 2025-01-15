@@ -20,7 +20,8 @@ import {
   bulkAddUsers,
   acceptInvitation,
   generateExcelTemplate,
-  getUserByEmail
+  getUserByEmail,
+  addUserManually
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -364,6 +365,23 @@ router.get("/user-details", async (req, res) => {
   } catch (error) {
     console.error("Error fetching user details:", error.message);
     res.status(500).json({ error: "Failed to fetch user details." });
+  }
+});
+
+
+router.post("/add-user-manual", async (req, res) => {
+  const { email, phoneNumber, name, role } = req.body;
+
+  if (!email || !phoneNumber || !name || !role) {
+    return res.status(400).json({ error: "Email, phone number, name, and role are required." });
+  }
+
+  try {
+    const user = await addUserManually(email, phoneNumber, name, role);
+    res.status(201).json({ message: "User added successfully.", user });
+  } catch (error) {
+    console.error("Error adding user manually:", error.message);
+    res.status(500).json({ error: "Failed to add user manually." });
   }
 });
 

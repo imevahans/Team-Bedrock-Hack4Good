@@ -7,6 +7,9 @@ import fs from "fs";
 import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+dotenv.config();
+
 
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -433,18 +436,24 @@ export const bulkAddUsers = async (filePath) => {
 
     const users = [];
     for (const row of data) {
-      
       try {
-
         console.log("Raw row = ", row);
 
         // Normalize column names
         const name = row["Name"];
         const email = row["Email"];
         const phoneNumber = row["Phone Number (without +65 and spaces)"];
+        let role = row["Role (resident/admin)"];
 
-        if (!name || !email || !phoneNumber) {
+        if (!name || !email || !phoneNumber || !role) {
           failedEntries.push({ row, error: "Invalid data format." });
+          continue;
+        }
+
+        // Normalize and validate role
+        role = role.toLowerCase();
+        if (role !== "resident" && role !== "admin") {
+          failedEntries.push({ row, error: "Invalid role. Must be 'resident' or 'admin'." });
           continue;
         }
 
@@ -469,14 +478,14 @@ export const bulkAddUsers = async (filePath) => {
             name: $name,
             email: $email,
             phoneNumber: $phoneNumber,
-            role: "resident",
+            role: $role,
             invitationAccepted: false,
             createdAt: $createdAt,
             updatedAt: $updatedAt
           })
           RETURN u
           `,
-          { name, email, phoneNumber, createdAt, updatedAt }
+          { name, email, phoneNumber, role, createdAt, updatedAt }
         );
 
         const user = result.records[0].get("u").properties;
@@ -555,7 +564,7 @@ export const acceptInvitation = async (email, password) => {
 
 // Generate Excel Template
 export const generateExcelTemplate = () => {
-  const headers = [["Name", "Email", "Phone Number (without +65 and spaces)"]];
+  const headers = [["Name", "Email", "Phone Number (without +65 and spaces)", "Role (resident/admin)"]];
   const workbook = xlsx.utils.book_new();
   const worksheet = xlsx.utils.aoa_to_sheet(headers);
   xlsx.utils.book_append_sheet(workbook, worksheet, "Template");
@@ -571,6 +580,7 @@ export const generateExcelTemplate = () => {
   return filePath;
 };
 
+
 export const getUserByEmail = async (email) => {
   const session = driver.session();
   try {
@@ -584,6 +594,34 @@ export const getUserByEmail = async (email) => {
     }
 
     return { name: result.records[0].get("name") };
+  } finally {
+    await session.close();
+  }
+};
+
+export const addUserManually = async (email, phoneNumber, name) => {
+  const session = driver.session();
+  try {
+    const createdAt = formatTimestamp(Date.now());
+    const updatedAt = createdAt;
+    const result = await session.run(
+      `
+      CREATE (u:User {
+        email: $email,
+        phoneNumber: $phoneNumber,
+        name: $name,
+        role: "resident",
+        invitationAccepted: false,
+        createdAt: $createdAt,
+        updatedAt: $updatedAt
+      })
+      RETURN u
+      `,
+      { email, phoneNumber, name, createdAt, updatedAt }
+    );
+    const user = result.records[0].get("u").properties;
+    await sendInvitationEmail(email, name);
+    return user;
   } finally {
     await session.close();
   }

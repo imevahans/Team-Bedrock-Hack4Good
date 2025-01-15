@@ -5,6 +5,8 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [role, setRole] = useState("resident");
   const [searchTerm, setSearchTerm] = useState("");
   const [editedUser, setEditedUser] = useState(null);
@@ -28,16 +30,23 @@ const AdminDashboard = () => {
     fetchUsers();
   }, []);
 
-  // Add new user
-  const handleAddUser = async () => {
+  // Add new user manually
+  const handleAddUserManually = async () => {
+    if (!name || !email || !phoneNumber || !role) {
+      setMessage("All fields are required.");
+      return;
+    }
+  
     try {
-      const response = await api.post("/auth/add-user", { email, role });
+      const response = await api.post("/auth/add-user-manual", { email, phoneNumber, name, role });
       setMessage(response.data.message);
-      setUsers((prev) => [...prev, response.data.user]);
+      setUsers((prev) => [...prev, response.data.user]); // Update the user list
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to add user.");
+      console.error("Error adding user manually:", error.response?.data || error.message);
+      setMessage(error.response?.data?.error || "Failed to add user manually.");
     }
   };
+  
 
   // Suspend user
   const handleSuspendUser = async (email) => {
@@ -179,16 +188,29 @@ const handleBulkUpload = async () => {
       {/* Add New User Section */}
       <h3>Add New User</h3>
       <input
+        type="text"
+        placeholder="Enter name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <input
         type="email"
-        placeholder="Enter user email"
+        placeholder="Enter email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Enter phone number"
+        value={phoneNumber}
+        onChange={(e) => setPhoneNumber(e.target.value)}
       />
       <select value={role} onChange={(e) => setRole(e.target.value)}>
         <option value="resident">Resident</option>
         <option value="admin">Admin</option>
       </select>
-      <button onClick={handleAddUser}>Add User</button>
+      <button onClick={handleAddUserManually}>Add User</button>
+
 
       {/* Bulk Upload Section */}
       <h3>Bulk Upload Users</h3>
@@ -251,6 +273,7 @@ const handleBulkUpload = async () => {
               padding: "15px",
               borderRadius: "5px",
               marginBottom: "15px",
+              color: "#FFF",
             }}
           >
             <h4 style={{ marginBottom: "10px" }}>{user.name || "No Name Provided"}</h4>
