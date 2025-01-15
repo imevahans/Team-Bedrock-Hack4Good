@@ -7,8 +7,12 @@ import fs from "fs";
 import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 import dotenv from "dotenv";
+
 dotenv.config();
+
+const otpStorage = new Map();
 
 
 
@@ -694,5 +698,69 @@ export const createBasicAdminAccount = async () => {
     return user;
   } finally {
     await session.close();
+  }
+};
+
+// Function to generate OTP
+export const generateOtp = () => {
+  return crypto.randomInt(100000, 999999).toString(); // Generate a 6-digit OTP
+};
+
+// Function to send OTP via email
+export const sendEmailOtp = async (email) => {
+  const otp = generateOtp(); // Generate OTP
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    to: email,
+    subject: "Your OTP Code",
+    html: `
+      <p>Hello,</p>
+      <p>Your OTP code is <strong>${otp}</strong>.</p>
+      <p>Please use this code to complete your action. This code is valid for 10 minutes.</p>
+    `,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Message sent: %s", info.messageId);
+
+    // Store OTP in temporary storage with a timestamp (10-minute expiry)
+    otpStorage.set(email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+    return { message: "OTP sent successfully to your email." };
+  } catch (error) {
+    console.error("Error sending email OTP:", error);
+    throw new Error("Failed to send OTP. Please try again later.");
+  }
+};
+
+export const verifyEmailOtp = (email, submittedOtp) => {
+  const storedData = otpStorage.get(email);
+
+  if (!storedData) {
+    return { valid: false, message: "No OTP found for this email." };
+  }
+
+  const { otp, expiresAt } = storedData;
+
+  if (Date.now() > expiresAt) {
+    otpStorage.delete(email); // Remove expired OTP
+    return { valid: false, message: "OTP has expired. Please request a new one." };
+  }
+
+  if (otp === submittedOtp) {
+    otpStorage.delete(email); // Remove OTP after successful verification
+    return { valid: true, message: "OTP verified successfully." };
+  } else {
+    return { valid: false, message: "Invalid OTP. Please try again." };
   }
 };

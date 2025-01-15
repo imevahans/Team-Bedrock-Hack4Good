@@ -23,7 +23,9 @@ import {
   getUserByEmail,
   addUserManually,
   getDashboardStats,
-  createBasicAdminAccount
+  createBasicAdminAccount,
+  sendEmailOtp,
+  verifyEmailOtp
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -152,6 +154,38 @@ router.post("/reset-password/verify", async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+router.post("/reset-password/send-email-otp", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  try {
+    const response = await sendEmailOtp(email);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/reset-password/verify-email-otp", (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ error: "Email and OTP are required." });
+  }
+
+  const result = verifyEmailOtp(email, otp);
+
+  if (result.valid) {
+    res.status(200).json({ message: result.message });
+  } else {
+    res.status(400).json({ error: result.message });
+  }
+});
+
 
 /**
  * Route: Logout the user

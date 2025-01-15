@@ -3,20 +3,28 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 const ResetPasswordPage = () => {
-  const [phoneNumber, setPhoneNumber] = useState(""); // Only phone number is required
+  const [contact, setContact] = useState(""); // For email or phone
+  const [method, setMethod] = useState("email"); // Default to email
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otpSent, setOtpSent] = useState(false); // Track OTP status
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false); // Error state
-  const navigate = useNavigate(); // To handle navigation
+  const navigate = useNavigate();
 
-  // Send OTP to phone number
+  // Send OTP based on selected method
   const handleSendOtp = async () => {
     try {
-      const response = await api.post("/auth/reset-password/send-otp", { phoneNumber });
-      setOtpSent(true); // Enable OTP and password fields
+      const endpoint =
+        method === "email"
+          ? "/auth/reset-password/send-email-otp"
+          : "/auth/reset-password/send-otp";
+
+      const response = await api.post(endpoint, {
+        [method === "email" ? "email" : "phoneNumber"]: contact,
+      });
+      setOtpSent(true);
       setMessage(response.data.message);
       setError(false);
     } catch (error) {
@@ -34,12 +42,18 @@ const ResetPasswordPage = () => {
     }
 
     try {
-      const response = await api.post("/auth/reset-password/verify", {
-        phoneNumber,
+      const endpoint =
+        method === "email"
+          ? "/auth/reset-password/verify-email-otp"
+          : "/auth/reset-password/verify";
+
+      const response = await api.post(endpoint, {
+        [method === "email" ? "email" : "phoneNumber"]: contact,
         otp,
         newPassword,
         confirmPassword,
       });
+
       setMessage(response.data.message);
       setError(false);
       setTimeout(() => {
@@ -54,12 +68,21 @@ const ResetPasswordPage = () => {
   return (
     <div>
       <h2>Reset Password</h2>
+      <div style={{ marginBottom: "20px" }}>
+        <label>
+          OTP Delivery Method:
+          <select value={method} onChange={(e) => setMethod(e.target.value)}>
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+          </select>
+        </label>
+      </div>
       <input
         type="text"
-        placeholder="Enter your phone number"
-        value={phoneNumber}
-        onChange={(e) => setPhoneNumber(e.target.value)}
-        disabled={otpSent} // Disable phone number input after OTP is sent
+        placeholder={method === "email" ? "Enter your email" : "Enter your phone number"}
+        value={contact}
+        onChange={(e) => setContact(e.target.value)}
+        disabled={otpSent}
       />
       <button onClick={handleSendOtp} disabled={otpSent}>
         Send OTP
@@ -88,19 +111,15 @@ const ResetPasswordPage = () => {
         </div>
       )}
       {message && (
-        <p style={{ color: error ? "red" : "green", marginTop: "10px" }}>
+        <p
+          style={{
+            color: error ? "red" : "green",
+            marginTop: "10px",
+          }}
+        >
           {message}
         </p>
       )}
-      <p style={{ marginTop: "20px" }}>
-        Remembered your password?{" "}
-        <button
-          onClick={() => navigate("/")}
-          style={{ color: "blue", cursor: "pointer", border: "none", background: "none" }}
-        >
-          Log in here
-        </button>
-      </p>
     </div>
   );
 };
