@@ -10,6 +10,7 @@ import AcceptInvitationPage from "./pages/AcceptInvitationPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import TokenHandler from "./components/TokenHandler"; // Import the TokenHandler
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const App = () => {
   return (

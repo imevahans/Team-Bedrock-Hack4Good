@@ -1,0 +1,155 @@
+/* Set the entire page's background to a light grey */
+body {
+    background-color: #f0f0f0;  /* Light grey background for the entire page */
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display:inline;
+  }
+  
+  /* Container for the dashboard */
+  .dashboard-container {
+    display: flex;
+    height: 100vh;
+    padding: 10px;
+    overflow: hidden;  /* Prevent any overflow beyond the container */
+  }
+  
+  /* Sticky sidebar */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 95vh;
+    background-color: white; /* White background for the sidebar */
+    box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 15px; /* Rounded corners for the sidebar */
+    z-index: 1; /* Ensure sidebar stays on top */
+  }
+  
+  /* Profile section */
+  .profile-section {
+    text-align: center;
+  }
+  
+  .profile-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+  }
+  .dashboard-image {
+    width: 100px;
+    height: 100px;
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  
+  /* Sidebar buttons */
+  .sidebar-button {
+    background-color: transparent; /* Make button background transparent */
+    color: black; /* Black text by default */
+    border: 2px solid transparent; /* Transparent border initially */
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    transition: all 0.3s ease; /* Smooth transition for all properties */
+    font-size: 15px;
+  }
+  
+  .sidebar-button:hover {
+    background-color: transparent; /* Keep background transparent */
+    color: #9b59b6; /* Light purple text */
+    border-color: #9b59b6; /* Light purple border */
+  }
+  
+  /* Logout button styles */
+  .logout-button {
+    display: flex;
+    align-items: center;  /* Vertically centers the icon and text */
+    background-color: whitesmoke;
+    color: black;
+    border: none;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-size: 15px;
+  }
+  
+  .logout-image {
+    margin-left: 5px;
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;  /* Space between the icon and the text */
+  }
+  
+  .logout-button:hover {
+    background-color: #d3d3d3; /* Light grey on hover */
+  }
+  
+  /* Position the logout button at the bottom */
+  .logout-container {
+    margin-top: auto;
+  }
+  
+  /* Main content section */
+  .main-content {
+    padding: 20px;
+    padding-right: 10px; /* Add 10px padding from the right edge */
+  }
+  
+  /* Rounded section for header, vouchers, and products */
+  .header-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px; /* Rounded corners for header */
+    margin-bottom: 20px;
+    box-shadow: none; /* Removes any box-shadow, making it non-existent */
+    max-width: 100%; /* Make the header container span the full width */
+    margin-right: 10px; /* 10px away from the right side */
+    min-height: 200px; /* Set a fixed height to ensure it stays visible */
+    text-align: center;
+  }
+  
+  .rounded-section {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px; /* Rounded corners for the sections */
+    margin-bottom: 20px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%; /* Make the section container span the full width */
+    text-align: center;
+
+  }
+  
+  /* Prevents any overflow or purple hover area */
+  .container-fluid {
+    overflow: hidden;
+  }
+  
+  h1 {
+    color: #333;
+  }
+  
+  section {
+    margin-bottom: 20px;
+  }
+  
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  li {
+    padding: 5px 0;
+  }
+  

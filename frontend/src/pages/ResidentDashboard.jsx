@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
+import './ResidentDashboard.css'; // Import the CSS for the sidebar styles
+import profile from "../assets/profile.png";
+import logout from "../assets/logout.png"; 
+import minimart from "../assets/minimart.png";
+import food from "../assets/food.png";
 
 const ResidentDashboard = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -24,32 +29,66 @@ const ResidentDashboard = () => {
   }, []);
 
   return (
-    <div>
-      <h1>Resident Dashboard</h1>
+    <div className="container-fluid">
+      <div className="row">
+        {/* Sidebar - 1 column */}
+        <div className="col-md-1 sidebar">
+          <div className="profile-section">
+            <button style={{ marginBottom: '10px' }}>
+              <img src={profile} className="profile-image" />
+            </button>
+          </div>
+          <button className="sidebar-button">Products</button>
+          <button className="sidebar-button">Nav Bar Item 2</button>
+          <button className="sidebar-button">Nav Bar Item 3</button>
+          <button className="sidebar-button">Nav Bar Item 4</button>
+          <div className="logout-container">
+            <button className="logout-button">
+              Log Out
+              <img src={logout} className="logout-image" />
+            </button>
+          </div>
+        </div>
 
-      {/* Display Voucher Information */}
-      <section>
-        <h2>Your Vouchers</h2>
-        <ul>
-          {vouchers.map((voucher) => (
-            <li key={voucher.id}>
-              Voucher ID: {voucher.id}, Balance: {voucher.balance} points
-            </li>
-          ))}
-        </ul>
-      </section>
+        {/* Main Content - 11 columns */}
+        <div className="col-md-11 main-content">
+          <div className="header-container">
+            <h1>
+              <img src={minimart} className="dashboard-image" />
+              MuhammadDiyah MiniMart
+              <img src={food} className="dashboard-image" />
+            </h1>
+          </div>
 
-      {/* Display Available Products */}
-      <section>
-        <h2>Available Products</h2>
-        <ul>
-          {products.map((product) => (
-            <li key={product.id}>
-              {product.name} - {product.price} points
-            </li>
-          ))}
-        </ul>
-      </section>
+          {/* Display Voucher Information */}
+          <section className="rounded-section">
+            <h2>Your Vouchers</h2>
+            <ul>
+              <li>Vouch 1 placeholder</li>
+              <li>Vouch 2 placeholder</li>
+              {vouchers.map((voucher) => (
+                <li key={voucher.id}>
+                  Voucher ID: {voucher.id}, Balance: {voucher.balance} points
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Display Available Products */}
+          <section className="rounded-section">
+            <h2>Available Products</h2>
+            <ul>
+            <li>Product 1 placeholder</li>
+            <li>Product 2 placeholder</li>
+              {products.map((product) => (
+                <li key={product.id}>
+                  {product.name} - {product.price} points
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      </div>
     </div>
   );
 };
