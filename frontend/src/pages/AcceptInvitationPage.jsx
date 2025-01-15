@@ -71,8 +71,8 @@ const AcceptInvitationPage = () => {
   return (
     <div>
       <h2>Accept Invitation</h2>
-      <p>Hello, {name}!</p> {/* Greet the user by their name */}
-      <p>Email: {email}</p>
+      <p style={{ color: "white" }}>Hello, {name}!</p> {/* Greet the user by their name */}
+      <p style={{ color: "white" }}>Email: {email}</p>
       {!otpSent ? (
         <button onClick={handleSendOtp}>Send OTP</button>
       ) : (

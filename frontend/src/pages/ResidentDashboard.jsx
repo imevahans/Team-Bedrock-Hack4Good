@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import api from "../services/api";
-import './ResidentDashboard.css'; // Import the CSS for the sidebar styles
+import '../styles/ResidentDashboard.css'; // Import the CSS for the sidebar styles
 import profile from "../assets/profile.png";
 import logout from "../assets/logout.png"; 
 import minimart from "../assets/minimart.png";
