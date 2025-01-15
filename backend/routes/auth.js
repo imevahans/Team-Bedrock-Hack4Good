@@ -344,9 +344,9 @@ router.post("/bulk-add-users", upload.single("file"), async (req, res) => {
 
 // Accept invitation and set password
 router.post("/accept-invitation", async (req, res) => {
-  const { email, password, confirmPassword, otp } = req.body;
+  const { email, password, confirmPassword, otp, method } = req.body;
 
-  if (!email || !password || !confirmPassword || !otp) {
+  if (!email || !password || !confirmPassword || !otp || !method) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
@@ -355,8 +355,14 @@ router.post("/accept-invitation", async (req, res) => {
   }
 
   try {
-    // Verify OTP
-    await verifyOtpEmail(email, otp);
+    // Verify OTP based on method
+    if (method === "email") {
+      await verifyEmailOtp(email, otp);
+    } else if (method === "phone") {
+      await verifyOtpEmail(email, otp);
+    } else {
+      return res.status(400).json({ error: "Invalid OTP method." });
+    }
 
     // Accept invitation and set password
     await acceptInvitation(email, password);
@@ -366,6 +372,7 @@ router.post("/accept-invitation", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // Send OTP for invitation acceptance
 router.post("/accept-invitation/send-otp", async (req, res) => {
@@ -441,5 +448,22 @@ router.post("/testpage", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch basic admin acconut." });
   }
 });
+
+// Send email OTP
+router.post("/accept-invitation/send-email-otp", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+
+  try {
+    const response = await sendEmailOtp(email);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 export default router;

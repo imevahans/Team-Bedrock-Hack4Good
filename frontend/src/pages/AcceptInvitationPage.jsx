@@ -6,13 +6,14 @@ const AcceptInvitationPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [name, setName] = useState(""); // State to store the user's name
+  const [name, setName] = useState(""); // User's name
+  const [contactMethod, setContactMethod] = useState("email"); // Email or phone
   const [message, setMessage] = useState("");
   const [otpSent, setOtpSent] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState(5); // Countdown timer
-  const [redirecting, setRedirecting] = useState(false); // Redirect state
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const [redirecting, setRedirecting] = useState(false);
   const [searchParams] = useSearchParams();
-  const email = searchParams.get("email");
+  const email = searchParams.get("email"); // Default email from URL
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,7 +24,7 @@ const AcceptInvitationPage = () => {
         setName(response.data.name);
       } catch (error) {
         console.error("Error fetching user details:", error.response?.data?.error || error.message);
-        setName("Guest"); // Fallback if user details can't be fetched
+        setName("Guest");
       }
     };
 
@@ -34,7 +35,12 @@ const AcceptInvitationPage = () => {
 
   const handleSendOtp = async () => {
     try {
-      const response = await api.post("/auth/accept-invitation/send-otp", { email });
+      const endpoint =
+        contactMethod === "email"
+          ? "/auth/accept-invitation/send-email-otp"
+          : "/auth/accept-invitation/send-otp";
+
+      const response = await api.post(endpoint, { email });
       setOtpSent(true);
       setMessage(response.data.message);
     } catch (error) {
@@ -49,6 +55,7 @@ const AcceptInvitationPage = () => {
         password,
         confirmPassword,
         otp,
+        method: contactMethod,
       });
       setMessage(response.data.message);
 
@@ -58,7 +65,7 @@ const AcceptInvitationPage = () => {
         setRedirectCountdown((prev) => {
           if (prev === 1) {
             clearInterval(countdown);
-            navigate("/"); // Redirect to dashboard
+            navigate("/"); // Redirect to login
           }
           return prev - 1;
         });
@@ -71,12 +78,25 @@ const AcceptInvitationPage = () => {
   return (
     <div>
       <h2>Accept Invitation</h2>
-      <p style={{ color: "white" }}>Hello, {name}!</p> {/* Greet the user by their name */}
+      <p style={{ color: "white" }}>Hello, {name}!</p>
       <p style={{ color: "white" }}>Email: {email}</p>
+
       {!otpSent ? (
-        <button onClick={handleSendOtp}>Send OTP</button>
+        <div>
+          <label>
+            OTP Delivery Method:
+            <select
+              value={contactMethod}
+              onChange={(e) => setContactMethod(e.target.value)}
+            >
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+            </select>
+          </label>
+          <button onClick={handleSendOtp}>Send OTP</button>
+        </div>
       ) : (
-        <>
+        <div>
           <input
             type="text"
             placeholder="Enter OTP"
@@ -96,14 +116,10 @@ const AcceptInvitationPage = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
           <button onClick={handleAcceptInvitation}>Set Password</button>
-        </>
+        </div>
       )}
-      {message && <p>{message}</p>}
-      {redirecting && (
-        <p>
-          Redirecting to dashboard in {redirectCountdown} seconds...
-        </p>
-      )}
+      {message && <p style={{ color: "white" }}>{message}</p>}
+      {redirecting && <p>Redirecting to login in {redirectCountdown} seconds...</p>}
     </div>
   );
 };
