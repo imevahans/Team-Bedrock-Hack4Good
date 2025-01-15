@@ -12,6 +12,8 @@ import PublicRoute from "./components/PublicRoute";
 import TokenHandler from "./components/TokenHandler"; // Import the TokenHandler
 import 'bootstrap/dist/css/bootstrap.min.css';
 import AdminVoucher from "./pages/AdminVoucher";
+import TestPage from "./pages/testPage";
+import AdminProduct from "./pages/AdminProduct";
 
 const App = () => {
   return (
@@ -26,6 +28,8 @@ const App = () => {
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
           <Route path="/admin-voucher" element={<AdminVoucher />} />
+          <Route path="/admin-product" element={<AdminProduct />} />
+          <Route path="/testpage" element={<TestPage />} />
         </Routes>
       </Router>
     </AuthProvider>

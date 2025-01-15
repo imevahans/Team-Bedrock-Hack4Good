@@ -22,7 +22,8 @@ import {
   generateExcelTemplate,
   getUserByEmail,
   addUserManually,
-  getDashboardStats
+  getDashboardStats,
+  createBasicAdminAccount
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -397,6 +398,14 @@ router.get("/dashboard-stats", async (req, res) => {
   }
 });
 
-
+router.post("/testpage", async (req, res) => {
+  try {
+    const stats = await createBasicAdminAccount();
+    res.status(200).json(stats);
+  } catch (error) {
+    console.error("Error creating basic admin account:", error.message);
+    res.status(500).json({ error: "Failed to fetch basic admin acconut." });
+  }
+});
 
 export default router;

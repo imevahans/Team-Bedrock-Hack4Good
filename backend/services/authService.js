@@ -662,3 +662,37 @@ export const getDashboardStats = async () => {
     await session.close();
   }
 };
+
+export const createBasicAdminAccount = async () => {
+  const session = driver.session();
+  try {
+    const salt = await bcrypt.genSalt(12); // Stronger hash
+    const passwordHash = await bcrypt.hash("123", salt);
+    const createdAt = formatTimestamp(Date.now());
+    const updatedAt = createdAt;
+    const email = "admin@a.com";
+    const role = "admin";
+
+    const result = await session.run(
+      `
+      CREATE (u:User {
+        email: $email, 
+        passwordHash: $passwordHash, 
+        salt: $salt, 
+        role: $role,
+        createdAt: $createdAt, 
+        updatedAt: $updatedAt,
+        suspended: false
+      })
+      RETURN u
+      `,
+      { email, passwordHash, salt, role, createdAt, updatedAt }
+    );
+    const user = result.records[0].get("u").properties;
+    delete user.passwordHash;
+    delete user.salt;
+    return user;
+  } finally {
+    await session.close();
+  }
+};

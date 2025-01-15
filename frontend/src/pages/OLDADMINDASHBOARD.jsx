@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import api from "../services/api";
 
 
-const AdminDashboard = () => {
+
+const AdminProduct = () => {
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -476,4 +477,4 @@ const handleBulkUpload = async () => {
   );
 };
 
-export default AdminDashboard;
+export default AdminProduct;
