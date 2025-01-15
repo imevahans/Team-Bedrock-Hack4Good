@@ -21,7 +21,8 @@ import {
   acceptInvitation,
   generateExcelTemplate,
   getUserByEmail,
-  addUserManually
+  addUserManually,
+  getDashboardStats
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -384,6 +385,18 @@ router.post("/add-user-manual", async (req, res) => {
     res.status(500).json({ error: "Failed to add user manually." });
   }
 });
+
+
+router.get("/dashboard-stats", async (req, res) => {
+  try {
+    const stats = await getDashboardStats();
+    res.status(200).json(stats);
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error.message);
+    res.status(500).json({ error: "Failed to fetch dashboard stats." });
+  }
+});
+
 
 
 export default router;

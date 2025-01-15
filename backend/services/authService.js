@@ -626,3 +626,39 @@ export const addUserManually = async (email, phoneNumber, name) => {
     await session.close();
   }
 };
+
+
+export const getDashboardStats = async () => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (u:User)
+      RETURN 
+        COUNT(u) AS totalUsers,
+        COUNT(CASE WHEN u.invitationAccepted THEN 1 ELSE null END) AS invitationsAccepted,
+        COUNT(CASE WHEN NOT u.invitationAccepted THEN 1 ELSE null END) AS invitationsNotAccepted
+    `);
+
+    const voucherTasks = await session.run(`
+      MATCH (v:VoucherTask)
+      RETURN COUNT(v) AS pendingTasks
+    `);
+
+    const productRequests = await session.run(`
+      MATCH (p:ProductRequest)
+      RETURN COUNT(p) AS pendingRequests
+    `);
+
+    const stats = {
+      currentUsers: result.records[0].get("totalUsers").toInt(),
+      invitationsAccepted: result.records[0].get("invitationsAccepted").toInt(),
+      invitationsNotAccepted: result.records[0].get("invitationsNotAccepted").toInt(),
+      voucherTasksPending: voucherTasks.records[0].get("pendingTasks").toInt(),
+      productRequestsPending: productRequests.records[0].get("pendingRequests").toInt(),
+    };
+
+    return stats;
+  } finally {
+    await session.close();
+  }
+};

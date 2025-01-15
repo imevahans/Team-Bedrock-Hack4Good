@@ -1,0 +1,249 @@
+/* General Styling */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto; /* Ensure body is scrollable */
+}
+
+.container {
+  display: flex;
+  min-height: 100vh; /* Ensure container grows with content */
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #343a40;
+  color: white;
+  height: 100%; /* Allow sidebar to grow with content */
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: fixed; /* Keep sidebar fixed */
+  top: 0;
+  bottom: 0;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+}
+
+.sidebar button {
+  width: 100%;
+  background: none;
+  color: white;
+  border: none;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.sidebar button:hover {
+  background-color: #495057;
+}
+
+.active-tab {
+  background-color: #495057;
+  font-weight: bold;
+}
+
+.main-content {
+  margin-left: 250px; /* Leave space for sidebar */
+  padding: 20px;
+  background-color: #ffffff;
+  flex-grow: 1;
+  overflow-y: auto; /* Make main content scrollable */
+  height: auto; /* Adjust height to fit content */
+}
+
+/* Section Styling */
+.section {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #fdfdfd;
+}
+
+.section h3 {
+  margin-bottom: 15px;
+  color: #343a40;
+}
+
+/* Search and Filter */
+.search-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.search-container input,
+.search-container select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.search-container button {
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.search-container button:hover {
+  background-color: #0056b3;
+}
+
+/* User List Styling */
+.user-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f7f7f7;
+}
+
+.user-card p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #343a40;
+}
+
+.user-card .user-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-card .user-actions label {
+  font-size: 13px;
+  color: #495057;
+}
+
+.user-card .user-actions select,
+.user-card .user-actions input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.user-card .user-actions button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.user-card .user-actions button:nth-child(3) {
+  background-color: #28a745;
+  color: white;
+}
+
+.user-card .user-actions button:nth-child(3):hover {
+  background-color: #218838;
+}
+
+.user-card .user-actions button:nth-child(4) {
+  background-color: #ffc107;
+  color: black;
+}
+
+.user-card .user-actions button:nth-child(4):hover {
+  background-color: #e0a800;
+}
+
+.user-card .user-actions button:nth-child(5) {
+  background-color: #dc3545;
+  color: white;
+}
+
+.user-card .user-actions button:nth-child(5):hover {
+  background-color: #c82333;
+}
+
+/* Confirmation Popup */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-container {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+}
+
+.popup-container h4 {
+  margin-bottom: 15px;
+  color: #343a40;
+}
+
+.popup-container p {
+  color: #495057;
+  margin-bottom: 20px;
+}
+
+.popup-container button {
+  padding: 10px 15px;
+  margin: 0 5px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.popup-container button:first-child {
+  background-color: #007bff;
+  color: white;
+}
+
+.popup-container button:first-child:hover {
+  background-color: #0056b3;
+}
+
+.popup-container button:last-child {
+  background-color: #dc3545;
+  color: white;
+}
+
+.popup-container button:last-child:hover {
+  background-color: #c82333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .search-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 10px;
+  }
+}
