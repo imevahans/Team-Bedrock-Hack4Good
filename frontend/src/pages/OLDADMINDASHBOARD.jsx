@@ -3,7 +3,7 @@ import api from "../services/api";
 
 
 
-const AdminProduct = () => {
+const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -477,4 +477,4 @@ const handleBulkUpload = async () => {
   );
 };
 
-export default AdminProduct;
+export default AdminDashboard;
