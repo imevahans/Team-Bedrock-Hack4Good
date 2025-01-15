@@ -155,12 +155,13 @@ router.post("/reset-password/verify", async (req, res) => {
  * Method: GET
  */
 router.get("/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      console.error("Logout error:", err);
-    }
-    res.redirect("/");
-  });
+  try {
+    // Instruct the client to clear the token
+    res.status(200).json({ message: "Logged out successfully." });
+  } catch (error) {
+    console.error("Logout error:", error.message);
+    res.status(500).json({ error: "Failed to logout." });
+  }
 });
 
 

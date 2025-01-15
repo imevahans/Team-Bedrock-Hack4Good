@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import api from "../services/api";
 import './ResidentDashboard.css'; // Import the CSS for the sidebar styles
 import profile from "../assets/profile.png";
@@ -28,6 +29,18 @@ const ResidentDashboard = () => {
     fetchData();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      // Send a request to the backend to handle logout
+      await api.get("/auth/logout");
+      localStorage.removeItem("token"); // Clear the authentication token
+      window.location.href = "/"; // Redirect to the login page or home page
+    } catch (error) {
+      console.error("Error during logout:", error.message);
+      setMessage("Failed to log out. Please try again.");
+    }
+  };
+
   return (
     <div className="container-fluid">
       <div className="row">
@@ -43,7 +56,7 @@ const ResidentDashboard = () => {
           <button className="sidebar-button">Nav Bar Item 3</button>
           <button className="sidebar-button">Nav Bar Item 4</button>
           <div className="logout-container">
-            <button className="logout-button">
+            <button className="logout-button" onClick={handleLogout}>
               Log Out
               <img src={logout} className="logout-image" />
             </button>
@@ -55,7 +68,7 @@ const ResidentDashboard = () => {
           <div className="header-container">
             <h1>
               <img src={minimart} className="dashboard-image" />
-              MuhammadDiyah MiniMart
+              Muhammadiyah MiniMart
               <img src={food} className="dashboard-image" />
             </h1>
           </div>
