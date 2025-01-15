@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import TokenHandler from "./components/TokenHandler"; // Import the TokenHandler
 import 'bootstrap/dist/css/bootstrap.min.css';
+import AdminVoucher from "./pages/AdminVoucher";
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
           <Route path="/admin-dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+          <Route path="/admin-voucher" element={<AdminVoucher />} />
         </Routes>
       </Router>
     </AuthProvider>

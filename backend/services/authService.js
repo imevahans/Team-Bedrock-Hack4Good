@@ -548,10 +548,10 @@ export const acceptInvitation = async (email, password) => {
     const result = await session.run(
       `
       MATCH (u:User {email: $email, invitationAccepted: false})
-      SET u.passwordHash = $passwordHash, u.invitationAccepted = true, u.updatedAt = $updatedAt
+      SET u.passwordHash = $passwordHash, u.invitationAccepted = true, u.updatedAt = $updatedAt, u.salt = $salt
       RETURN u
       `,
-      { email, passwordHash, updatedAt }
+      { email, passwordHash, updatedAt, salt }
     );
 
     if (result.records.length === 0) {
