@@ -813,101 +813,76 @@ export const getAllProducts = async () => {
   try {
     const result = await session.run(`
       MATCH (p:Product)
-      RETURN p.name AS name, p.price AS price, p.quantity AS quantity
+      RETURN p.name AS name, p.price AS price, p.quantity AS quantity, p.imageUrl AS imageUrl
     `);
 
-    // Map the result to return a list of products
-    const products = result.records.map(record => {
-      const price = record.get('price');
-      const quantity = record.get('quantity');
-
-      return {
-        name: record.get('name'),
-        price: price instanceof neo4j.types.Integer ? price.toNumber() : parseFloat(price),
-        quantity: quantity instanceof neo4j.types.Integer ? quantity.toNumber() : parseInt(quantity, 10),
-      };
-    });
-
-    return products;
-  } catch (error) {
-    console.error("Error fetching products from Neo4j:", error.message); // Log any errors from Neo4j
-    throw error;  // Rethrow the error to be caught by the route handler
+    return result.records.map(record => ({
+      name: record.get('name'),
+      price: parseFloat(record.get('price')),
+      quantity: parseInt(record.get('quantity'), 10),
+      imageUrl: record.get('imageUrl'),
+    }));
   } finally {
     await session.close();
   }
 };
 
 
-
-// In backend/services/authServices.js
-
-// Function to update product name
-export const updateProductName = async (productName, newName) => {
+export const editProduct = async (originalName, name, price, quantity, imageFilePath) => {
   const session = driver.session();
   try {
-    const result = await session.run(`
-      MATCH (p:Product {name: $productName})
-      SET p.name = $newName
-      RETURN p.name AS name
-    `, { productName, newName });
+    console.log("Triggered! originalName = ", originalName);
 
-    if (result.records.length > 0) {
-      return { message: "Product name updated successfully." };
-    } else {
-      return { error: "Product not found." };
+    const updatedAt = formatTimestamp(Date.now());
+    if (imageFilePath) {
+      const imageUrl = await uploadImageToCloudinary(imageFilePath);
+      console.log("imageURL created = ", imageUrl);
+
+      const result = await session.run(`
+        MATCH (p:Product {name: $originalName})
+        SET p.name = $name,
+            p.price = $price,
+            p.quantity = $quantity,
+            p.updatedAt = $updatedAt,
+            p.imageUrl = $imageUrl
+        RETURN p
+      `, { originalName, name, price, quantity, updatedAt, imageUrl});
+
+      if (result.records.length > 0) {
+        return { message: "Product updated successfully." };
+      } else {
+        return { error: "Product not found." };
+      }
+    }
+
+    else {
+      const result = await session.run(`
+        MATCH (p:Product {name: $originalName})
+        SET p.name = $name,
+            p.price = $price,
+            p.quantity = $quantity,
+            p.updatedAt = $updatedAt,
+        RETURN p
+      `, { originalName, name, price, quantity, updatedAt});
+
+      if (result.records.length > 0) {
+        return { message: "Product updated successfully." };
+      } else {
+        return { error: "Product not found." };
+      }
+
     }
   } finally {
     await session.close();
   }
 };
 
-export const updateProductQuantity = async (productName, newQuantity) => {
-  const session = driver.session();
-  try {
-    const result = await session.run(`
-      MATCH (p:Product {name: $productName})
-      SET p.quantity = $newQuantity
-      RETURN p.quantity AS quantity
-    `, { productName, newQuantity });
-
-    if (result.records.length > 0) {
-      return { message: "Product quantity updated successfully." };
-    } else {
-      return { error: "Product not found." };
-    }
-  } finally {
-    await session.close();
-  }
-};
-
-
-// Function to update product price
-export const updateProductPrice = async (productName, newPrice) => {
-  const session = driver.session();
-  try {
-    const result = await session.run(`
-      MATCH (p:Product {name: $productName})
-      SET p.price = $newPrice
-      RETURN p.price AS price
-    `, { productName, newPrice });
-
-    if (result.records.length > 0) {
-      return { message: "Product price updated successfully." };
-    } else {
-      return { error: "Product not found." };
-    }
-  } finally {
-    await session.close();
-  }
-};
 
 export const createProduct = async (name, price, quantity, imageFilePath) => {
-  console.log("Triggered");
   const session = driver.session();
   try {
     // Upload image to Cloudinary
 
-    console.log("Triggered4");
     const imageUrl = await uploadImageToCloudinary(imageFilePath);
     console.log("imageURL created = ", imageUrl);
 

@@ -32,6 +32,7 @@ const AdminDashboard = () => {
   const [newProduct, setNewProduct] = useState({ name: "", price: 0, quantity: 0, imageFile: null });
   const [showModal, setShowModal] = useState(false); // For creating product modal
   const [showErrorModal, setShowErrorModal] = useState(false); // For error modal
+  const [originalName, setOriginalName] = useState('');
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
@@ -306,19 +307,17 @@ const handleResetPassword = async (email, name) => {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get("/auth/products"); // Make sure this route matches your Express route
-  
-      // Map the result to return a list of products, ensuring that price and quantity are numbers
+      const response = await api.get("/auth/products");
       const products = response.data.products.map((product) => ({
         name: product.name,
-        price: Number(product.price), // Safely convert to number
-        quantity: Number(product.quantity), // Safely convert to number
+        price: Number(product.price),
+        quantity: Number(product.quantity),
+        imageUrl: product.imageUrl || "../assets/minimart.png", // Use a default image if none provided
       }));
-  
-      setProducts(products); // Store the products in the state
+      setProducts(products);
     } catch (error) {
       console.error("Error fetching products:", error.message);
-      setMessage("Failed to fetch products.");
+      showNotification("Failed to fetch products.", "error");
     }
   };
 
@@ -400,54 +399,47 @@ const handleEditProduct = (product) => {
     ...product, // Populate the product details
     imageUrl: product.imageUrl || "", // Make sure image URL is passed
   });
+  setOriginalName(product.name);
 };
 
 
-  const handleSaveProduct = async () => {
-    if (!editedProduct) return;
-  
-    const { name, quantity, price, originalName, currentPrice, currentQuantity } = editedProduct;
-  
-    try {  
-      // Check if the quantity is different from the original quantity (stored in invisible field)
-      if (quantity !== currentQuantity) {
-        const response = await api.post("/auth/products/edit-quantity", {
-          productName: originalName,
-          newQuantity: quantity,
-        });
-        showNotification(response.data.message || "Product quantity updated successfully!", "success");
-      }
-  
-      // Check if the price is different from the original price (stored in invisible field)
-      if (price !== currentPrice) {
-        const response = await api.post("/auth/products/edit-price", {
-          productName: originalName,
-          newPrice: price,
-        });
-        showNotification(response.data.message || "Product price updated successfully!", "success");
-      }
+const handleSaveProduct = async () => {
+  if (!editedProduct) return;
 
-      // Update the name if it's changed
-      if (name !== originalName) {
-        const response = await api.post("/auth/products/edit-name", {
-          productName: originalName,
-          newName: name,
-        });
-        showNotification(response.data.message || "Product name updated successfully!", "success");
-      }
-      fetchProducts(); // Refresh the product list
-      setEditedProduct(null); // Close the modal
-    } catch (error) {
-      console.error("Error saving product:", error.message);
-      showNotification(`Failed to update product due to ${error.message}.`, "error");
-    }
-  };
+  const { name, quantity, price, imageFile } = editedProduct;
+  console.log("originalName = ", originalName);
+
+  try {
+    const formData = new FormData();
+    formData.append("originalName", originalName);
+    formData.append("name", name);
+    formData.append("quantity", quantity);
+    formData.append("price", price);
+    if (imageFile) formData.append("image", imageFile);
+
+    const response = await api.post("/auth/products/edit", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    showNotification(response.data.message || "Product updated successfully!", "success");
+    fetchProducts(); // Refresh product list
+    setEditedProduct(null); // Close the edit modal
+  } catch (error) {
+    console.error("Error saving product:", error.message);
+    showNotification(`Failed to update product due to ${error.message}.`, "error");
+  }
+};
+
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       const imageFile = file; // Generate a URL for the file
       setNewProduct((prev) => ({
+        ...prev,
+        imageFile, // Set image URL for the product
+      }));
+      setEditedProduct((prev) => ({
         ...prev,
         imageFile, // Set image URL for the product
       }));
@@ -883,24 +875,31 @@ const handleEditProduct = (product) => {
               <button onClick={() => setShowModal(true)}>Add Product</button>
               {products.length > 0 ? (
                 <div className="product-grid">
-                {products.map((product) => (
-                  <div className="product-card" key={product.name}>
-                    <div className="product-image">
-                      <img
-                        src={product.imageUrl || "default-image.jpg"} // Display image or default
-                        alt={product.name}
-                        style={{ width: "100%", height: "auto" }} // Adjust size to fit nicely
-                      />
-                    </div>
-                    <p><strong>Name:</strong> {product.name}</p>
-                    <p><strong>Price:</strong> ${product.price}</p>
-                    <p><strong>Quantity:</strong> {product.quantity}</p>
-                    <div className="product-actions">
-                      <button onClick={() => handleEditProduct(product)}>Edit</button>
-                      <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
-                    </div>
+                {products.length > 0 ? (
+                  <div className="product-grid">
+                    {products.map((product) => (
+                      <div className="product-card" key={product.name}>
+                        <div className="product-image">
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            style={{ width: "100%", height: "auto" }}
+                          />
+                        </div>
+                        <p><strong>Name:</strong> {product.name}</p>
+                        <p><strong>Price:</strong> ${product.price}</p>
+                        <p><strong>Quantity:</strong> {product.quantity}</p>
+                        <div className="product-actions">
+                          <button onClick={() => handleEditProduct(product)}>Edit</button>
+                          <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p>No products available.</p>
+                )}
+
 
                 </div>
               ) : (

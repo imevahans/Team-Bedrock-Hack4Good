@@ -25,9 +25,7 @@ import {
   sendEmailOtp,
   verifyEmailOtp,
   getAllProducts,
-  updateProductName,
-  updateProductQuantity,
-  updateProductPrice,
+  editProduct,
   createProduct,
   deleteProduct,
   getAuditLogs,
@@ -461,45 +459,16 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// Route to update product name
-router.post("/products/edit-name", async (req, res) => {
-  const { productName, newName } = req.body;
-
-  if (!productName || !newName) {
-    return res.status(400).json({ error: "Product Name and new name are required." });
-  }
-
-  try {
-    const result = await updateProductName(productName, newName);
-    
-    // Check if the update was successful, adjust this logic based on the backend response
-    if (result.error) {
-      return res.status(404).json({ error: "Product not found." });
-    }
-    
-    // Send a success message with the updated product name or any other relevant information
-    return res.status(200).json({ message: "Product name updated successfully." });
-  } catch (error) {
-    console.error("Error updating product name:", error.message);
-    return res.status(500).json({ error: "Failed to update product name." });
-  }
-});
-
 // Route to update product quantity
-router.post("/products/edit-quantity", async (req, res) => {
-  const { productName, newQuantity } = req.body;
-
-  if (!productName || !newQuantity) {
-    return res.status(400).json({ error: "Product Name and new quantity are required." });
+router.post("/products/edit", upload.single("image"), async (req, res) => {
+  const { originalName, name, quantity, price } = req.body;
+  const image = req.file
+  if (!name || !quantity || !price) {
+    return res.status(400).json({ error: "All fields are required." });
   }
 
   try {
-    const result = await updateProductQuantity(productName, newQuantity);
-
-    // If product not found, return error
-    if (result.error) {
-      return res.status(404).json(result);  // Product not found
-    }
+    const result = await editProduct(originalName, name, price, quantity, image.path);
 
     // Return success message
     res.status(200).json({ message: "Product quantity updated successfully." });
@@ -510,26 +479,6 @@ router.post("/products/edit-quantity", async (req, res) => {
 });
 
 
-// Route to update product price
-router.post("/products/edit-price", async (req, res) => {
-  const { productName, newPrice } = req.body;
-
-  if (!productName || !newPrice) {
-    return res.status(400).json({ error: "Product Name and new price are required." });
-  }
-
-  try {
-    const result = await updateProductPrice(productName, newPrice);
-    if (result.error) {
-      return res.status(404).json(result);  // Product not found
-    }
-    res.status(200).json(result);  // Success message
-  } catch (error) {
-    console.error("Error updating product price:", error.message);
-    res.status(500).json({ error: "Failed to update product price." });
-  }
-});
-
 // Route to create a new product
 router.post("/products/create", upload.single("image"), async (req, res) => {
   const { name, price, quantity } = req.body;
@@ -537,12 +486,9 @@ router.post("/products/create", upload.single("image"), async (req, res) => {
   console.log("image = ", image);
   console.log("image.path = ", image.path);
   if (!name || !price || !quantity || !image) {
-    console.log("Triggered 3");
     return res.status(400).json({ error: "Product name, price, quantity, and image are required." });
   }
-  console.log("Triggered 2");
   try {
-    console.log("Triggered 1");
     const result = await createProduct(name, price, quantity, image.path); // Pass the image file path
     res.status(200).json({ message: "Product created successfully.", product: result });
   } catch (error) {
