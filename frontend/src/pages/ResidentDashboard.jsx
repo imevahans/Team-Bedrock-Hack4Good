@@ -266,8 +266,13 @@ const ResidentDashboard = () => {
                       <p><strong>Price:</strong> ${product.price}</p>
                       <p><strong>Quantity:</strong> {product.quantity}</p>
                       <div className="product-actions">
+                      {product.quantity === 0 ? (
+                        <p style={{ color: "red" }}>Out of Stock</p>
+                      ) : (
                         <button onClick={() => handleOpenModal(product)}>Buy</button>
-                      </div>
+                      )}
+                      {product.quantity === 0 && <button>Pre Order</button>}
+                    </div>
                     </div>
                   ))}
                 </div>

@@ -1362,3 +1362,48 @@ export const deleteVoucherTask = async (id, adminName, adminEmail) => {
     await session.close();
   }
 };
+
+export const preOrderProduct = async (productName, quantity, userEmail) => {
+  const session = driver.session();
+
+  try {
+    // Create PreOrder node
+    await session.run(
+      `
+      MATCH (p:Product {name: $productName})
+      CREATE (preOrder:PreOrder {
+        userEmail: $userEmail,
+        productName: $productName,
+        quantity: $quantity,
+        totalPrice: $totalPrice,
+        status: 'pending',
+        createdAt: $createdAt,
+        updatedAt: $updatedAt
+      })
+      MERGE (preOrder)-[:PREORDERS]->(p)
+      RETURN preOrder
+      `,
+      {
+        userEmail,
+        productName,
+        quantity,
+        totalPrice,
+        createdAt: formatTimestamp(Date.now()),
+        updatedAt: formatTimestamp(Date.now())
+      }
+    );
+
+    logAuditAction(
+      userName,
+      userEmail,
+      "PreOrder",
+      `Pre-ordered ${quantity} piece(s) of ${productName}.`
+    );
+
+    return { message: "Pre-order placed successfully." };
+  } catch (error) {
+    throw error;
+  } finally {
+    await session.close();
+  }
+};

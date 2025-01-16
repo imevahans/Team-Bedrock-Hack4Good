@@ -37,7 +37,8 @@ import {
   approveVoucherTask,
   rejectVoucherTask,
   markRequestAsFulfilled,
-  fetchUnfulfilledRequests
+  fetchUnfulfilledRequests,
+  preOrderProduct,
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -675,6 +676,29 @@ router.delete("/vouchers/delete/:id", async (req, res) => {
   }
 });
 
+router.post("/products/preorder", async (req, res) => {
+  const { productName, quantity, userEmail } = req.body;
 
+  if (!productName || !quantity || !userEmail) {
+    return res.status(400).json({
+      error: "Product name, quantity, and user email are required.",
+    });
+  }
+
+  try {
+    // Call the pre-order function
+    const result = await preOrderProduct(productName, quantity, userEmail);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error placing pre-order:", error.message);
+    if (error.message === "Product not found.") {
+      res.status(404).json({ error: error.message });
+    } else if (error.message === "User not found.") {
+      res.status(404).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Failed to place pre-order." });
+    }
+  }
+});
 
 export default router;
