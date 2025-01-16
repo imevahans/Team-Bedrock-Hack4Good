@@ -30,7 +30,8 @@ import {
   deleteProduct,
   getAuditLogs,
   getAuditActions,
-  buyProduct
+  buyProduct,
+  uploadImageToCloudinary
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -375,7 +376,7 @@ router.post("/accept-invitation/send-otp", async (req, res) => {
 // Fetch user details by email
 router.get("/user-details", async (req, res) => {
   const { email } = req.query;
-  
+
   if (!email) {
     return res.status(400).json({ error: "Email is required." });
   }
@@ -461,27 +462,35 @@ router.get("/products", async (req, res) => {
 
 // Route to update product quantity
 router.post("/products/edit", upload.single("image"), async (req, res) => {
-  const { originalName, name, quantity, price } = req.body;
-  const image = req.file
+  const { originalName, name, quantity, price, adminName, adminEmail, imageUrl } = req.body;
+
   if (!name || !quantity || !price) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
   try {
-    const result = await editProduct(originalName, name, price, quantity, image.path);
+    let newImageUrl = imageUrl;
+
+    if (req.file) {
+      // Reupload the new image to Cloudinary
+      newImageUrl = await uploadImageToCloudinary(req.file.path);
+    }
+
+    const result = await editProduct(originalName, name, price, quantity, newImageUrl, adminName, adminEmail);
 
     // Return success message
-    res.status(200).json({ message: "Product quantity updated successfully." });
+    res.status(200).json(result);
   } catch (error) {
-    console.error("Error updating product quantity:", error.message);
-    res.status(500).json({ error: "Failed to update product quantity." });
+    console.error("Error editing product:", error.message);
+    res.status(500).json({ error: "Failed to update product." });
   }
 });
 
 
+
 // Route to create a new product
 router.post("/products/create", upload.single("image"), async (req, res) => {
-  const { name, price, quantity } = req.body;
+  const { name, price, quantity, adminName, adminEmail } = req.body;
   const image = req.file
   console.log("image = ", image);
   console.log("image.path = ", image.path);
@@ -489,7 +498,7 @@ router.post("/products/create", upload.single("image"), async (req, res) => {
     return res.status(400).json({ error: "Product name, price, quantity, and image are required." });
   }
   try {
-    const result = await createProduct(name, price, quantity, image.path); // Pass the image file path
+    const result = await createProduct(name, price, quantity, image.path, adminName, adminEmail); // Pass the image file path
     res.status(200).json({ message: "Product created successfully.", product: result });
   } catch (error) {
     console.error("Error creating product:", error.message);
@@ -499,14 +508,14 @@ router.post("/products/create", upload.single("image"), async (req, res) => {
 
 // Route to delete a product
 router.delete("/products/delete", async (req, res) => {
-  const { productName } = req.body;
+  const { productName, adminName, adminEmail } = req.body;
 
   if (!productName) {
     return res.status(400).json({ error: "Product name is required." });
   }
 
   try {
-    const result = await deleteProduct(productName); // Make sure deleteProduct is being used here
+    const result = await deleteProduct(productName, adminName, adminEmail); // Make sure deleteProduct is being used here
     if (result.error) {
       return res.status(404).json({ error: result.error });
     }

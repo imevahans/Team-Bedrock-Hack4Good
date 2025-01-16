@@ -11,6 +11,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import neo4j from 'neo4j-driver';
 import cloudinary from 'cloudinary';
+import { log } from "util";
 
 dotenv.config();
 
@@ -826,57 +827,48 @@ export const getAllProducts = async () => {
 };
 
 
-export const editProduct = async (originalName, name, price, quantity, imageFilePath) => {
+export const editProduct = async (originalName, name, price, quantity, imageUrl, adminName, adminEmail) => {
   const session = driver.session();
   try {
-    console.log("Triggered! originalName = ", originalName);
-
     const updatedAt = formatTimestamp(Date.now());
-    if (imageFilePath) {
-      const imageUrl = await uploadImageToCloudinary(imageFilePath);
-      console.log("imageURL created = ", imageUrl);
 
-      const result = await session.run(`
-        MATCH (p:Product {name: $originalName})
-        SET p.name = $name,
-            p.price = $price,
-            p.quantity = $quantity,
-            p.updatedAt = $updatedAt,
-            p.imageUrl = $imageUrl
-        RETURN p
-      `, { originalName, name, price, quantity, updatedAt, imageUrl});
+    const result = await session.run(
+      `
+      MATCH (p:Product {name: $originalName})
+      SET p.name = $name,
+          p.price = $price,
+          p.quantity = $quantity,
+          p.updatedAt = $updatedAt,
+          p.imageUrl = $imageUrl
+      RETURN p
+      `,
+      { originalName, name, price, quantity, updatedAt, imageUrl }
+    );
 
-      if (result.records.length > 0) {
-        return { message: "Product updated successfully." };
-      } else {
-        return { error: "Product not found." };
-      }
+    if (result.records.length > 0) {
+      // Log the action
+      await logAuditAction(
+        adminName,
+        adminEmail,
+        "Edit",
+        `Edited product ${originalName}: updated name to ${name}, price to $${price}, quantity to ${quantity}, and image URL.`
+      );
+
+      return { message: "Product updated successfully." };
+    } else {
+      return { error: "Product not found." };
     }
-
-    else {
-      const result = await session.run(`
-        MATCH (p:Product {name: $originalName})
-        SET p.name = $name,
-            p.price = $price,
-            p.quantity = $quantity,
-            p.updatedAt = $updatedAt,
-        RETURN p
-      `, { originalName, name, price, quantity, updatedAt});
-
-      if (result.records.length > 0) {
-        return { message: "Product updated successfully." };
-      } else {
-        return { error: "Product not found." };
-      }
-
-    }
+  } catch (error) {
+    console.error("Error editing product:", error.message);
+    throw error;
   } finally {
     await session.close();
   }
 };
 
 
-export const createProduct = async (name, price, quantity, imageFilePath) => {
+
+export const createProduct = async (name, price, quantity, imageFilePath, adminName, adminEmail) => {
   const session = driver.session();
   try {
     // Upload image to Cloudinary
@@ -903,13 +895,14 @@ export const createProduct = async (name, price, quantity, imageFilePath) => {
       { name, price, quantity, imageUrl, createdAt, updatedAt }
     );
 
+    logAuditAction(adminName, adminEmail, "Create", `created ${quantity} piece(s) of product ${name} at ${price} dollars each.`);
     return result.records[0].get('p').properties;
   } finally {
     await session.close();
   }
 };
 
-export const deleteProduct = async (productName) => {
+export const deleteProduct = async (productName, adminName, adminEmail) => {
   const session = driver.session();
   try {
     const result = await session.run(`
@@ -919,6 +912,7 @@ export const deleteProduct = async (productName) => {
     `, { productName });
 
     if (result.records.length > 0) {
+      logAuditAction(adminName, adminEmail, "Delete", `deleted product ${productName}.`);
       return { message: "Product deleted successfully." };
     } else {
       return { error: "Product not found." };
@@ -983,7 +977,7 @@ cloudinary.config({
 });
 
 // Upload image function
-const uploadImageToCloudinary = async (filePath) => {
+export const uploadImageToCloudinary = async (filePath) => {
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload(filePath, (result, error) => {
       if (error) {
@@ -1096,7 +1090,7 @@ export const buyProduct = async (productName, quantity, userEmail) => {
     // Step 4: Deduct user balance
     await updateUserBalance(userEmail, totalPrice);
 
-    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} pieces of ${productName}.`)
+    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} piece(s) of ${productName}.`)
 
     return { message: "Product purchased successfully." };
   } catch (error) {

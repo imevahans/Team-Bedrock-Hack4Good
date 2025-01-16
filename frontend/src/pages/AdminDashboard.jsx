@@ -45,13 +45,11 @@ const AdminDashboard = () => {
       fetchUsers();
     } else if (activeTab === "Products") {
       fetchProducts();
+    } else if (activeTab === "Audit Logs") {
+      fetchAuditLogs();
     }
   
   }, [activeTab]);
-
-  useEffect(() => {
-    fetchAuditLogs();
-  }, [searchTerm, filterRole, filterAction]); // Fetch logs whenever filters change
 
   // Fetch available actions when component mounts
   useEffect(() => {
@@ -328,7 +326,7 @@ const handleResetPassword = async (email, name) => {
   const handleDeleteProduct = async (productName) => {
     try {
       const response = await api.delete("/auth/products/delete", {
-        data: { productName },
+        data: { productName, adminName: user.name, adminEmail: user.email },
       });
       showNotification(response.data.message || "Product deleted successfully.", "success");
       fetchProducts(); // Refresh the product list
@@ -366,6 +364,8 @@ const handleResetPassword = async (email, name) => {
     formData.append("price", price);
     formData.append("quantity", quantity);
     formData.append("image", imageFile); // Add image file here
+    formData.append("adminName", user.name);
+    formData.append("adminEmail", user.email);
   
     try {
       const response = await api.post("/auth/products/create", formData, {
@@ -410,7 +410,7 @@ const handleEditProduct = (product) => {
 const handleSaveProduct = async () => {
   if (!editedProduct) return;
 
-  const { name, quantity, price, imageFile } = editedProduct;
+  const { name, quantity, price, imageFile, imageUrl } = editedProduct;
   console.log("originalName = ", originalName);
 
   try {
@@ -419,7 +419,14 @@ const handleSaveProduct = async () => {
     formData.append("name", name);
     formData.append("quantity", quantity);
     formData.append("price", price);
-    if (imageFile) formData.append("image", imageFile);
+    // Append image only if a new image file is provided
+    if (imageFile) {
+      formData.append("image", imageFile);
+    } else {
+      formData.append("imageUrl", imageUrl); // Send existing image URL as a fallback
+    }
+    formData.append("adminName", user.name);
+    formData.append("adminEmail", user.email);
 
     const response = await api.post("/auth/products/edit", formData, {
       headers: { "Content-Type": "multipart/form-data" },
