@@ -1074,7 +1074,7 @@ export const buyProduct = async (productName, quantity, userEmail) => {
     const userResult = await session.run(
       `
       MATCH (u:User {email: $userEmail})
-      RETURN u.balance AS balance
+      RETURN u.balance AS balance, u.name AS name
       `,
       { userEmail }
     );
@@ -1084,6 +1084,7 @@ export const buyProduct = async (productName, quantity, userEmail) => {
     }
 
     const userBalance = userResult.records[0].get("balance");
+    const userName = userResult.records[0].get("name");
 
     if (userBalance < totalPrice) {
       throw new Error("Insufficient balance.");
@@ -1094,6 +1095,8 @@ export const buyProduct = async (productName, quantity, userEmail) => {
 
     // Step 4: Deduct user balance
     await updateUserBalance(userEmail, totalPrice);
+
+    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} pieces of ${productName}.`)
 
     return { message: "Product purchased successfully." };
   } catch (error) {

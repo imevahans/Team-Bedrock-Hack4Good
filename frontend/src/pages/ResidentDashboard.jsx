@@ -61,11 +61,9 @@ const ResidentDashboard = () => {
   // Function to fetch both user details (name and balance) at once
   const fetchUserDetails = async () => {
     try {
-      console.log(`Fetching ${user.email} balance....`);
       const response = await api.get(`/auth/user-details?email=${user.email}`);
       setUserName(response.data.name); // Set the user's name
       setUserBalance(response.data.balance); // Set the user's balance
-      console.log("UserBalance = ", userBalance);
     } catch (error) {
       console.error("Error fetching user details:", error.message);
     }

@@ -375,8 +375,7 @@ router.post("/accept-invitation/send-otp", async (req, res) => {
 // Fetch user details by email
 router.get("/user-details", async (req, res) => {
   const { email } = req.query;
-
-
+  
   if (!email) {
     return res.status(400).json({ error: "Email is required." });
   }
