@@ -878,34 +878,24 @@ const handleSaveProduct = async () => {
             <h2>Manage Products</h2>
             <div className="rounded-section">
               <h3>Product List</h3>
-              {/* Button to open the product creation modal */}
               <h2>Add a Product</h2>
               <button onClick={() => setShowModal(true)}>Add Product</button>
               {products.length > 0 ? (
                 <div className="product-grid">
-                {products.length > 0 ? (
-                  <div className="product-grid">
-                    {products.map((product) => (
-                      <div className="product-card" key={product.name}>
-                        <div className="product-image">
-                          <img src={product.imageUrl} alt={product.name} />
-                        </div>
-                        <p><strong>Name:</strong> {product.name}</p>
-                        <p><strong>Price:</strong> ${product.price}</p>
-                        <p><strong>Quantity:</strong> {product.quantity}</p>
-                        <div className="product-actions">
-                          <button onClick={() => handleEditProduct(product)}>Edit</button>
-                          <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
-                        </div>
+                  {products.map((product) => (
+                    <div className="product-card" key={product.name}>
+                      <div className="product-image">
+                        <img src={product.imageUrl} alt={product.name} />
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>No products available.</p>
-                )}
-
-
-
+                      <p><strong>Name:</strong> {product.name}</p>
+                      <p><strong>Price:</strong> ${product.price}</p>
+                      <p><strong>Quantity:</strong> {product.quantity}</p>
+                      <div className="product-actions">
+                        <button onClick={() => handleEditProduct(product)}>Edit</button>
+                        <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <p>No products available.</p>
