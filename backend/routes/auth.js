@@ -417,7 +417,11 @@ router.get("/user-details", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
-    res.status(200).json({ name: user.name });
+    res.status(200).json({ 
+      name: user.name,
+      balance: user.balance,
+
+    });
   } catch (error) {
     console.error("Error fetching user details:", error.message);
     res.status(500).json({ error: "Failed to fetch user details." });
@@ -594,6 +598,58 @@ router.delete("/products/delete", async (req, res) => {
   } catch (error) {
     console.error("Error deleting product:", error.message);
     res.status(500).json({ error: "Failed to delete product." });
+  }
+});
+
+// Route to buy a product
+router.post("/products/buy", async (req, res) => {
+  const { productName, quantity, userEmail } = req.body;
+
+  if (!productName || !quantity || !userEmail) {
+    return res.status(400).json({ error: "Product name, quantity, and user email are required." });
+  }
+
+  try {
+    // Step 1: Fetch product details to get price and current quantity
+    const productResult = await session.run(`
+      MATCH (p:Product {name: $productName})
+      RETURN p.price AS price, p.quantity AS quantity
+    `, { productName });
+
+    if (productResult.records.length === 0) {
+      return res.status(404).json({ error: "Product not found." });
+    }
+
+    const price = productResult.records[0].get("price");
+    const currentQuantity = productResult.records[0].get("quantity");
+    const totalPrice = price * quantity;
+
+    // Step 2: Check if user has enough balance
+    const userResult = await session.run(`
+      MATCH (u:User {email: $userEmail})
+      RETURN u.balance AS balance
+    `, { userEmail });
+
+    if (userResult.records.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const userBalance = userResult.records[0].get("balance");
+
+    if (userBalance < totalPrice) {
+      return res.status(400).json({ error: "Insufficient balance." });
+    }
+
+    // Step 3: Update product quantity
+    await updateProductQuantity(productName, currentQuantity - quantity);
+
+    // Step 4: Deduct balance
+    await updateUserBalance(userEmail, totalPrice);
+
+    res.status(200).json({ message: "Product purchased successfully." });
+  } catch (error) {
+    console.error("Error buying product:", error.message);
+    res.status(500).json({ error: "Failed to process the purchase." });
   }
 });
 

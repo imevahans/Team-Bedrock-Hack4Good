@@ -592,7 +592,7 @@ export const getUserByEmail = async (email) => {
   const session = driver.session();
   try {
     const result = await session.run(
-      "MATCH (u:User {email: $email}) RETURN u.name AS name",
+      "MATCH (u:User {email: $email}) RETURN u.name AS name, u.balance AS balance",
       { email }
     );
 
@@ -600,11 +600,19 @@ export const getUserByEmail = async (email) => {
       return null; // User not found
     }
 
-    return { name: result.records[0].get("name") };
+    const balance = result.records[0].get("balance");
+    // Convert balance from a Long to a JavaScript number if necessary
+    const balanceAmount = balance.low + balance.high * Math.pow(2, 32);
+
+    return {
+      name: result.records[0].get("name"),
+      balance: balanceAmount,
+    };
   } finally {
     await session.close();
   }
 };
+
 
 export const addUserManually = async (email, phoneNumber, name) => {
   const session = driver.session();
@@ -902,3 +910,22 @@ export const deleteProduct = async (productName) => {
   }
 };
 
+// service function to deduct balance from the user
+export const updateUserBalance = async (userEmail, amount) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (u:User {email: $userEmail})
+      SET u.balance = u.balance - $amount
+      RETURN u.balance AS balance
+    `, { userEmail, amount });
+
+    if (result.records.length > 0) {
+      return { balance: result.records[0].get("balance") };
+    } else {
+      return { error: "User not found or insufficient balance." };
+    }
+  } finally {
+    await session.close();
+  }
+};

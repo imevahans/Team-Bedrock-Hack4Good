@@ -436,8 +436,8 @@ const AdminProduct = () => {
           </div>
         )}
 
-                {/* Product Creation Modal */}
-                {showModal && (
+        {/* Product Creation Modal */}
+        {showModal && (
           <div
             className="modal"
             style={{
