@@ -11,7 +11,9 @@ const ResidentDashboard = () => {
   const [activeTab, setActiveTab] = useState("Products");
   const [products, setProducts] = useState([]);
   const [vouchers, setVouchers] = useState([]);
-
+  const [userName, setUserName] = useState([]);
+  const [userBalance, setUserBalance] = useState([]);
+    const [showModal, setShowModal] = useState(false);
   
   useEffect(() => {
     if (activeTab === "Products") {
