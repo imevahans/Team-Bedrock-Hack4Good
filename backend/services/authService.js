@@ -1176,12 +1176,40 @@ export const markRequestAsFulfilled = async (requestId, adminName, adminEmail) =
 export const getAllVoucherTasks = async () => {
   const session = driver.session();
   try {
-    const result = await session.run("MATCH (v:VoucherTask) RETURN v");
-    return result.records.map((record) => record.get("v").properties);
+    const result = await session.run(`
+      MATCH (v:VoucherTask)
+      OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
+      RETURN 
+        v.title AS title,
+        v.description AS description,
+        v.maxAttempts AS maxAttempts,
+        v.points AS points,
+        v.createdAt AS createdAt,
+        v.updatedAt AS updatedAt,
+        v.status AS status,
+        elementId(v) AS id,
+        u.name AS userName,
+        v.imageProofUrl AS imageProofUrl
+    `);
+
+    return result.records.map((record) => ({
+      id: record.get("id"),
+      title: record.get("title"),
+      description: record.get("description"),
+      maxAttempts: record.get("maxAttempts"),
+      points: record.get("points"),
+      createdAt: record.get("createdAt"),
+      updatedAt: record.get("updatedAt"),
+      status: record.get("status"),
+      userName: record.get("userName") || null,
+      imageProofUrl: record.get("imageProofUrl") || null,
+    }));
   } finally {
     await session.close();
   }
 };
+
+
 
 export const createVoucherTask = async (title, description, maxAttempts, points, adminName, adminEmail) => {
   const session = driver.session();
@@ -1221,41 +1249,27 @@ export const approveVoucherTask = async (id, adminName, adminEmail) => {
     const result = await session.run(
       `
       MATCH (v:VoucherTask {id: $id})
+      OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
       SET v.status = "approved", v.updatedAt = $updatedAt
-      RETURN v, v.userId AS userId
+      RETURN v, u.name AS userName, u.email AS userEmail
       `,
       { id, updatedAt }
     );
 
-    if (result.records.length === 0) {
-      throw new Error(`Voucher task with ID ${id} not found.`);
-    }
-
     const voucher = result.records[0].get("v").properties;
-    const userId = result.records[0].get("userId");
-
-    // Fetch user information
-    const userResult = await session.run(
-      `
-      MATCH (u:User {id: $userId})
-      RETURN u.name AS userName, u.email AS userEmail
-      `,
-      { userId }
-    );
-
-    const user = userResult.records[0]?.toObject();
+    const userName = result.records[0].get("userName");
+    const userEmail = result.records[0].get("userEmail");
 
     await logAuditAction(
       adminName,
       adminEmail,
       "Approve Voucher Task",
-      `Approved voucher task: ${JSON.stringify(voucher)}, assigned to user: ${JSON.stringify(user)}.`
+      `Approved voucher task: ${JSON.stringify(voucher)} for user: ${userName} (${userEmail}).`
     );
   } finally {
     await session.close();
   }
 };
-
 
 export const rejectVoucherTask = async (id, adminName, adminEmail) => {
   const session = driver.session();
@@ -1265,40 +1279,28 @@ export const rejectVoucherTask = async (id, adminName, adminEmail) => {
     const result = await session.run(
       `
       MATCH (v:VoucherTask {id: $id})
+      OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
       SET v.status = "rejected", v.updatedAt = $updatedAt
-      RETURN v, v.userId AS userId
+      RETURN v, u.name AS userName, u.email AS userEmail
       `,
       { id, updatedAt }
     );
 
-    if (result.records.length === 0) {
-      throw new Error(`Voucher task with ID ${id} not found.`);
-    }
-
     const voucher = result.records[0].get("v").properties;
-    const userId = result.records[0].get("userId");
-
-    // Fetch user information
-    const userResult = await session.run(
-      `
-      MATCH (u:User {id: $userId})
-      RETURN u.name AS userName, u.email AS userEmail
-      `,
-      { userId }
-    );
-
-    const user = userResult.records[0]?.toObject();
+    const userName = result.records[0].get("userName");
+    const userEmail = result.records[0].get("userEmail");
 
     await logAuditAction(
       adminName,
       adminEmail,
       "Reject Voucher Task",
-      `Rejected voucher task: ${JSON.stringify(voucher)}, assigned to user: ${JSON.stringify(user)}.`
+      `Rejected voucher task: ${JSON.stringify(voucher)} for user: ${userName} (${userEmail}).`
     );
   } finally {
     await session.close();
   }
 };
+
 
 
 export const editVoucherTask = async (id, title, description, maxAttempts, points, adminName, adminEmail) => {

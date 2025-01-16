@@ -544,20 +544,46 @@ div {
 }
 
 
-.voucher-task-card img {
-  max-width: 100%;
-  border-radius: 5px;
-  margin: 10px 0;
-}
-
 .voucher-task-card {
   border: 1px solid #ddd;
-  padding: 10px;
+  padding: 15px;
   margin: 10px 0;
-  border-radius: 5px;
+  border-radius: 8px;
   background-color: #f9f9f9;
+}
+
+.voucher-task-card img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 10px 0;
 }
 
 .voucher-task-card button {
   margin-right: 10px;
+  padding: 8px 15px;
+  border: none;
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.voucher-task-card button:hover {
+  background-color: #0056b3;
+}
+
+.voucher-task-card .approve-btn {
+  background-color: #28a745;
+}
+
+.voucher-task-card .approve-btn:hover {
+  background-color: #218838;
+}
+
+.voucher-task-card .reject-btn {
+  background-color: #dc3545;
+}
+
+.voucher-task-card .reject-btn:hover {
+  background-color: #c82333;
 }

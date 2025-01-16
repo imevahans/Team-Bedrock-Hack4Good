@@ -46,7 +46,6 @@ const AdminDashboard = () => {
   const [unfulfilledRequests, setUnfulfilledRequests] = useState([]);
 
 
-
   useEffect(() => {
     if (activeTab === "Dashboard") {
       fetchDashboardStats();
@@ -527,6 +526,7 @@ const markAsFulfilled = async (requestId) => {
     try {
       const response = await api.get("/auth/vouchers/tasks");
       setVoucherTasks(response.data);
+      console.log("VoucherTasks = ", voucherTasks);
     } catch (error) {
       showNotification("Failed to fetch voucher tasks.", "error");
     }
@@ -548,6 +548,13 @@ const markAsFulfilled = async (requestId) => {
       showNotification("Failed to create voucher task.", "error");
     }
   };
+
+  const handleEditTask = (task) => {
+    setEditTask(task);
+    setIsEditModalOpen(true);
+  };
+
+  
   
   const handleApproveTask = async (taskId) => {
     try {
@@ -604,6 +611,11 @@ const markAsFulfilled = async (requestId) => {
       showNotification("Failed to delete task.", "error");
     }
   };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+  
   
   
 
@@ -696,41 +708,59 @@ const markAsFulfilled = async (requestId) => {
 
         {activeTab === "Voucher Tasks" && (
           <div>
-            <h2>Manage Vouchers</h2>
-            <div>
-              {/* Create Voucher Task */}
-              <div>
-                <h3>Create Voucher Task</h3>
-                <input
-                  type="text"
-                  placeholder="Voucher Title"
-                  value={voucherTitle}
-                  onChange={(e) => setVoucherTitle(e.target.value)}
-                />
-                <textarea
-                  placeholder="Task Description"
-                  value={taskDescription}
-                  onChange={(e) => setTaskDescription(e.target.value)}
-                ></textarea>
-                <input
-                  type="number"
-                  placeholder="Max Attempts"
-                  value={maxAttempts}
-                  onChange={(e) => setMaxAttempts(e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder="Points"
-                  value={voucherPoints}
-                  onChange={(e) => setVoucherPoints(e.target.value)}
-                />
-                <button onClick={handleCreateVoucherTask}>Create Task</button>
-              </div>
+            <h2>Manage Voucher Tasks</h2>
 
-              {/* Current Active Tasks */}
-              <div>
-                <h3>Active Voucher Tasks</h3>
-                {voucherTasks.map((task) => (
+            {/* Create Voucher Task */}
+            <div>
+              <h3>Create Voucher Task</h3>
+              <input
+                type="text"
+                placeholder="Voucher Title"
+                value={voucherTitle}
+                onChange={(e) => setVoucherTitle(e.target.value)}
+              />
+              <textarea
+                placeholder="Task Description"
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+              ></textarea>
+              <input
+                type="number"
+                placeholder="Max Attempts"
+                value={maxAttempts}
+                onChange={(e) => setMaxAttempts(e.target.value)}
+              />
+              <input
+                type="number"
+                placeholder="Points"
+                value={voucherPoints}
+                onChange={(e) => setVoucherPoints(e.target.value)}
+              />
+              <button onClick={handleCreateVoucherTask}>Create Task</button>
+            </div>
+
+            {/* Current Active Tasks */}
+            <div>
+              <h3>Active Voucher Tasks</h3>
+              {voucherTasks
+                .filter((task) => task.status === "active")
+                .map((task) => (
+                  <div key={task.id} className="voucher-task-card">
+                    <p><strong>{task.title}</strong></p>
+                    <p>{task.description}</p>
+                    <p>Max Attempts: {task.maxAttempts}</p>
+                    <p>Points: {task.points}</p>
+                    <button onClick={() => handleEditTask(task)}>Edit</button>
+                  </div>
+                ))}
+            </div>
+
+            {/* Pending Approvals */}
+            <div>
+              <h3>Pending Approvals</h3>
+              {voucherTasks
+                .filter((task) => task.status === "pending")
+                .map((task) => (
                   <div key={task.id} className="voucher-task-card">
                     <p><strong>{task.title}</strong></p>
                     <p>{task.description}</p>
@@ -740,24 +770,6 @@ const markAsFulfilled = async (requestId) => {
                     <button onClick={() => handleRejectTask(task.id)}>Reject</button>
                   </div>
                 ))}
-              </div>
-
-              {/* Pending Approvals */}
-              <div>
-                <h3>Pending Approvals</h3>
-                {voucherTasks
-                  .filter((task) => task.status === "pending")
-                  .map((task) => (
-                    <div key={task.id} className="voucher-task-card">
-                      <p><strong>{task.title}</strong></p>
-                      <p>{task.description}</p>
-                      <p>Resident: {task.userName}</p>
-                      <img src={task.imageProofUrl} alt="Proof" />
-                      <button onClick={() => handleApproveTask(task.id)}>Approve</button>
-                      <button onClick={() => handleRejectTask(task.id)}>Reject</button>
-                    </div>
-                  ))}
-              </div>
             </div>
 
             {/* Edit Modal */}
@@ -789,6 +801,7 @@ const markAsFulfilled = async (requestId) => {
             )}
           </div>
         )}
+
 
         {activeTab === "Product Requests" && (
           <div>

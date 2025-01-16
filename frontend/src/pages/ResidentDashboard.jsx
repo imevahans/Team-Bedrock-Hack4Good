@@ -144,7 +144,7 @@ const ResidentDashboard = () => {
   // Filter and sort products
   const filteredProducts = products
   .filter((product) =>
-    product.name.toLowerCase().includes(searchTermProduct.toLowerCase()) && product.quantity > 0
+    product.name.toLowerCase().includes(searchTermProduct.toLowerCase())
   )
   .sort((a, b) => {
     let fieldA = a[sortCriteria];
