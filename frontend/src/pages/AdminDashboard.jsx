@@ -439,6 +439,14 @@ const handleSaveProduct = async () => {
         ...prev,
         imageFile, // Set image URL for the product
       }));
+      console.log("uploaded image! file = ", imageFile);
+    }
+  };
+
+  const handleEditImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageFile = file; // Generate a URL for the file
       setEditedProduct((prev) => ({
         ...prev,
         imageFile, // Set image URL for the product
@@ -880,11 +888,7 @@ const handleSaveProduct = async () => {
                     {products.map((product) => (
                       <div className="product-card" key={product.name}>
                         <div className="product-image">
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            style={{ width: "100%", height: "auto" }}
-                          />
+                          <img src={product.imageUrl} alt={product.name} />
                         </div>
                         <p><strong>Name:</strong> {product.name}</p>
                         <p><strong>Price:</strong> ${product.price}</p>
@@ -899,6 +903,7 @@ const handleSaveProduct = async () => {
                 ) : (
                   <p>No products available.</p>
                 )}
+
 
 
                 </div>
@@ -1091,7 +1096,7 @@ const handleSaveProduct = async () => {
                 <input
                   type="file"
                   name="image"
-                  onChange={handleImageUpload}
+                  onChange={handleEditImageUpload}
                   accept="image/*"
                 />
                 {editedProduct.imageUrl && (

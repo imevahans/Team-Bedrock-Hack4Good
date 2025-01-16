@@ -814,6 +814,7 @@ export const getAllProducts = async () => {
     const result = await session.run(`
       MATCH (p:Product)
       RETURN p.name AS name, p.price AS price, p.quantity AS quantity, p.imageUrl AS imageUrl
+      ORDER BY p.name ASC
     `);
 
     return result.records.map(record => ({
