@@ -31,7 +31,13 @@ import {
   getAuditLogs,
   getAuditActions,
   buyProduct,
-  uploadImageToCloudinary
+  uploadImageToCloudinary,
+  getAllVoucherTasks,
+  createVoucherTask,
+  approveVoucherTask,
+  rejectVoucherTask,
+  markRequestAsFulfilled,
+  fetchUnfulfilledRequests
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -573,4 +579,102 @@ router.get("/audit-actions", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch audit actions" });
   }
 });
+
+// Fetch unfulfilled product requests
+router.get("/requests/unfulfilled", async (req, res) => {
+  try {
+    const requests = await fetchUnfulfilledRequests();
+    res.status(200).json({ requests });
+  } catch (error) {
+    console.error("Error fetching unfulfilled requests:", error.message);
+    res.status(500).json({ error: "Failed to fetch unfulfilled requests." });
+  }
+});
+
+// Mark a request as fulfilled
+router.post("/requests/mark-fulfilled/:requestId", async (req, res) => {
+  const { requestId } = req.params;
+  const { adminName, adminEmail } = req.body;
+
+  console.log("requestId = ", requestId);
+
+  if (!requestId) {
+    return res.status(400).json({ error: "Request ID is required." });
+  }
+
+  try {
+    await markRequestAsFulfilled(requestId, adminName, adminEmail);
+    res.status(200).json({ message: "Request marked as fulfilled." });
+  } catch (error) {
+    console.error("Error marking request as fulfilled:", error.message);
+    res.status(500).json({ error: "Failed to mark request as fulfilled." });
+  }
+});
+
+
+router.get("/vouchers/tasks", async (req, res) => {
+  try {
+    const tasks = await getAllVoucherTasks();
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch voucher tasks." });
+  }
+});
+
+router.post("/vouchers/create", async (req, res) => {
+  const { title, description, maxAttempts, points, adminName, adminEmail } = req.body;
+  try {
+    await createVoucherTask(title, description, maxAttempts, points, adminName, adminEmail);
+    res.status(201).json({ message: "Voucher task created." });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create voucher task." });
+  }
+});
+
+router.post("/vouchers/approve/:id", async (req, res) => {
+  const { id } = req.params;
+  const { adminName, adminEmail } = req.body;
+  try {
+    await approveVoucherTask(id, adminName, adminEmail);
+    res.status(200).json({ message: "Task approved." });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to approve task." });
+  }
+});
+
+router.post("/vouchers/reject/:id", async (req, res) => {
+  const { id } = req.params;
+  const { adminName, adminEmail } = req.body;
+  try {
+    await rejectVoucherTask(id, adminName, adminEmail);
+    res.status(200).json({ message: "Task rejected." });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to reject task." });
+  }
+});
+
+router.post("/vouchers/edit/:id", async (req, res) => {
+  const { id } = req.params;
+  const { title, description, maxAttempts, points, adminName, adminEmail } = req.body;
+  try {
+    await editVoucherTask(id, title, description, maxAttempts, points, adminName, adminEmail);
+    res.status(200).json({ message: "Task updated successfully." });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update task." });
+  }
+});
+
+router.delete("/vouchers/delete/:id", async (req, res) => {
+  const { id } = req.params;
+  const { adminName, adminEmail } = req.body;
+  try {
+    await deleteVoucherTask(id, adminName, adminEmail);
+    res.status(200).json({ message: "Task deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete task." });
+  }
+});
+
+
+
 export default router;

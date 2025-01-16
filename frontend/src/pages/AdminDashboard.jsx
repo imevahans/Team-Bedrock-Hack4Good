@@ -36,6 +36,15 @@ const AdminDashboard = () => {
   const [searchTermProduct, setSearchTermProduct] = useState("");
   const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
   const [sortCriteria, setSortCriteria] = useState("name"); // "name", "price", or "quantity"
+  const [voucherTitle, setVoucherTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [maxAttempts, setMaxAttempts] = useState(1);
+  const [voucherPoints, setVoucherPoints] = useState(0);
+  const [voucherTasks, setVoucherTasks] = useState([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editTask, setEditTask] = useState({});
+  const [unfulfilledRequests, setUnfulfilledRequests] = useState([]);
+
 
 
   useEffect(() => {
@@ -47,23 +56,14 @@ const AdminDashboard = () => {
       fetchProducts();
     } else if (activeTab === "Audit Logs") {
       fetchAuditLogs();
+    } else if (activeTab === "Product Requests") {
+      fetchUnfulfilledRequests();
+    } else if (activeTab === "Voucher Tasks") {
+      fetchVoucherTasks();
     }
   
   }, [activeTab]);
 
-  // Fetch available actions when component mounts
-  useEffect(() => {
-    const fetchActions = async () => {
-      try {
-        const response = await api.get("/auth/audit-actions");
-        setActions(response.data.actions);
-      } catch (error) {
-        console.error("Error fetching actions:", error.response?.data?.error || error.message);
-      }
-    };
-
-    fetchActions();
-  }, []);
 
   const fetchDashboardStats = async () => {
     try {
@@ -499,6 +499,114 @@ const handleSaveProduct = async () => {
     });
 
 
+  // Fetch unfulfilled product requests
+const fetchUnfulfilledRequests = async () => {
+  try {
+    const response = await api.get("/auth/requests/unfulfilled");
+    setUnfulfilledRequests(response.data.requests);
+  } catch (error) {
+    showNotification("Failed to fetch unfulfilled requests.", "error");
+  }
+};
+
+// Mark request as fulfilled
+const markAsFulfilled = async (requestId) => {
+  try {
+    await api.post(`/auth/requests/mark-fulfilled/${requestId}`, {
+      adminName: user.name,
+      adminEmail: user.email,
+    });
+    showNotification("Request marked as fulfilled.", "success");
+    fetchUnfulfilledRequests(); // Refresh the list
+  } catch (error) {
+    showNotification("Failed to mark request as fulfilled.", "error");
+  }
+};
+
+  const fetchVoucherTasks = async () => {
+    try {
+      const response = await api.get("/auth/vouchers/tasks");
+      setVoucherTasks(response.data);
+    } catch (error) {
+      showNotification("Failed to fetch voucher tasks.", "error");
+    }
+  };
+  
+  const handleCreateVoucherTask = async () => {
+    try {
+      await api.post("/auth/vouchers/create", {
+        title: voucherTitle,
+        description: taskDescription,
+        maxAttempts,
+        points: voucherPoints,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      showNotification("Voucher task created successfully.", "success");
+      fetchVoucherTasks();
+    } catch (error) {
+      showNotification("Failed to create voucher task.", "error");
+    }
+  };
+  
+  const handleApproveTask = async (taskId) => {
+    try {
+      await api.post(`/auth/vouchers/approve/${taskId}`, {
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      showNotification("Task approved successfully.", "success");
+      fetchVoucherTasks();
+    } catch (error) {
+      showNotification("Failed to approve task.", "error");
+    }
+  };
+  
+  const handleRejectTask = async (taskId) => {
+    try {
+      await api.post(`/auth/vouchers/reject/${taskId}`, {
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      showNotification("Task rejected successfully.", "success");
+      fetchVoucherTasks();
+    } catch (error) {
+      showNotification("Failed to reject task.", "error");
+    }
+  };
+  
+  const handleUpdateTask = async () => {
+    try {
+      await api.post(`/auth/vouchers/edit/${editTask.id}`, {
+        ...editTask,
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      showNotification("Task updated successfully.", "success");
+      fetchVoucherTasks();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      showNotification("Failed to update task.", "error");
+    }
+  };
+  
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await api.delete(`/auth/vouchers/delete/${taskId}`, {
+        data: {
+          adminName: user.name,
+          adminEmail: user.email,
+        },
+      });
+      showNotification("Task deleted successfully.", "success");
+      fetchVoucherTasks();
+    } catch (error) {
+      showNotification("Failed to delete task.", "error");
+    }
+  };
+  
+  
+
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -529,11 +637,19 @@ const handleSaveProduct = async () => {
         </button>
         <button
           className={`sidebar-button ${
-            activeTab === "Vouchers Tasks" ? "active" : ""
+            activeTab === "Product Requests" ? "active" : ""
           }`}
-          onClick={() => setActiveTab("Vouchers Tasks")}
+          onClick={() => setActiveTab("Product Requests")}
         >
-          Vouchers Tasks
+          Product Requests
+        </button>
+        <button
+          className={`sidebar-button ${
+            activeTab === "Voucher Tasks" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("Voucher Tasks")}
+        >
+          Voucher Tasks
         </button>
         <button
           className={`sidebar-button ${
@@ -574,6 +690,126 @@ const handleSaveProduct = async () => {
               <p>Invitations Not Accepted: {dashboardStats.invitationsNotAccepted}</p>
               <p>Pending Voucher Approvals: {dashboardStats.voucherTasksPending}</p>
               <p>Pending Product Requests: {dashboardStats.productRequestsPending}</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "Voucher Tasks" && (
+          <div>
+            <h2>Manage Vouchers</h2>
+            <div>
+              {/* Create Voucher Task */}
+              <div>
+                <h3>Create Voucher Task</h3>
+                <input
+                  type="text"
+                  placeholder="Voucher Title"
+                  value={voucherTitle}
+                  onChange={(e) => setVoucherTitle(e.target.value)}
+                />
+                <textarea
+                  placeholder="Task Description"
+                  value={taskDescription}
+                  onChange={(e) => setTaskDescription(e.target.value)}
+                ></textarea>
+                <input
+                  type="number"
+                  placeholder="Max Attempts"
+                  value={maxAttempts}
+                  onChange={(e) => setMaxAttempts(e.target.value)}
+                />
+                <input
+                  type="number"
+                  placeholder="Points"
+                  value={voucherPoints}
+                  onChange={(e) => setVoucherPoints(e.target.value)}
+                />
+                <button onClick={handleCreateVoucherTask}>Create Task</button>
+              </div>
+
+              {/* Current Active Tasks */}
+              <div>
+                <h3>Active Voucher Tasks</h3>
+                {voucherTasks.map((task) => (
+                  <div key={task.id} className="voucher-task-card">
+                    <p><strong>{task.title}</strong></p>
+                    <p>{task.description}</p>
+                    <p>Resident: {task.userName}</p>
+                    <img src={task.imageProofUrl} alt="Proof" />
+                    <button onClick={() => handleApproveTask(task.id)}>Approve</button>
+                    <button onClick={() => handleRejectTask(task.id)}>Reject</button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pending Approvals */}
+              <div>
+                <h3>Pending Approvals</h3>
+                {voucherTasks
+                  .filter((task) => task.status === "pending")
+                  .map((task) => (
+                    <div key={task.id} className="voucher-task-card">
+                      <p><strong>{task.title}</strong></p>
+                      <p>{task.description}</p>
+                      <p>Resident: {task.userName}</p>
+                      <img src={task.imageProofUrl} alt="Proof" />
+                      <button onClick={() => handleApproveTask(task.id)}>Approve</button>
+                      <button onClick={() => handleRejectTask(task.id)}>Reject</button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Edit Modal */}
+            {isEditModalOpen && (
+              <div className="modal">
+                <h3>Edit Voucher Task</h3>
+                <input
+                  type="text"
+                  value={editTask.title}
+                  onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
+                />
+                <textarea
+                  value={editTask.description}
+                  onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
+                ></textarea>
+                <input
+                  type="number"
+                  value={editTask.maxAttempts}
+                  onChange={(e) => setEditTask({ ...editTask, maxAttempts: e.target.value })}
+                />
+                <input
+                  type="number"
+                  value={editTask.points}
+                  onChange={(e) => setEditTask({ ...editTask, points: e.target.value })}
+                />
+                <button onClick={handleUpdateTask}>Save Changes</button>
+                <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "Product Requests" && (
+          <div>
+            <h2>Manage Product Requests</h2>
+            <div className="rounded-section">
+              <h3>Unfulfilled Requests</h3>
+              {unfulfilledRequests.length > 0 ? (
+                unfulfilledRequests.map((request) => (
+                  <div key={request.requestId} className="request-card"> {/* Use requestId as the unique key */}
+                    <p><strong>User:</strong> {request.userName} ({request.userEmail})</p>
+                    <p><strong>Product:</strong> {request.productName}</p>
+                    <p><strong>Quantity:</strong> {request.quantity}</p>
+                    <p><strong>Requested At:</strong> {new Date(request.createdAt).toLocaleString()}</p>
+                    <div className="request-actions">
+                      <button onClick={() => markAsFulfilled(request.requestId)}>Mark as Fulfilled</button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No unfulfilled requests found.</p>
+              )}
             </div>
           </div>
         )}
@@ -966,6 +1202,7 @@ const handleSaveProduct = async () => {
             </div>
           </div>
         )}
+        
 
         {/* Product Creation Modal */}
         {showModal && (

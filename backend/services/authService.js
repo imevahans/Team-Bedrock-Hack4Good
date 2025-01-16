@@ -663,7 +663,6 @@ export const addUserManually = async (email, phoneNumber, name, role, adminName,
 };
 
 
-
 export const getDashboardStats = async () => {
   const session = driver.session();
   try {
@@ -681,8 +680,8 @@ export const getDashboardStats = async () => {
     `);
 
     const productRequests = await session.run(`
-      MATCH (p:ProductRequest)
-      RETURN COUNT(p) AS pendingRequests
+      MATCH (u:User)-[r:PURCHASED {fulfilled: false}]->(p:Product)
+      RETURN COUNT(r) AS pendingRequests
     `);
 
     const stats = {
@@ -1090,11 +1089,273 @@ export const buyProduct = async (productName, quantity, userEmail) => {
     // Step 4: Deduct user balance
     await updateUserBalance(userEmail, totalPrice);
 
-    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} piece(s) of ${productName}.`)
+    // Step 5: Create a relationship between User and Product
+    await session.run(
+      `
+      MATCH (u:User {email: $userEmail}), (p:Product {name: $productName})
+      MERGE (u)-[r:PURCHASED]->(p)
+      SET r.quantity = $quantity, r.fulfilled = false, r.createdAt = $createdAt
+      RETURN r
+      `,
+      {
+        userEmail,
+        productName,
+        quantity,
+        createdAt: formatTimestamp(Date.now()),
+      }
+    );
+
+    logAuditAction(
+      userName,
+      userEmail,
+      "Buy",
+      `Purchased ${quantity} piece(s) of ${productName}.`
+    );
 
     return { message: "Product purchased successfully." };
   } catch (error) {
     throw error;
+  } finally {
+    await session.close();
+  }
+};
+
+export const fetchUnfulfilledRequests = async () => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (u:User)-[r:PURCHASED {fulfilled: false}]->(p:Product)
+      RETURN 
+        u.name AS userName, 
+        u.email AS userEmail, 
+        p.name AS productName, 
+        r.quantity AS quantity, 
+        r.createdAt AS createdAt, 
+        elementId(r) AS requestId
+    `);
+
+    return result.records.map((record) => ({
+      userName: record.get("userName"),
+      userEmail: record.get("userEmail"),
+      productName: record.get("productName"),
+      quantity: record.get("quantity"),
+      createdAt: record.get("createdAt"),
+      requestId: record.get("requestId"),
+    }));
+  } finally {
+    await session.close();
+  }
+};
+
+export const markRequestAsFulfilled = async (requestId, adminName, adminEmail) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH ()-[r:PURCHASED]->()
+      WHERE elementId(r) = $requestId
+      SET r.fulfilled = true
+      RETURN r
+    `, { requestId });
+
+    if (result.records.length === 0) {
+      throw new Error("Request not found.");
+    }
+
+    await logAuditAction(
+      adminName,
+      adminEmail,
+      "Mark Fulfilled",
+      `Marked request ${requestId} as fulfilled.`
+    );
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const getAllVoucherTasks = async () => {
+  const session = driver.session();
+  try {
+    const result = await session.run("MATCH (v:VoucherTask) RETURN v");
+    return result.records.map((record) => record.get("v").properties);
+  } finally {
+    await session.close();
+  }
+};
+
+export const createVoucherTask = async (title, description, maxAttempts, points, adminName, adminEmail) => {
+  const session = driver.session();
+  const createdAt = formatTimestamp(Date.now());
+  const updatedAt = createdAt;
+
+  try {
+    const result = await session.run(
+      `
+      CREATE (v:VoucherTask {
+        title: $title,
+        description: $description,
+        maxAttempts: $maxAttempts,
+        points: $points,
+        createdAt: $createdAt,
+        updatedAt: $updatedAt,
+        status: "active"
+      })
+      RETURN v
+      `,
+      { title, description, maxAttempts, points, createdAt, updatedAt }
+    );
+
+    const voucher = result.records[0].get("v").properties;
+    await logAuditAction(adminName, adminEmail, "Create Voucher Task", `Created voucher task: ${JSON.stringify(voucher)}.`);
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const approveVoucherTask = async (id, adminName, adminEmail) => {
+  const session = driver.session();
+  const updatedAt = formatTimestamp(Date.now());
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (v:VoucherTask {id: $id})
+      SET v.status = "approved", v.updatedAt = $updatedAt
+      RETURN v, v.userId AS userId
+      `,
+      { id, updatedAt }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error(`Voucher task with ID ${id} not found.`);
+    }
+
+    const voucher = result.records[0].get("v").properties;
+    const userId = result.records[0].get("userId");
+
+    // Fetch user information
+    const userResult = await session.run(
+      `
+      MATCH (u:User {id: $userId})
+      RETURN u.name AS userName, u.email AS userEmail
+      `,
+      { userId }
+    );
+
+    const user = userResult.records[0]?.toObject();
+
+    await logAuditAction(
+      adminName,
+      adminEmail,
+      "Approve Voucher Task",
+      `Approved voucher task: ${JSON.stringify(voucher)}, assigned to user: ${JSON.stringify(user)}.`
+    );
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const rejectVoucherTask = async (id, adminName, adminEmail) => {
+  const session = driver.session();
+  const updatedAt = formatTimestamp(Date.now());
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (v:VoucherTask {id: $id})
+      SET v.status = "rejected", v.updatedAt = $updatedAt
+      RETURN v, v.userId AS userId
+      `,
+      { id, updatedAt }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error(`Voucher task with ID ${id} not found.`);
+    }
+
+    const voucher = result.records[0].get("v").properties;
+    const userId = result.records[0].get("userId");
+
+    // Fetch user information
+    const userResult = await session.run(
+      `
+      MATCH (u:User {id: $userId})
+      RETURN u.name AS userName, u.email AS userEmail
+      `,
+      { userId }
+    );
+
+    const user = userResult.records[0]?.toObject();
+
+    await logAuditAction(
+      adminName,
+      adminEmail,
+      "Reject Voucher Task",
+      `Rejected voucher task: ${JSON.stringify(voucher)}, assigned to user: ${JSON.stringify(user)}.`
+    );
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const editVoucherTask = async (id, title, description, maxAttempts, points, adminName, adminEmail) => {
+  const session = driver.session();
+  const updatedAt = formatTimestamp(Date.now());
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (v:VoucherTask {id: $id})
+      SET 
+        v.title = $title,
+        v.description = $description,
+        v.maxAttempts = $maxAttempts,
+        v.points = $points,
+        v.updatedAt = $updatedAt
+      RETURN v
+      `,
+      { id, title, description, maxAttempts, points, updatedAt }
+    );
+
+    const voucher = result.records[0].get("v").properties;
+
+    await logAuditAction(adminName, adminEmail, "Edit Voucher Task", `Edited voucher task: ${JSON.stringify(voucher)}.`);
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const deleteVoucherTask = async (id, adminName, adminEmail) => {
+  const session = driver.session();
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (v:VoucherTask {id: $id})
+      RETURN v
+      `,
+      { id }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error(`Voucher task with ID ${id} not found.`);
+    }
+
+    const voucher = result.records[0].get("v").properties;
+
+    await session.run(
+      `
+      MATCH (v:VoucherTask {id: $id})
+      DELETE v
+      `,
+      { id }
+    );
+
+    await logAuditAction(adminName, adminEmail, "Delete Voucher Task", `Deleted voucher task: ${JSON.stringify(voucher)}.`);
   } finally {
     await session.close();
   }

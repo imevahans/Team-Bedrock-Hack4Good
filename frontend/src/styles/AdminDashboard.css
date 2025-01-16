@@ -500,3 +500,64 @@ div {
 .sort-button:hover {
   background-color: #0056b3;
 }
+
+.request-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}
+
+.request-card p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.request-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.request-actions button {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.request-actions button:hover {
+  background-color: #0056b3;
+}
+
+.request-actions button:nth-child(2) {
+  background-color: #dc3545;
+}
+
+.request-actions button:nth-child(2):hover {
+  background-color: #c82333;
+}
+
+
+.voucher-task-card img {
+  max-width: 100%;
+  border-radius: 5px;
+  margin: 10px 0;
+}
+
+.voucher-task-card {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.voucher-task-card button {
+  margin-right: 10px;
+}
