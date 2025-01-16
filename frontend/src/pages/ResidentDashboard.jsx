@@ -11,6 +11,7 @@ const ResidentDashboard = () => {
   const [vouchers, setVouchers] = useState([]);
   const [products, setProducts] = useState([]);
 
+  
   useEffect(() => {
     const fetchData = async () => {
       try {

@@ -9,6 +9,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import neo4j from 'neo4j-driver';
+
 
 dotenv.config();
 
@@ -770,22 +772,96 @@ export const verifyEmailOtp = (email, submittedOtp) => {
 export const getAllProducts = async () => {
   const session = driver.session();
   try {
-    // Run the Cypher query to get all Product nodes
     const result = await session.run(`
       MATCH (p:Product)
       RETURN p.name AS name, p.price AS price, p.quantity AS quantity
     `);
 
+    console.log("Neo4j result:", result.records); // Log the result to debug
+
     // Map the result to return a list of products
-    const products = result.records.map(record => ({
-      name: record.get('name'),
-      price: record.get('price').toInt(),  // Ensure price is a number
-      quantity: record.get('quantity').toInt(), // Ensure quantity is a number
-    }));
+    const products = result.records.map(record => {
+      const price = record.get('price');
+      const quantity = record.get('quantity');
+
+      return {
+        name: record.get('name'),
+        price: price instanceof neo4j.types.Integer ? price.toNumber() : parseFloat(price),
+        quantity: quantity instanceof neo4j.types.Integer ? quantity.toNumber() : parseInt(quantity, 10),
+      };
+    });
 
     return products;
+  } catch (error) {
+    console.error("Error fetching products from Neo4j:", error.message); // Log any errors from Neo4j
+    throw error;  // Rethrow the error to be caught by the route handler
   } finally {
-    // Close the session to release resources
     await session.close();
   }
 };
+
+
+
+// In backend/services/authServices.js
+
+// Function to update product name
+export const updateProductName = async (productName, newName) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (p:Product {name: $productName})
+      SET p.name = $newName
+      RETURN p.name AS name
+    `, { productName, newName });
+
+    if (result.records.length > 0) {
+      return { message: "Product name updated successfully." };
+    } else {
+      return { error: "Product not found." };
+    }
+  } finally {
+    await session.close();
+  }
+};
+
+export const updateProductQuantity = async (productName, newQuantity) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (p:Product {name: $productName})
+      SET p.quantity = $newQuantity
+      RETURN p.quantity AS quantity
+    `, { productName, newQuantity });
+
+    if (result.records.length > 0) {
+      return { message: "Product quantity updated successfully." };
+    } else {
+      return { error: "Product not found." };
+    }
+  } finally {
+    await session.close();
+  }
+};
+
+
+// Function to update product price
+export const updateProductPrice = async (productName, newPrice) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (p:Product {name: $productName})
+      SET p.price = $newPrice
+      RETURN p.price AS price
+    `, { productName, newPrice });
+
+    if (result.records.length > 0) {
+      return { message: "Product price updated successfully." };
+    } else {
+      return { error: "Product not found." };
+    }
+  } finally {
+    await session.close();
+  }
+};
+
+

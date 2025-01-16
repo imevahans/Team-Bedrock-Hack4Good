@@ -20,6 +20,8 @@ const AdminProduct = () => {
   const [bulkFile, setBulkFile] = useState(null); // File for bulk upload
   const [failedEntries, setFailedEntries] = useState([]); // Track failed entries
   const [products, setProducts] = useState([]);
+  const [editedProduct, setEditedProduct] = useState(null); // For the product being edited
+
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
@@ -31,6 +33,65 @@ const AdminProduct = () => {
     }
   
   }, [activeTab]);
+
+  const handleProductChange = (e) => {
+    const { name, value } = e.target;
+    setEditedProduct({
+      ...editedProduct,
+      [name]: value
+    });
+  };
+
+  const handleEditProduct = (product) => {
+    setEditedProduct({
+      originalName: product.name, // Store the original name as a reference
+      currentPrice: product.price, // Store the current price as a reference
+      currentQuantity: product.quantity, // Store the current quantity as a reference
+      name: product.name,                    // Editable product name (can be left blank)
+      quantity: product.quantity,  // Editable quantity
+      price: product.price,        // Editable price
+    });
+  };
+
+  const handleSaveProduct = async () => {
+    if (!editedProduct) return;
+  
+    const { name, quantity, price, originalName, currentPrice, currentQuantity } = editedProduct;
+  
+    try {  
+      // Check if the quantity is different from the original quantity (stored in invisible field)
+      if (quantity !== currentQuantity) {
+        const response = await api.post("/auth/products/edit-quantity", {
+          productName: originalName,
+          newQuantity: quantity,
+        });
+        setMessage(response.data.message || "Product quantity updated successfully!");
+      }
+  
+      // Check if the price is different from the original price (stored in invisible field)
+      if (price !== currentPrice) {
+        const response = await api.post("/auth/products/edit-price", {
+          productName: originalName,
+          newPrice: price,
+        });
+        setMessage(response.data.message || "Product price updated successfully!");
+      }
+
+      // Update the name if it's changed
+      if (name !== originalName) {
+        const response = await api.post("/auth/products/edit-name", {
+          productName: originalName,
+          newName: name,
+        });
+        setMessage(response.data.message || "Product name updated successfully!");
+      }
+      fetchProducts(); // Refresh the product list
+      setEditedProduct(null); // Close the modal
+    } catch (error) {
+      console.error("Error saving product:", error.message);
+      setMessage("Failed to update product.");
+    }
+  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -206,17 +267,25 @@ const AdminProduct = () => {
       setMessage(error.response?.data?.error || "Failed to upload users.");
     }
   };
-
+  
   const fetchProducts = async () => {
     try {
       const response = await api.get("/auth/products"); // Make sure this route matches your Express route
-      setProducts(response.data.products); // Store the products in the state
+  
+      // Map the result to return a list of products, ensuring that price and quantity are numbers
+      const products = response.data.products.map((product) => ({
+        name: product.name,
+        price: Number(product.price), // Safely convert to number
+        quantity: Number(product.quantity), // Safely convert to number
+      }));
+  
+      setProducts(products); // Store the products in the state
     } catch (error) {
       console.error("Error fetching products:", error.message);
+      setMessage("Failed to fetch products.");
     }
   };
   
-
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -281,9 +350,9 @@ const AdminProduct = () => {
             <div className="rounded-section">
               <h3>Product List</h3>
               {products.length > 0 ? (
-                products.map((product, index) => (
+                products.map((product) => (
                   <div
-                    key={index}
+                    key={product.name}
                     style={{
                       border: "1px solid #ccc",
                       padding: "10px",
@@ -294,6 +363,7 @@ const AdminProduct = () => {
                     <p><strong>Name:</strong> {product.name}</p>
                     <p><strong>Price:</strong> ${product.price}</p>
                     <p><strong>Quantity:</strong> {product.quantity}</p>
+                    <button onClick={() => handleEditProduct(product)}>Edit</button>
                   </div>
                 ))
               ) : (
@@ -302,6 +372,82 @@ const AdminProduct = () => {
             </div>
           </div>
         )}
+
+        {/* Modal for editing product */}
+        {editedProduct && (
+          <div
+            className="modal"
+            style={{
+              position: "fixed",
+              top: "0",
+              left: "0",
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: "1000",
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "10px",
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
+              <h4>Edit Product</h4>
+
+              {/* Editable field for new name */}
+              <div>
+                <label>Name:</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editedProduct.name}
+                  onChange={handleProductChange}
+                  placeholder="Enter New Name or Leave Blank"
+                />
+              </div>
+
+              {/* Editable field for quantity */}
+              <div>
+                <label>Quantity:</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={editedProduct.quantity}
+                  onChange={handleProductChange}
+                  placeholder="Enter Quantity"
+                />
+              </div>
+
+              {/* Editable field for price */}
+              <div>
+                <label>Price:</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={editedProduct.price}
+                  onChange={handleProductChange}
+                  placeholder="Enter Price"
+                />
+              </div>
+
+              <div>
+                <button onClick={handleSaveProduct}>Save</button>
+                <button onClick={() => setEditedProduct(null)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Message Display */}
+        {message && <p style={{ color: "green", marginTop: "10px" }}>{message}</p>}
 
         {activeTab === "Users" && (
           <div>
