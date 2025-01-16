@@ -936,7 +936,7 @@ const handleSaveProduct = async () => {
               <h3>Product List</h3>
               <h2>Add a Product</h2>
               <button onClick={() => setShowModal(true)}>Add Product</button>
-              {products.length > 0 ? (
+              {filteredProducts.length > 0 ? (
                 <div className="product-grid">
                   {filteredProducts.map((product) => (
                     <div className="product-card" key={product.name}>

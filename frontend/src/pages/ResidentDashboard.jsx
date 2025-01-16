@@ -6,14 +6,19 @@ import logout from "../assets/logout.png";
 import minimart from "../assets/minimart.png";
 import food from "../assets/food.png";
 import { useNotification } from "../context/NotificationContext";
+import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
 
 const ResidentDashboard = () => {
+    const { user } = useAuth(); // Access the user's details
   const [activeTab, setActiveTab] = useState("Products");
   const [products, setProducts] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [userName, setUserName] = useState([]);
   const [userBalance, setUserBalance] = useState([]);
-    const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [searchTermProduct, setSearchTermProduct] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
+  const [sortCriteria, setSortCriteria] = useState("name"); // "name", "price", or "quantity"
   
   useEffect(() => {
     if (activeTab === "Products") {
@@ -31,10 +36,12 @@ const ResidentDashboard = () => {
         name: product.name,
         price: Number(product.price),
         quantity: Number(product.quantity),
+        imageUrl: product.imageUrl || "../assets/minimart.png", // Use a default image if none provided
       }));
       setProducts(products);
     } catch (error) {
       console.error("Error fetching products:", error.message);
+      showNotification("Failed to fetch products.", "error");
     }
   };
 
@@ -50,7 +57,7 @@ const ResidentDashboard = () => {
   // Function to fetch both user details (name and balance) at once
   const fetchUserDetails = async () => {
     try {
-      const response = await api.get(`/auth/user-details?email=${userEmail}`);
+      const response = await api.get(`/auth/user-details?email=${user.email}`);
       setUserName(response.data.name); // Set the user's name
       setUserBalance(response.data.balance); // Set the user's balance
     } catch (error) {
@@ -115,6 +122,38 @@ const ResidentDashboard = () => {
       console.error("Error during logout:", error.message);
     }
   };
+
+  const handleSearchChange = (e) => {
+    setSearchTermProduct(e.target.value);
+  };
+
+  const handleSortCriteriaChange = (e) => {
+    setSortCriteria(e.target.value);
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+  };
+
+  // Filter and sort products
+  const filteredProducts = products
+    .filter((product) =>
+      product.name.toLowerCase().includes(searchTermProduct.toLowerCase())
+    )
+    .sort((a, b) => {
+      let fieldA = a[sortCriteria];
+      let fieldB = b[sortCriteria];
+
+      if (sortCriteria === "name") {
+        fieldA = fieldA.toLowerCase();
+        fieldB = fieldB.toLowerCase();
+      }
+
+      if (sortOrder === "asc") {
+        return fieldA > fieldB ? 1 : -1;
+      }
+      return fieldA < fieldB ? 1 : -1;
+    });
 
   return (
     <div className="dashboard-container">
@@ -185,32 +224,44 @@ const ResidentDashboard = () => {
         {activeTab === "Products" && (
           <section className="rounded-section">
             <h2>Available Products</h2>
-            {products.length > 0 ? (
-              products.map((product) => (
-                <div
-                  key={product.name}
-                  style={{
-                    border: "1px solid #ccc",
-                    padding: "10px",
-                    marginBottom: "10px",
-                    borderRadius: "5px",
-                  }}
-                >
-                  <p>
-                    <strong>Name:</strong> {product.name}
-                  </p>
-                  <p>
-                    <strong>Price:</strong> ${product.price}
-                  </p>
-                  <p>
-                    <strong>Quantity:</strong> {product.quantity}
-                  </p>
-                  <button onClick={() => handleOpenModal(product)}>Buy</button>
+            <div className="product-controls">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTermProduct}
+                onChange={handleSearchChange}
+                className="search-bar"
+              />
+              <div className="sort-controls">
+                <select value={sortCriteria} onChange={handleSortCriteriaChange} className="sort-criteria">
+                  <option value="name">Name</option>
+                  <option value="price">Price</option>
+                  <option value="quantity">Quantity</option>
+                </select>
+                <button onClick={toggleSortOrder} className="sort-button">
+                  Sort: {sortOrder === "asc" ? "Ascending" : "Descending"}
+                </button>
+              </div>
+            </div>
+            {filteredProducts.length > 0 ? (
+                <div className="product-grid">
+                  {filteredProducts.map((product) => (
+                    <div className="product-card" key={product.name}>
+                      <div className="product-image">
+                        <img src={product.imageUrl} alt={product.name} />
+                      </div>
+                      <p><strong>Name:</strong> {product.name}</p>
+                      <p><strong>Price:</strong> ${product.price}</p>
+                      <p><strong>Quantity:</strong> {product.quantity}</p>
+                      <div className="product-actions">
+                        <button onClick={() => handleOpenModal(product)}>Buy</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))
-            ) : (
-              <p>No products available.</p>
-            )}
+              ) : (
+                <p>No products available.</p>
+              )}
           </section>
         )}
       </div>
