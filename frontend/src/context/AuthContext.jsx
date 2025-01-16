@@ -11,7 +11,11 @@ export const AuthProvider = ({ children }) => {
       try {
         const payload = decodeJwt(token);
         console.log("AuthContext: Initializing user from token:", payload);
-        setUser({ email: payload.email, role: payload.role });
+        setUser({
+          email: payload.email,
+          role: payload.role,
+          name: payload.name, // Add name to user context
+        });
       } catch (error) {
         console.error("AuthContext: Invalid token", error);
         localStorage.removeItem("token");
@@ -23,7 +27,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const payload = decodeJwt(token);
       console.log("AuthContext: Setting user:", payload);
-      setUser({ email: payload.email, role: payload.role });
+      setUser({
+        email: payload.email,
+        role: payload.role,
+        name: payload.name, // Store name from token
+      });
       localStorage.setItem("token", token);
     } catch (error) {
       console.error("AuthContext: Failed to decode token during login", error);

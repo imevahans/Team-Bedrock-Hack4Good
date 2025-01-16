@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import "../styles/AdminDashboard.css"; // Use the same style file
 import { useNotification } from "../context/NotificationContext";
+import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -19,6 +20,7 @@ const AdminDashboard = () => {
   const [popupAction, setPopupAction] = useState(""); // Action for confirmation popup
   const [bulkFile, setBulkFile] = useState(null); // File for bulk upload
   const [failedEntries, setFailedEntries] = useState([]); // Track failed entries
+  const { user } = useAuth(); // Access the admin's details
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
@@ -94,8 +96,10 @@ const AdminDashboard = () => {
 
   // Suspend user
   const handleSuspendUser = async (email) => {
+    console.log("user.name = ", user.name);
+    console.log("user.email = ", user.email);
     try {
-      const response = await api.post("/auth/suspend-user", { email });
+      const response = await api.post("/auth/suspend-user", { email, adminName: user.name, adminEmail: user.email });
       showNotification(response.data.message, "success");
       setUsers((prev) =>
         prev.map((user) => (user.email === email ? { ...user, suspended: true } : user))
@@ -108,7 +112,7 @@ const AdminDashboard = () => {
   // Unsuspend user
   const handleUnsuspendUser = async (email) => {
     try {
-      const response = await api.post("/auth/unsuspend-user", { email });
+      const response = await api.post("/auth/unsuspend-user", { email, adminName: user.name, adminEmail: user.email });
       showNotification(response.data.message, "success");
       setUsers((prev) =>
         prev.map((user) => (user.email === email ? { ...user, suspended: false } : user))
@@ -237,9 +241,30 @@ const AdminDashboard = () => {
         >
           Products
         </button>
-        <button className="sidebar-button">Voucher Tasks</button>
-        <button className="sidebar-button">Audit Logs</button>
-        <button className="sidebar-button">Reports</button>
+        <button
+          className={`sidebar-button ${
+            activeTab === "Vouchers Tasks" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("Vouchers Tasks")}
+        >
+          Vouchers Tasks
+        </button>
+        <button
+          className={`sidebar-button ${
+            activeTab === "Audit Log" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("Audit Log")}
+        >
+          Audit Log
+        </button>
+        <button
+          className={`sidebar-button ${
+            activeTab === "Report" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("Reports")}
+        >
+          Reports
+        </button>
         <div className="logout-container">
           <button
             className="logout-button"

@@ -2,7 +2,6 @@ import express from "express";
 import multer from "multer";
 import fs from "fs";
 import {
-  registerUser,
   loginUser,
   sendOtp,
   verifyOtp,
@@ -11,7 +10,6 @@ import {
   resetPassword,
   sendOtpReset,
   getAllUsers,
-  addUser,
   suspendUser,
   unsuspendUser,
   resetPasswordByAdmin,
@@ -70,30 +68,6 @@ router.post("/send-otp", async (req, res) => {
   }
 });
 
-/**
- * Route: Register a new user with OTP verification
- * Method: POST
- * Body: { email: string, password: string, phoneNumber: string, role: string, otp: string }
- */
-router.post("/register", async (req, res) => {
-  const { email, password, phoneNumber, role, otp } = req.body;
-
-  if (!email || !password || !phoneNumber || !role || !otp) {
-    return res.status(400).json({ error: "All fields are required." });
-  }
-
-  try {
-    // Verify OTP
-    await verifyOtp(phoneNumber, otp);
-
-    // Register the user
-    const user = await registerUser(email, password, phoneNumber, role);
-    res.status(201).json({ message: "User registered successfully", user });
-  } catch (error) {
-    console.error("Error registering user:", error.message);
-    res.status(400).json({ error: "Registration failed: " + error.message });
-  }
-});
 
 /**
  * Route: Login a user
@@ -229,28 +203,15 @@ router.get("/users", async (req, res) => {
   }
 });
 
-// Add new user
-router.post("/add-user", async (req, res) => {
-  const { email, role } = req.body;
-  if (!email || !role) {
-    return res.status(400).json({ error: "Email and role are required." });
-  }
-  try {
-    const user = await addUser(email, role);
-    res.status(201).json({ message: "User added successfully.", user });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to add user." });
-  }
-});
 
 // Suspend user
 router.post("/suspend-user", async (req, res) => {
-  const { email } = req.body;
+  const { email, adminName, adminEmail } = req.body;
   if (!email) {
     return res.status(400).json({ error: "Email is required." });
   }
   try {
-    await suspendUser(email);
+    await suspendUser(email, adminName, adminEmail);
     res.status(200).json({ message: "User suspended successfully." });
   } catch (error) {
     res.status(500).json({ error: "Failed to suspend user." });
@@ -259,7 +220,7 @@ router.post("/suspend-user", async (req, res) => {
 
 // Suspend user
 router.post("/unsuspend-user", async (req, res) => {
-  const { email } = req.body;
+  const { email, adminName, adminEmail } = req.body;
   if (!email) {
     return res.status(400).json({ error: "Email is required." });
   }

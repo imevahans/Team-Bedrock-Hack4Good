@@ -16,8 +16,6 @@ dotenv.config();
 
 const otpStorage = new Map();
 
-
-
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const serviceSID = process.env.TWILIO_SERVICE_SID;
@@ -63,40 +61,28 @@ const formatTimestamp = (timestamp) => {
   return gmt8Date.toISOString().replace("T", " ").split(".")[0]; // Format: YYYY-MM-DD HH:mm:ss
 };
 
-//Register User
-export const registerUser = async (email, password, phoneNumber, role) => {
+export const logAuditAction = async (name, email, action, details) => {
   const session = driver.session();
+  const timestamp = formatTimestamp(Date.now());
+
   try {
-    // Generate a salt
-    const salt = await bcrypt.genSalt(10);
-
-    // Hash the password with the salt
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    // Generate formatted timestamps
-    const createdAt = formatTimestamp(Date.now());
-    const updatedAt = createdAt;
-
-    // Create a user node with phoneNumber
     const result = await session.run(
       `
-      CREATE (u:User {
-        email: $email, 
-        passwordHash: $passwordHash, 
-        salt: $salt, 
-        phoneNumber: $phoneNumber,
-        role: $role, 
-        createdAt: $createdAt, 
-        updatedAt: $updatedAt,
-        suspended: false
+      CREATE (a:Audit {
+        userName: $name,
+        userEmail: $email,
+        action: $action,
+        details: $details,
+        timestamp: $timestamp
       })
-      RETURN u
+      RETURN a
       `,
-      { email, passwordHash, salt, phoneNumber, role, createdAt, updatedAt }
+      { name, email, action, details, timestamp }
     );
 
-    // Return the created user's properties
-    return result.records[0].get("u").properties;
+    console.log("Audit log created:", result.records[0].get("a").properties);
+  } catch (error) {
+    console.error("Error logging audit action:", error.message);
   } finally {
     await session.close();
   }
@@ -109,7 +95,7 @@ export const loginUser = async (email, password) => {
   try {
     // Retrieve the passwordHash, salt, role, and suspended status for the user
     const result = await session.run(
-      "MATCH (u:User {email: $email}) RETURN u.passwordHash AS passwordHash, u.salt AS salt, u.role AS role, u.suspended AS suspended",
+      "MATCH (u:User {email: $email}) RETURN u.passwordHash AS passwordHash, u.salt AS salt, u.role AS role, u.suspended AS suspended, u.name AS name",
       { email }
     );
 
@@ -117,7 +103,7 @@ export const loginUser = async (email, password) => {
       throw new Error("User or Password incorrect.");
     }
 
-    const { passwordHash, role, suspended } = result.records[0].toObject();
+    const { passwordHash, role, suspended, name } = result.records[0].toObject();
 
     // Verify the password by comparing it with the stored hash
     const isMatch = await bcrypt.compare(password, passwordHash);
@@ -127,7 +113,13 @@ export const loginUser = async (email, password) => {
     }
 
     // Generate a JWT token for the user
-    const token = jwt.sign({ email, role }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ email, role, name }, JWT_SECRET, { expiresIn: "1h" });
+
+    if (suspended) {
+      logAuditAction(name, email, "Login", "is suspended but tried logging in.");
+    } else {
+      logAuditAction(name, email, "Login", "has logged in.");
+    }
 
     return { token, role, suspended }; // Return suspended status along with token and role
   } finally {
@@ -142,8 +134,12 @@ export const sendOtp = async (phoneNumber) => {
   try {
     const verification = await createVerification(phoneNumber); // Send OTP via Twilio
     console.log(`OTP sent to ${phoneNumber}:`, verification.status);
+
+    logAuditAction("System", "", "OTP", `OTP has been sent to ${phoneNumber}`);
+
     return { success: true, message: "OTP sent successfully." };
   } catch (error) {
+    logAuditAction("System", "", "OTP", `OTP has failed to send to ${phoneNumber} due to ${error.message}`);
     console.error("Error sending OTP:", error.message);
     throw new Error("Failed to send OTP. Please try again.");
   }
@@ -157,11 +153,13 @@ export const verifyOtp = async (phoneNumber, otp) => {
     console.log(`OTP verification status for ${phoneNumber}:`, verificationCheck.status);
 
     if (verificationCheck.status !== "approved") {
+      logAuditAction("System", "", "OTP", `OTP has failed verification for ${phoneNumber}`);
       throw new Error("Invalid or expired OTP.");
     }
-
+    logAuditAction("System", "", "OTP", `OTP has verified for ${phoneNumber}`);
     return { success: true, message: "OTP verified successfully." };
   } catch (error) {
+    logAuditAction("System", "", "OTP", `Error verifying OTP for ${phoneNumber}`);
     console.error("Error verifying OTP:", error.message);
     throw new Error("Invalid or expired OTP.");
   }
@@ -184,9 +182,11 @@ export const sendOtpEmail = async (email) => {
     const fullPhoneNumber = `+65${phoneNumber}`;
 
     const verification = await createVerification(fullPhoneNumber); // Send OTP via Twilio
+    logAuditAction("System", "", "OTP", `OTP has been sent to ${fullPhoneNumber}`);
     console.log(`OTP sent to ${fullPhoneNumber}:`, verification.status);
     return { success: true, message: "OTP sent successfully." };
   } catch (error) {
+    logAuditAction("System", "", "OTP", `OTP has failed to send to ${fullPhoneNumber} due to ${error.message}`);
     console.error("Error sending OTP:", error.message);
     throw new Error("Failed to send OTP. Please try again.");
   }
@@ -209,20 +209,21 @@ export const verifyOtpEmail = async (email, otp) => {
     const phoneNumber = result.records[0].get("phoneNumber");
     const fullPhoneNumber = `+65${phoneNumber}`;
     const verificationCheck = await createVerificationCheck(otp, fullPhoneNumber);
+    
     console.log(`OTP verification status for ${fullPhoneNumber}:`, verificationCheck.status);
 
     if (verificationCheck.status !== "approved") {
+      logAuditAction("System", "", "OTP", `OTP has failed verification for ${fullPhoneNumber}.`);
       throw new Error("Invalid or expired OTP.");
     }
-
+    logAuditAction("System", "", "OTP", `OTP has verified for ${fullPhoneNumber}.`);
     return { success: true, message: "OTP verified successfully." };
   } catch (error) {
+    logAuditAction("System", "", "OTP", `Error verifying OTP for ${fullPhoneNumber} due to ${error.message}.`);
     console.error("Error verifying OTP:", error.message);
     throw new Error("Invalid or expired OTP.");
   }
 };
-
-
 
 export const sendOtpReset = async (phoneNumber) => {
   const session = driver.session();
@@ -248,7 +249,8 @@ export const sendOtpReset = async (phoneNumber) => {
     const verification = await client.verify.v2
       .services(serviceSID)
       .verifications.create({ channel: "sms", to: userPhoneNumber });
-
+    
+      logAuditAction("System", "", "OTP", `OTP has been sent to ${userPhoneNumber} to reset password`);
     console.log(`OTP sent to ${userPhoneNumber}:`, verification.status);
     return verification;
   } finally {
@@ -267,9 +269,11 @@ export const resetPassword = async (phoneNumber, otp, newPassword) => {
     .verificationChecks.create({ code: otp, to: phoneNumber });
 
   if (verificationCheck.status !== "approved") {
+    logAuditAction("System", "", "OTP", `OTP has failed verification for ${phoneNumber}.`);
     throw new Error("Invalid or expired OTP.");
   }
 
+  logAuditAction("System", "", "OTP", `OTP has verified for ${phoneNumber} to reset password.`);
   console.log("Reset OTP Passed!");
 
   // Hash the new password
@@ -283,7 +287,7 @@ export const resetPassword = async (phoneNumber, otp, newPassword) => {
       `
       MATCH (u:User {phoneNumber: $oldPhoneNumber})
       SET u.passwordHash = $passwordHash, u.updatedAt = $updatedAt
-      RETURN u.email AS email
+      RETURN u.email AS email, u.name AS name
       `,
       { oldPhoneNumber, passwordHash, updatedAt }
     );
@@ -292,8 +296,12 @@ export const resetPassword = async (phoneNumber, otp, newPassword) => {
       throw new Error("Failed to reset password.");
     }
 
+    const { email, name } = result.records[0].toObject()
+
     console.log("Resetting for.... ", result.records);
     console.log("Password reset successfully.");
+    logAuditAction(name, email, "Reset Password", `has sucessfully resetted password.`);
+
   } finally {
     await session.close();
   }
@@ -314,56 +322,31 @@ export const getAllUsers = async () => {
   }
 };
 
-export const addUser = async (email, password, phoneNumber, role) => {
-  const session = driver.session();
-  try {
-    const salt = await bcrypt.genSalt(12); // Stronger hash
-    const passwordHash = await bcrypt.hash(password, salt);
-    const createdAt = formatTimestamp(Date.now());
-    const updatedAt = createdAt;
-
-    const result = await session.run(
-      `
-      CREATE (u:User {
-        email: $email, 
-        passwordHash: $passwordHash, 
-        salt: $salt, 
-        phoneNumber: $phoneNumber,
-        role: $role, 
-        createdAt: $createdAt, 
-        updatedAt: $updatedAt,
-        suspended: false
-      })
-      RETURN u
-      `,
-      { email, passwordHash, salt, phoneNumber, role, createdAt, updatedAt }
-    );
-    const user = result.records[0].get("u").properties;
-    delete user.passwordHash;
-    delete user.salt;
-    return user;
-  } finally {
-    await session.close();
-  }
-};
-
-export const suspendUser = async (email) => {
+export const suspendUser = async (email, adminName, adminEmail) => {
   const session = driver.session();
   try {
     await session.run("MATCH (u:User {email: $email}) SET u.suspended = true", { email });
+
+    // Log audit action
+    await logAuditAction(adminName, adminEmail, "Suspend User", `suspended user with email ${email}.`);
   } finally {
     await session.close();
   }
 };
 
-export const unsuspendUser = async (email) => {
+
+export const unsuspendUser = async (email, adminName, adminEmail) => {
   const session = driver.session();
   try {
     await session.run("MATCH (u:User {email: $email}) SET u.suspended = false", { email });
+
+    // Log audit action
+    await logAuditAction(adminName, adminEmail, "Unsuspend User", `unsuspended user with email ${email}.`);
   } finally {
     await session.close();
   }
 };
+
 
 export const resetPasswordByAdmin = async (email) => {
   const session = driver.session();
@@ -381,7 +364,7 @@ export const resetPasswordByAdmin = async (email) => {
   }
 };
 
-export const updateUser = async (email, role, phoneNumber) => {
+export const updateUser = async (email, role, phoneNumber, adminName, adminEmail) => {
   const session = driver.session();
   try {
     const updatedAt = formatTimestamp(Date.now());
@@ -401,6 +384,9 @@ export const updateUser = async (email, role, phoneNumber) => {
     if (result.records.length === 0) {
       throw new Error("User not found.");
     }
+
+    // Log audit action
+    await logAuditAction(adminName, adminEmail, "Update User", `updated user with email ${email}.`);
 
     return result.records[0].get("u").properties;
   } finally {
@@ -606,7 +592,7 @@ export const getUserByEmail = async (email) => {
   }
 };
 
-export const addUserManually = async (email, phoneNumber, name) => {
+export const addUserManually = async (email, phoneNumber, name, role, adminName, adminEmail) => {
   const session = driver.session();
   try {
     const createdAt = formatTimestamp(Date.now());
@@ -617,22 +603,27 @@ export const addUserManually = async (email, phoneNumber, name) => {
         email: $email,
         phoneNumber: $phoneNumber,
         name: $name,
-        role: "resident",
+        role: $role,
         invitationAccepted: false,
         createdAt: $createdAt,
         updatedAt: $updatedAt
       })
       RETURN u
       `,
-      { email, phoneNumber, name, createdAt, updatedAt }
+      { email, phoneNumber, name, role, createdAt, updatedAt }
     );
     const user = result.records[0].get("u").properties;
+    
+    // Log audit action
+    await logAuditAction(adminName, adminEmail, "User Creation", `created user with email ${email} as ${role}.`);
+
     await sendInvitationEmail(email, name);
     return user;
   } finally {
     await session.close();
   }
 };
+
 
 
 export const getDashboardStats = async () => {
@@ -679,11 +670,13 @@ export const createBasicAdminAccount = async () => {
     const updatedAt = createdAt;
     const email = "admin@a.com";
     const role = "admin";
+    const name = "testadmin"
 
     const result = await session.run(
       `
       CREATE (u:User {
-        email: $email, 
+        email: $email,
+        name: $name,
         passwordHash: $passwordHash, 
         salt: $salt, 
         role: $role,
@@ -693,7 +686,7 @@ export const createBasicAdminAccount = async () => {
       })
       RETURN u
       `,
-      { email, passwordHash, salt, role, createdAt, updatedAt }
+      { email, name, passwordHash, salt, role, createdAt, updatedAt }
     );
     const user = result.records[0].get("u").properties;
     delete user.passwordHash;
