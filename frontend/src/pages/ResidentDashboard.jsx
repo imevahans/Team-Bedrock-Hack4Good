@@ -23,7 +23,76 @@ const ResidentDashboard = () => {
   const [searchTermProduct, setSearchTermProduct] = useState("");
   const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
   const [sortCriteria, setSortCriteria] = useState("name"); // "name", "price", or "quantity"
+  const [showPreOrderModal, setShowPreOrderModal] = useState(false);
+  const [preOrderQuantity, setPreOrderQuantity] = useState(1);
+  const [selectedPreOrderProduct, setSelectedPreOrderProduct] = useState(null);
+  const [preOrderTotalPrice, setPreOrderTotalPrice] = useState(0);
   
+  const handlePreOrderClick = (product) => {
+    setSelectedPreOrderProduct(product);
+    setPreOrderQuantity(1); // Set the initial quantity to 1
+    setShowPreOrderModal(true); // Show the pre-order modal
+  };  
+  
+  // Handle Pre-order modal close
+  const handleClosePreOrderModal = () => {
+    setShowPreOrderModal(false);
+    setSelectedPreOrderProduct(null);
+    setPreOrderQuantity(1);
+    setPreOrderTotalPrice(0);
+  };
+  
+  // Handle Pre-order quantity change
+  const handlePreOrderQuantityChange = (e) => {
+    const newQuantity = Number(e.target.value);
+    setPreOrderQuantity(newQuantity);
+    if (selectedPreOrderProduct) {
+      const newTotalPrice = newQuantity * selectedPreOrderProduct.price; // Recalculate the total price
+      setPreOrderTotalPrice(newTotalPrice); // Update the total price state
+    }
+  };
+  
+  const handlePreOrderSubmit = async () => {
+    try {
+      if (!selectedPreOrderProduct) return;
+  
+      const totalCost = preOrderQuantity * selectedPreOrderProduct.price; // Calculate total price
+  
+      // Log all the data being sent to the backend for debugging
+      console.log("Sending the following data to backend:");
+      console.log({
+        productName: selectedPreOrderProduct.name,
+        quantity: preOrderQuantity,
+        userEmail: user.email,
+        price: selectedPreOrderProduct.price,
+        userName: user.name,
+        totalCost,
+      });
+  
+      // Check if the user has enough balance
+      if (userBalance < totalCost) {
+        showNotification("Insufficient balance for pre-order.", "error");
+        return;
+      }
+  
+      // Send pre-order request to backend
+      const response = await api.post("/auth/products/preorder", {
+        productName: selectedPreOrderProduct.name,
+        quantity: preOrderQuantity,
+        userEmail: user.email,
+        price: selectedPreOrderProduct.price, // Backend will calculate totalPrice
+        userName: user.name,
+      });
+  
+      showNotification(response.data.message, "success");
+      handleClosePreOrderModal(); // Close the pre-order modal
+      fetchProducts(); // Refresh the product list
+      fetchUserDetails(); // Update the user balance
+    } catch (error) {
+      console.error("Error pre-ordering product:", error.message);
+      showNotification("Failed to place pre-order.", "error");
+    }
+  };
   useEffect(() => {
     if (activeTab === "Products") {
       fetchProducts();
@@ -256,32 +325,57 @@ const ResidentDashboard = () => {
               </div>
             </div>
             {filteredProducts.length > 0 ? (
-                <div className="product-grid">
-                  {filteredProducts.map((product) => (
-                    <div className="product-card" key={product.name}>
-                      <div className="product-image">
-                        <img src={product.imageUrl} alt={product.name} />
-                      </div>
-                      <p><strong>Name:</strong> {product.name}</p>
-                      <p><strong>Price:</strong> ${product.price}</p>
-                      <p><strong>Quantity:</strong> {product.quantity}</p>
-                      <div className="product-actions">
+              <div className="product-grid">
+                {filteredProducts.map((product) => (
+                  <div className="product-card" key={product.name}>
+                    <div className="product-image">
+                      <img src={product.imageUrl} alt={product.name} />
+                    </div>
+                    <p><strong>Name:</strong> {product.name}</p>
+                    <p><strong>Price:</strong> ${product.price}</p>
+                    <p><strong>Quantity:</strong> {product.quantity}</p>
+                    <div className="product-actions">
                       {product.quantity === 0 ? (
                         <p style={{ color: "red" }}>Out of Stock</p>
                       ) : (
                         <button onClick={() => handleOpenModal(product)}>Buy</button>
                       )}
-                      {product.quantity === 0 && <button>Pre Order</button>}
+                      {product.quantity === 0 && <button onClick={() => handlePreOrderClick(product)}>Pre Order</button>}
                     </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p>No products available.</p>
-              )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>No products available.</p>
+            )}
           </section>
         )}
       </div>
+
+      {/* Pre-order Modal */ }
+      {showPreOrderModal && selectedPreOrderProduct && (
+        <div className="modal" style={{ position: "fixed", top: "0", left: "0", width: "100vw", height: "100vh", background: "rgba(0, 0, 0, 0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: "1000" }}>
+          <div className="modal-content" style={{ background: "#fff", padding: "20px", borderRadius: "10px", width: "400px", textAlign: "center" }}>
+            <h4>{selectedPreOrderProduct.name}</h4>
+            <p><strong>Total Price: </strong>${preOrderTotalPrice}</p>
+            <label>
+              Quantity:
+              <input
+                type="number"
+                value={preOrderQuantity}
+                min="1"
+                onChange={handlePreOrderQuantityChange}
+                style={{ width: "100px", padding: "5px" }}
+              />
+            </label>
+            <div>
+              <button onClick={handlePreOrderSubmit}>Confirm Pre-order</button>
+              <button onClick={handleClosePreOrderModal}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Modal for buying a product */}
       {showModal && selectedProduct && (
