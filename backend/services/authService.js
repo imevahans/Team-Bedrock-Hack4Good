@@ -1012,13 +1012,13 @@ cloudinary.config({
 // Upload image function
 const uploadImageToCloudinary = async (filePath) => {
   return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(filePath, (error, result) => {
+    cloudinary.uploader.upload(filePath, (result, error) => {
       if (error) {
-        console.log("cloudinary error = ", error);
-        reject(error);
+        console.error("Error uploading image to Cloudinary:", error.message);
+        reject(error);  // Reject the promise if there’s an error
       } else {
-        console.log("cloudinary result = ", result);
-        resolve(result.url); // Return image URL from Cloudinary
+        console.log("Image uploaded successfully. Image URL: ", result.url);
+        resolve(result.url);  // Resolve the promise with the URL when upload is successful
       }
     });
   });

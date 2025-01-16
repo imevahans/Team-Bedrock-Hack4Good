@@ -309,6 +309,7 @@ router.post("/bulk-add-users", upload.single("file"), async (req, res) => {
   }
 
   try {
+    console.log("req.file.path = ", req.file.path);
     const result = await bulkAddUsers(req.file.path, adminName, adminEmail); // Corrected: req.file.path
     res.status(200).json({
       message: `${result.users.length} users added successfully.`,
@@ -531,9 +532,10 @@ router.post("/products/edit-price", async (req, res) => {
 
 // Route to create a new product
 router.post("/products/create", upload.single("image"), async (req, res) => {
-  const { name, price, quantity, image } = req.body;
+  const { name, price, quantity } = req.body;
+  const image = req.file
   console.log("image = ", image);
-  console.log("req.body = ", req.body);
+  console.log("image.path = ", image.path);
   if (!name || !price || !quantity || !image) {
     console.log("Triggered 3");
     return res.status(400).json({ error: "Product name, price, quantity, and image are required." });
@@ -541,7 +543,7 @@ router.post("/products/create", upload.single("image"), async (req, res) => {
   console.log("Triggered 2");
   try {
     console.log("Triggered 1");
-    const result = await createProduct(name, price, quantity, image); // Pass the image file path
+    const result = await createProduct(name, price, quantity, image.path); // Pass the image file path
     res.status(200).json({ message: "Product created successfully.", product: result });
   } catch (error) {
     console.error("Error creating product:", error.message);

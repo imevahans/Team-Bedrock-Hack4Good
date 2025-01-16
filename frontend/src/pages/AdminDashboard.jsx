@@ -446,12 +446,12 @@ const handleEditProduct = (product) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const imageFile = URL.createObjectURL(file); // Generate a URL for the file
+      const imageFile = file; // Generate a URL for the file
       setNewProduct((prev) => ({
         ...prev,
         imageFile, // Set image URL for the product
       }));
-      console.log("uploaded image! url = ", imageFile);
+      console.log("uploaded image! file = ", imageFile);
     }
   };
   
