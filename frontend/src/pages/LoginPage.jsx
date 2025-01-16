@@ -17,22 +17,25 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     console.log("LoginPage: Attempting login with email:", email);
-
+  
     try {
       const response = await api.post("/auth/login", { email, password });
       console.log("LoginPage: Login successful, response:", response.data);
-
+  
       // Check if the user is suspended
       if (response.data.suspended) {
         showNotification("Your account has been suspended. Please contact support.", "error");
         setError(true);
         return;
       }
-
+  
       login(response.data.token); // Set user in AuthContext
       showNotification("Login successful!", "success");
       setError(false); // Reset error state on success
-
+  
+      // Store email in localStorage
+      localStorage.setItem("userEmail", email);
+  
       // Redirect to the appropriate dashboard
       if (response.data.role === "admin") {
         console.log("LoginPage: Redirecting to admin dashboard...");

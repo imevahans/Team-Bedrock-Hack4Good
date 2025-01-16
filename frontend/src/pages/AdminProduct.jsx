@@ -451,10 +451,33 @@ const handleAddProduct = async () => {
           </div>
         )}
 
-        {/* Product Creation Modal */}
-        {showModal && (
-          <div className="modal">
-            <div className="modal-content">
+                {/* Product Creation Modal */}
+                {showModal && (
+          <div
+            className="modal"
+            style={{
+              position: "fixed",
+              top: "0",
+              left: "0",
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: "1000",
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "10px",
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
               <h4>Create Product</h4>
 
               {/* Name field */}

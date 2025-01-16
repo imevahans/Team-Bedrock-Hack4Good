@@ -610,7 +610,7 @@ export const getUserByEmail = async (email) => {
   const session = driver.session();
   try {
     const result = await session.run(
-      "MATCH (u:User {email: $email}) RETURN u.name AS name",
+      "MATCH (u:User {email: $email}) RETURN u.name AS name, u.balance AS balance",
       { email }
     );
 
@@ -618,11 +618,19 @@ export const getUserByEmail = async (email) => {
       return null; // User not found
     }
 
-    return { name: result.records[0].get("name") };
+    const balance = result.records[0].get("balance");
+    // Convert balance from a Long to a JavaScript number if necessary
+    const balanceAmount = balance.low + balance.high * Math.pow(2, 32);
+
+    return {
+      name: result.records[0].get("name"),
+      balance: balanceAmount,
+    };
   } finally {
     await session.close();
   }
 };
+
 
 export const addUserManually = async (email, phoneNumber, name, role, adminName, adminEmail) => {
   const session = driver.session();
@@ -947,70 +955,3 @@ export const deleteProduct = async (productName) => {
   }
 };
 
-export const getAuditLogs = async () => {
-  const session = driver.session();
-  try {
-    const result = await session.run(
-      `
-      MATCH (a:Audit)
-      RETURN a.userName, a.userEmail, a.action, a.details, a.timestamp
-      ORDER BY a.timestamp DESC
-      `
-    );
-
-    // Parse the results and map to the correct format
-    const logs = result.records.map((record) => {
-      return {
-        userName: record.get("a.userName"),
-        userEmail: record.get("a.userEmail"),
-        action: record.get("a.action"),
-        details: record.get("a.details"),
-        timestamp: record.get("a.timestamp"),
-      };
-    });
-
-    return logs;
-  } catch (error) {
-    console.error("Error fetching audit logs:", error.message);
-    throw new Error("Failed to fetch audit logs");
-  } finally {
-    await session.close();
-  }
-};
-
-export const getAuditActions = async () => {
-  const session = driver.session();
-  
-  try {
-    const result = await session.run(
-      "MATCH (a:Audit) RETURN DISTINCT a.action AS action"
-    );
-    
-    const actions = result.records.map((record) => record.get("action"));
-    return actions;
-  } finally {
-    await session.close();
-  }
-};
-
-// Configure Cloudinary with your credentials
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-// Upload image function
-const uploadImageToCloudinary = async (filePath) => {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(filePath, (error, result) => {
-      if (error) {
-        console.log("cloudinary error = ", error);
-        reject(error);
-      } else {
-        console.log("cloudinary result = ", result);
-        resolve(result.url); // Return image URL from Cloudinary
-      }
-    });
-  });
-};
