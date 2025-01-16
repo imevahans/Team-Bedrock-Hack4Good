@@ -21,6 +21,12 @@ const AdminDashboard = () => {
   const [bulkFile, setBulkFile] = useState(null); // File for bulk upload
   const [failedEntries, setFailedEntries] = useState([]); // Track failed entries
   const { user } = useAuth(); // Access the admin's details
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [filterAction, setFilterAction] = useState("all"); // Action filter
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const { showNotification } = useNotification();
+  const [actions, setActions] = useState([]);
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
@@ -30,7 +36,23 @@ const AdminDashboard = () => {
     }
   }, [activeTab]);
 
-  const { showNotification } = useNotification();
+  useEffect(() => {
+    fetchAuditLogs();
+  }, [searchTerm, filterRole, filterAction]); // Fetch logs whenever filters change
+
+  // Fetch available actions when component mounts
+  useEffect(() => {
+    const fetchActions = async () => {
+      try {
+        const response = await api.get("/auth/audit-actions");
+        setActions(response.data.actions);
+      } catch (error) {
+        console.error("Error fetching actions:", error.response?.data?.error || error.message);
+      }
+    };
+
+    fetchActions();
+  }, []);
 
   const fetchDashboardStats = async () => {
     try {
@@ -54,27 +76,83 @@ const AdminDashboard = () => {
   const handleFilterRole = (e) => setFilterRole(e.target.value);
   const handleFilterInvitation = (e) => setFilterInvitation(e.target.value);
 
+
+  const resetTimeToMidnight = (date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
+    return d;
+  };
+
+  const fetchAuditLogs = async () => {
+    try {
+      const response = await api.get("/auth/audit-logs", {
+        params: { searchTerm, filterRole, filterAction },
+      });
+      setAuditLogs(response.data.logs);
+    } catch (error) {
+      showNotification("Error fetching audit logs", "error");
+    }
+  };
+
+  const filteredLogs = auditLogs.filter((log) => {
+    console.log("log = ", log);
+    const searchTermLower = searchTerm.toLowerCase();
+  
+    // Name filter
+    let nameMatch = false;
+    if (log.userName != null) {
+       nameMatch = log.userName.toLowerCase().includes(searchTermLower);
+    }
+  
+    // Email filter
+    let emailMatch = false;
+    if (log.userEmail != null) {
+      emailMatch = log.userEmail.toLowerCase().includes(searchTermLower);
+    }
+  
+    // Details filter
+    let detailMatch = false;
+    if (log.details != null) {
+      detailMatch = log.details.toLowerCase().includes(searchTermLower);
+    }
+  
+    // Date filter (for matching date range)
+    const dateMatch = !startDate || !endDate || (resetTimeToMidnight(new Date(log.timestamp))) >= (resetTimeToMidnight(new Date(startDate))) && (resetTimeToMidnight(new Date(log.timestamp)) <= (resetTimeToMidnight(new Date(endDate))));
+  
+    // Action filter
+    const actionFilterMatch =
+      filterAction === "all" || (log.action && log.action.toLowerCase() === filterAction.toLowerCase());
+  
+    // Combine all the filters
+    return (
+      (nameMatch || emailMatch || detailMatch) &&
+      dateMatch &&
+      actionFilterMatch
+    );
+  });
+  
+
   // Filter and Search Users
   const filteredUsers = users.filter((user) => {
-      const searchTermLower = searchTerm.toLowerCase();
-    
-      // Role filter
-      const roleMatch =
-        filterRole === "all" || user.role.toLowerCase() === filterRole.toLowerCase();
-    
-      // Invitation filter
-      const invitationMatch =
-        filterInvitation === "all" ||
-        (filterInvitation === "sent" && user.invitationAccepted) ||
-        (filterInvitation === "not-sent" && !user.invitationAccepted);
-    
-      // Search term filter
-      const searchMatch =
-        user.name?.toLowerCase().includes(searchTermLower) ||
-        user.email?.toLowerCase().includes(searchTermLower);
-    
-      return roleMatch && invitationMatch && searchMatch;
-    });
+    const searchTermLower = searchTerm.toLowerCase();
+
+    // Role filter
+    const roleMatch =
+      filterRole === "all" || user.role.toLowerCase() === filterRole.toLowerCase();
+
+    // Invitation filter
+    const invitationMatch =
+      filterInvitation === "all" ||
+      (filterInvitation === "sent" && user.invitationAccepted) ||
+      (filterInvitation === "not-sent" && !user.invitationAccepted);
+
+    // Search term filter
+    const searchMatch =
+      user.name?.toLowerCase().includes(searchTermLower) ||
+      user.email?.toLowerCase().includes(searchTermLower);
+
+    return roleMatch && invitationMatch && searchMatch;
+  });
 
   // Add new user manually
   const handleAddUserManually = async () => {
@@ -214,7 +292,10 @@ const AdminDashboard = () => {
     }
   };
 
-
+  // Handle searching/filtering
+  const handleAuditSearch = () => {
+    fetchAuditLogs(); // Re-fetch based on new search/filter criteria
+  };
   
 
   return (
@@ -255,11 +336,11 @@ const AdminDashboard = () => {
         </button>
         <button
           className={`sidebar-button ${
-            activeTab === "Audit Log" ? "active" : ""
+            activeTab === "Audit Logs" ? "active" : ""
           }`}
-          onClick={() => setActiveTab("Audit Log")}
+          onClick={() => setActiveTab("Audit Logs")}
         >
-          Audit Log
+          Audit Logs
         </button>
         <button
           className={`sidebar-button ${
@@ -295,6 +376,80 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {activeTab === "Audit Logs" && (
+          <div>
+            <h2>Audit Logs</h2>
+            <div className="filter-section">
+              <input
+                type="text"
+                placeholder="Search by name, email, or details"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button onClick={handleAuditSearch}>Search</button>
+
+              <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
+                <option value="all">All Actions</option>
+                {actions.map((action, index) => (
+                  <option key={index} value={action}>
+                    {action}
+                  </option>
+                ))}
+              </select>
+
+              <div>
+                <label>Start Date:</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label>End Date:</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+
+            <h3>Audit Logs</h3>
+            <div className="audit-log-table">
+              {filteredLogs.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User Name</th>
+                      <th>Email</th>
+                      <th>Action</th>
+                      <th>Details</th>
+                      <th>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLogs.map((log, index) => (
+                      <tr key={index}>
+                        <td>{log.userName}</td>
+                        <td>{log.userEmail}</td>
+                        <td>{log.action}</td>
+                        <td>{log.details}</td>
+                        <td>{log.timestamp}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p>No audit logs found matching the criteria.</p>
+              )}
+            </div>
+          </div>
+        )}
+
 
         {activeTab === "Users" && (
           <div>

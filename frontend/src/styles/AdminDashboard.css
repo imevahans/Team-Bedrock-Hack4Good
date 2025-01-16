@@ -267,3 +267,66 @@ body {
 .notification-bar.error {
   background-color: #F44336; /* Red for error */
 }
+
+/* Admin Dashboard Styles */
+.audit-log-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.audit-log-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.audit-log-table th, .audit-log-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.audit-log-table th {
+  background-color: #f2f2f2;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-section input {
+  padding: 8px;
+  margin-right: 10px;
+  width: 200px;
+}
+
+.filter-section select {
+  padding: 8px;
+  margin-right: 10px;
+}
+
+.filter-section button {
+  padding: 8px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.filter-section button:hover {
+  background-color: #45a049;
+}
+
+.audit-log-table p {
+  font-size: 16px;
+  color: gray;
+}
+
+h3 {
+  margin-top: 20px;
+  color: #333;
+}
+
+h2 {
+  margin-top: 20px;
+  color: #333;
+}

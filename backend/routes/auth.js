@@ -30,6 +30,8 @@ import {
   updateProductPrice,
   createProduct,
   deleteProduct,
+  getAuditLogs,
+  getAuditActions
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -560,5 +562,26 @@ router.delete("/products/delete", async (req, res) => {
   }
 });
 
+// Endpoint to get audit logs
+router.get("/audit-logs", async (req, res) => {
+  const { searchTerm, filterRole, filterAction } = req.query;
 
+  try {
+    const logs = await getAuditLogs(searchTerm, filterRole, filterAction); // Call the service function
+    res.status(200).json({ logs });
+  } catch (error) {
+    console.error("Error fetching audit logs:", error.message);
+    res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
+router.get("/audit-actions", async (req, res) => {
+  try {
+    const actions = await getAuditActions(); // Call a service function to get actions
+    res.status(200).json({ actions });
+  } catch (error) {
+    console.error("Error fetching audit actions:", error.message);
+    res.status(500).json({ error: "Failed to fetch audit actions" });
+  }
+});
 export default router;

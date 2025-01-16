@@ -910,3 +910,79 @@ export const deleteProduct = async (productName) => {
     await session.close();
   }
 };
+
+export const getAuditLogs = async (searchTerm, filterRole, filterAction) => {
+  const session = driver.session();
+
+  // Initialize filters array and parameters object
+  let filters = [];
+  let params = {};
+
+  // Apply searchTerm filter if provided
+  if (searchTerm) {
+    filters.push(
+      "(a.userName CONTAINS $searchTerm OR a.userEmail CONTAINS $searchTerm OR a.action CONTAINS $searchTerm)"
+    );
+    params.searchTerm = searchTerm.toLowerCase();  // Make sure the search term is case insensitive
+  }
+
+  // Apply role filter if provided
+  if (filterRole && filterRole !== "all") {
+    filters.push("a.userRole = $role");
+    params.role = filterRole;
+  }
+
+  // Apply action filter if provided
+  if (filterAction && filterAction !== "all") {
+    filters.push("a.action = $action");
+    params.action = filterAction;
+  }
+
+  // Construct the final query with the filters
+  const filterQuery = filters.length > 0 ? "WHERE " + filters.join(" AND ") : "";
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (a:Audit)
+      ${filterQuery}
+      RETURN a.userName, a.userEmail, a.action, a.details, a.timestamp
+      ORDER BY a.timestamp DESC
+      `,
+      params
+    );
+
+    // Parse the results and map to the correct format
+    const logs = result.records.map((record) => {
+      return {
+        userName: record.get("a.userName"),
+        userEmail: record.get("a.userEmail"),
+        action: record.get("a.action"),
+        details: record.get("a.details"),
+        timestamp: record.get("a.timestamp"),
+      };
+    });
+
+    return logs;
+  } catch (error) {
+    console.error("Error fetching audit logs:", error.message);
+    throw new Error("Failed to fetch audit logs");
+  } finally {
+    await session.close();
+  }
+};
+
+export const getAuditActions = async () => {
+  const session = driver.session();
+  
+  try {
+    const result = await session.run(
+      "MATCH (a:Audit) RETURN DISTINCT a.action AS action"
+    );
+    
+    const actions = result.records.map((record) => record.get("action"));
+    return actions;
+  } finally {
+    await session.close();
+  }
+};
