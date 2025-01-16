@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import "../styles/AdminDashboard.css"; // Use the same style file
+import { useNotification } from "../context/NotificationContext";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [users, setUsers] = useState([]);
-  const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterInvitation, setFilterInvitation] = useState("all");
@@ -27,6 +27,8 @@ const AdminDashboard = () => {
       fetchUsers();
     }
   }, [activeTab]);
+
+  const { showNotification } = useNotification();
 
   const fetchDashboardStats = async () => {
     try {
@@ -75,17 +77,17 @@ const AdminDashboard = () => {
   // Add new user manually
   const handleAddUserManually = async () => {
     if (!name || !email || !phoneNumber || !role) {
-      setMessage("All fields are required.");
+      showNotification("All fields are required.", "error");
       return;
     }
   
     try {
       const response = await api.post("/auth/add-user-manual", { email, phoneNumber, name, role });
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
       setUsers((prev) => [...prev, response.data.user]); // Update the user list
     } catch (error) {
       console.error("Error adding user manually:", error.response?.data || error.message);
-      setMessage(error.response?.data?.error || "Failed to add user manually.");
+      showNotification(error.response?.data?.error || "Failed to add user manually.", "error");
     }
   };
   
@@ -94,12 +96,12 @@ const AdminDashboard = () => {
   const handleSuspendUser = async (email) => {
     try {
       const response = await api.post("/auth/suspend-user", { email });
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
       setUsers((prev) =>
         prev.map((user) => (user.email === email ? { ...user, suspended: true } : user))
       );
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to suspend user.");
+      showNotification(error.response?.data?.error || "Failed to suspend user.", "error");
     }
   };
 
@@ -107,12 +109,12 @@ const AdminDashboard = () => {
   const handleUnsuspendUser = async (email) => {
     try {
       const response = await api.post("/auth/unsuspend-user", { email });
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
       setUsers((prev) =>
         prev.map((user) => (user.email === email ? { ...user, suspended: false } : user))
       );
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to unsuspend user.");
+      showNotification(error.response?.data?.error || "Failed to unsuspend user.", "error");
     }
   };
 
@@ -120,9 +122,9 @@ const AdminDashboard = () => {
   const handleResetPassword = async (email) => {
     try {
       const response = await api.post("/auth/reset-password-admin", { email });
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to reset password.");
+      showNotification(error.response?.data?.error || "Failed to reset password.", "error");
     }
   };
 
@@ -139,7 +141,7 @@ const AdminDashboard = () => {
       };
 
       const response = await api.post("/auth/update-user", payload);
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
       setUsers((prev) =>
         prev.map((user) =>
           user.email === editedUser.email
@@ -150,7 +152,7 @@ const AdminDashboard = () => {
       setConfirmPopup(false);
       setEditedUser(null);
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to save changes.");
+      showNotification(error.response?.data?.error || "Failed to save changes.", "error");
     }
   };
 
@@ -171,12 +173,13 @@ const AdminDashboard = () => {
   // Download Excel Template
   const handleDownloadTemplate = () => {
     window.open("/api/auth/download-template", "_blank");
+    showNotification("Downloading template!", "success");
   };
 
   // Bulk upload users
   const handleBulkUpload = async () => {
     if (!bulkFile) {
-      setMessage("Please upload a valid Excel file.");
+      showNotification("Please upload a valid Excel file.", "error");
       return;
     }
 
@@ -194,14 +197,17 @@ const AdminDashboard = () => {
       const response = await api.post("/auth/bulk-add-users", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
       setUsers((prev) => [...prev, ...response.data.users]);
       setFailedEntries(response.data.failedEntries); // Store failed entries
     } catch (error) {
       console.error("Error during bulk upload:", error);
-      setMessage(error.response?.data?.error || "Failed to upload users.");
+      showNotification(error.response?.data?.error || "Failed to upload users.", "error");
     }
   };
+
+
+  
 
   return (
     <div className="dashboard-container">
@@ -499,9 +505,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
             )}
-
-            {/* Message Display */}
-            {message && <p style={{ color: "green", marginTop: "10px" }}>{message}</p>}
           </div>
         )}
       </div>

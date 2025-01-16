@@ -247,3 +247,23 @@ body {
     padding: 10px;
   }
 }
+
+/* In your CSS file, add this */
+.notification-bar {
+  background-color: #4CAF50; /* Green for success */
+  color: white;
+  padding: 16px;
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease-in-out;
+}
+
+.notification-bar.error {
+  background-color: #F44336; /* Red for error */
+}
