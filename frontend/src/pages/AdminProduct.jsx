@@ -21,6 +21,9 @@ const AdminProduct = () => {
   const [failedEntries, setFailedEntries] = useState([]); // Track failed entries
   const [products, setProducts] = useState([]);
   const [editedProduct, setEditedProduct] = useState(null); // For the product being edited
+  const [newProduct, setNewProduct] = useState({ name: "", price: 0, quantity: 0 });
+  const [showModal, setShowModal] = useState(false); // For creating product modal
+  const [showErrorModal, setShowErrorModal] = useState(false); // For error modal
 
 
   useEffect(() => {
@@ -33,6 +36,62 @@ const AdminProduct = () => {
     }
   
   }, [activeTab]);
+
+  const handleDeleteProduct = async (productName) => {
+    try {
+      const response = await api.delete("/auth/products/delete", {
+        data: { productName },
+      });
+      setMessage(response.data.message || "Product deleted successfully.");
+      fetchProducts(); // Refresh the product list
+    } catch (error) {
+      console.error("Error deleting product:", error.message);
+      setMessage("Failed to delete product.");
+    }
+  };
+
+  const handleAddProduct = async () => {
+    const { name, price, quantity } = newProduct;
+  
+    // Validate the fields before sending the request
+    if (!name || !price || !quantity) {
+      setShowModal(false); // Close the modal
+      setShowErrorModal(true); // Show error modal
+      return;
+    }
+  
+    // Check if the product name already exists
+    const productExists = products.some((product) => product.name.toLowerCase() === name.toLowerCase());
+    if (productExists) {
+      setShowModal(false); // Close the modal
+      setShowErrorModal(true); // Show error modal
+      setMessage("Product name already exists.");
+      return;
+    }
+  
+    try {
+      const response = await api.post("/auth/products/create", {
+        name,
+        price,
+        quantity,
+      });
+      setMessage(response.data.message || "Product created successfully!");
+      fetchProducts(); // Refresh the product list
+      setShowModal(false); // Close the modal
+    } catch (error) {
+      console.error("Error creating product:", error.message);
+      setMessage("Failed to create product.");
+      setShowErrorModal(true); // Show error modal if creation fails
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewProduct((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleProductChange = (e) => {
     const { name, value } = e.target;
@@ -349,6 +408,9 @@ const AdminProduct = () => {
             <h2>Manage Products</h2>
             <div className="rounded-section">
               <h3>Product List</h3>
+              {/* Button to open the product creation modal */}
+              <h2>Add a Product</h2>
+              <button onClick={() => setShowModal(true)}>Add Product</button>
               {products.length > 0 ? (
                 products.map((product) => (
                   <div
@@ -364,11 +426,112 @@ const AdminProduct = () => {
                     <p><strong>Price:</strong> ${product.price}</p>
                     <p><strong>Quantity:</strong> {product.quantity}</p>
                     <button onClick={() => handleEditProduct(product)}>Edit</button>
+                    <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
                   </div>
                 ))
               ) : (
                 <p>No products available.</p>
               )}
+            </div>
+          </div>
+        )}
+
+                {/* Product Creation Modal */}
+                {showModal && (
+          <div
+            className="modal"
+            style={{
+              position: "fixed",
+              top: "0",
+              left: "0",
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: "1000",
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "10px",
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
+              <h4>Create Product</h4>
+              <div>
+                <label>Name:</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={newProduct.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter product name"
+                />
+              </div>
+              <div>
+                <label>Price:</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={newProduct.price}
+                  onChange={handleInputChange}
+                  placeholder="Enter product price"
+                />
+              </div>
+              <div>
+                <label>Quantity:</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={newProduct.quantity}
+                  onChange={handleInputChange}
+                  placeholder="Enter product quantity"
+                />
+              </div>
+              <div>
+                <button onClick={handleAddProduct}>Add</button>
+                <button onClick={() => setShowModal(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Modal */}
+        {showErrorModal && (
+          <div
+            className="modal"
+            style={{
+              position: "fixed",
+              top: "0",
+              left: "0",
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: "1000",
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "10px",
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
+              <h4>Error</h4>
+              <p>There was an issue creating the product. Please fill out all fields or the Product already Exists.</p>
+              <button onClick={() => setShowErrorModal(false)}>Close</button>
             </div>
           </div>
         )}

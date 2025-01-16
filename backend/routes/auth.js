@@ -29,7 +29,9 @@ import {
   getAllProducts,
   updateProductName,
   updateProductQuantity,
-  updateProductPrice
+  updateProductPrice,
+  createProduct,
+  deleteProduct,
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -547,5 +549,46 @@ router.post("/products/edit-price", async (req, res) => {
     res.status(500).json({ error: "Failed to update product price." });
   }
 });
+
+// Route to create a new product
+router.post("/products/create", async (req, res) => {
+  const { name, price, quantity } = req.body;
+
+  if (!name || !price || !quantity) {
+    return res.status(400).json({ error: "Product name, price, and quantity are required." });
+  }
+
+  try {
+    const result = await createProduct(name, price, quantity); // Make sure createProduct is being used here
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
+    }
+    res.status(200).json({ message: result.message });
+  } catch (error) {
+    console.error("Error creating product:", error.message);
+    res.status(500).json({ error: "Failed to create product." });
+  }
+});
+
+// Route to delete a product
+router.delete("/products/delete", async (req, res) => {
+  const { productName } = req.body;
+
+  if (!productName) {
+    return res.status(400).json({ error: "Product name is required." });
+  }
+
+  try {
+    const result = await deleteProduct(productName); // Make sure deleteProduct is being used here
+    if (result.error) {
+      return res.status(404).json({ error: result.error });
+    }
+    res.status(200).json({ message: result.message });
+  } catch (error) {
+    console.error("Error deleting product:", error.message);
+    res.status(500).json({ error: "Failed to delete product." });
+  }
+});
+
 
 export default router;

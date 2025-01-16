@@ -864,4 +864,40 @@ export const updateProductPrice = async (productName, newPrice) => {
   }
 };
 
+export const createProduct = async (name, price, quantity) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      CREATE (p:Product {name: $name, price: $price, quantity: $quantity})
+      RETURN p
+    `, { name, price, quantity });
+
+    if (result.records.length > 0) {
+      return { message: "Product created successfully.", product: result.records[0].get(0).properties };
+    } else {
+      return { error: "Failed to create product." };
+    }
+  } finally {
+    await session.close();
+  }
+};
+
+export const deleteProduct = async (productName) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (p:Product {name: $productName})
+      DELETE p
+      RETURN p
+    `, { productName });
+
+    if (result.records.length > 0) {
+      return { message: "Product deleted successfully." };
+    } else {
+      return { error: "Product not found." };
+    }
+  } finally {
+    await session.close();
+  }
+};
 
