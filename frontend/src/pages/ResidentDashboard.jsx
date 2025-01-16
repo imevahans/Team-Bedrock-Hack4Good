@@ -9,13 +9,17 @@ import { useNotification } from "../context/NotificationContext";
 import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
 
 const ResidentDashboard = () => {
-    const { user } = useAuth(); // Access the user's details
+  const { user } = useAuth(); // Access the user's details
+  const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("Products");
   const [products, setProducts] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [userName, setUserName] = useState([]);
   const [userBalance, setUserBalance] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [totalPrice, setTotalPrice] = useState("");
   const [searchTermProduct, setSearchTermProduct] = useState("");
   const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
   const [sortCriteria, setSortCriteria] = useState("name"); // "name", "price", or "quantity"
@@ -57,9 +61,11 @@ const ResidentDashboard = () => {
   // Function to fetch both user details (name and balance) at once
   const fetchUserDetails = async () => {
     try {
+      console.log(`Fetching ${user.email} balance....`);
       const response = await api.get(`/auth/user-details?email=${user.email}`);
       setUserName(response.data.name); // Set the user's name
       setUserBalance(response.data.balance); // Set the user's balance
+      console.log("UserBalance = ", userBalance);
     } catch (error) {
       console.error("Error fetching user details:", error.message);
     }
@@ -72,21 +78,23 @@ const ResidentDashboard = () => {
 
       const totalCost = totalPrice;
       if (userBalance < totalCost) {
-        alert("Insufficient balance.");
+        showNotification("Insufficient balance.", "error");
         return;
       }
 
       const response = await api.post("/auth/products/buy", {
         productName: selectedProduct.name,
         quantity: quantity,
+        userEmail: user.email
       });
 
-      alert(response.data.message); // Show success message
+      showNotification(response.data.message, "success"); // Show success message
       setShowModal(false); // Close the modal
       fetchProducts(); // Refresh products list
       fetchUserDetails(); // Update the balance after the purchase
     } catch (error) {
       console.error("Error buying product:", error.message);
+      showNotification(`"Error buying product: ${error.message}`, "error");
     }
   };
 
@@ -137,23 +145,24 @@ const ResidentDashboard = () => {
 
   // Filter and sort products
   const filteredProducts = products
-    .filter((product) =>
-      product.name.toLowerCase().includes(searchTermProduct.toLowerCase())
-    )
-    .sort((a, b) => {
-      let fieldA = a[sortCriteria];
-      let fieldB = b[sortCriteria];
+  .filter((product) =>
+    product.name.toLowerCase().includes(searchTermProduct.toLowerCase()) && product.quantity > 0
+  )
+  .sort((a, b) => {
+    let fieldA = a[sortCriteria];
+    let fieldB = b[sortCriteria];
 
-      if (sortCriteria === "name") {
-        fieldA = fieldA.toLowerCase();
-        fieldB = fieldB.toLowerCase();
-      }
+    if (sortCriteria === "name") {
+      fieldA = fieldA.toLowerCase();
+      fieldB = fieldB.toLowerCase();
+    }
 
-      if (sortOrder === "asc") {
-        return fieldA > fieldB ? 1 : -1;
-      }
-      return fieldA < fieldB ? 1 : -1;
-    });
+    if (sortOrder === "asc") {
+      return fieldA > fieldB ? 1 : -1;
+    }
+    return fieldA < fieldB ? 1 : -1;
+  });
+
 
   return (
     <div className="dashboard-container">
@@ -183,7 +192,12 @@ const ResidentDashboard = () => {
         >
           Vouchers
         </button>
-        <button className="sidebar-button">Nav Bar Item 3</button>
+        <button
+          className={`sidebar-button ${activeTab === "Transaction History" ? "active" : ""}`}
+          onClick={() => setActiveTab("Transaction History")}
+        >
+          Transaction History
+        </button>
         <button className="sidebar-button">Nav Bar Item 4</button>
         <div className="logout-container">
           <button className="logout-button" onClick={handleLogout}>

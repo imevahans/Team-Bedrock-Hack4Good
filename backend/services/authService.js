@@ -619,12 +619,9 @@ export const getUserByEmail = async (email) => {
     }
 
     const balance = result.records[0].get("balance");
-    // Convert balance from a Long to a JavaScript number if necessary
-    const balanceAmount = balance.low + balance.high * Math.pow(2, 32);
-
     return {
       name: result.records[0].get("name"),
-      balance: balanceAmount,
+      balance: balance,
     };
   } finally {
     await session.close();
@@ -998,4 +995,110 @@ const uploadImageToCloudinary = async (filePath) => {
       }
     });
   });
+};
+
+
+export const updateProductQuantity = async (productName, newQuantity) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      `
+      MATCH (p:Product {name: $productName})
+      SET p.quantity = $newQuantity
+      RETURN p
+      `,
+      { productName, newQuantity }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error("Product not found.");
+    }
+
+    return { message: "Product quantity updated successfully." };
+  } catch (error) {
+    console.error("Error updating product quantity:", error.message);
+    throw error;
+  } finally {
+    await session.close();
+  }
+};
+
+export const updateUserBalance = async (userEmail, deductionAmount) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      `
+      MATCH (u:User {email: $userEmail})
+      SET u.balance = u.balance - $deductionAmount
+      RETURN u
+      `,
+      { userEmail, deductionAmount }
+    );
+
+    if (result.records.length === 0) {
+      throw new Error("User not found.");
+    }
+
+    return { message: "User balance updated successfully." };
+  } catch (error) {
+    console.error("Error updating user balance:", error.message);
+    throw error;
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const buyProduct = async (productName, quantity, userEmail) => {
+  const session = driver.session();
+
+  try {
+    // Step 1: Fetch product details
+    const productResult = await session.run(
+      `
+      MATCH (p:Product {name: $productName})
+      RETURN p.price AS price, p.quantity AS quantity
+      `,
+      { productName }
+    );
+
+    if (productResult.records.length === 0) {
+      throw new Error("Product not found.");
+    }
+
+    const price = productResult.records[0].get("price");
+    const currentQuantity = productResult.records[0].get("quantity");
+    const totalPrice = price * quantity;
+
+    // Step 2: Check if user has enough balance
+    const userResult = await session.run(
+      `
+      MATCH (u:User {email: $userEmail})
+      RETURN u.balance AS balance
+      `,
+      { userEmail }
+    );
+
+    if (userResult.records.length === 0) {
+      throw new Error("User not found.");
+    }
+
+    const userBalance = userResult.records[0].get("balance");
+
+    if (userBalance < totalPrice) {
+      throw new Error("Insufficient balance.");
+    }
+
+    // Step 3: Update product quantity
+    await updateProductQuantity(productName, currentQuantity - quantity);
+
+    // Step 4: Deduct user balance
+    await updateUserBalance(userEmail, totalPrice);
+
+    return { message: "Product purchased successfully." };
+  } catch (error) {
+    throw error;
+  } finally {
+    await session.close();
+  }
 };
