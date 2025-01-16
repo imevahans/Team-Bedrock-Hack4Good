@@ -564,10 +564,8 @@ router.delete("/products/delete", async (req, res) => {
 
 // Endpoint to get audit logs
 router.get("/audit-logs", async (req, res) => {
-  const { searchTerm, filterRole, filterAction } = req.query;
-
   try {
-    const logs = await getAuditLogs(searchTerm, filterRole, filterAction); // Call the service function
+    const logs = await getAuditLogs(); // Call the service function
     res.status(200).json({ logs });
   } catch (error) {
     console.error("Error fetching audit logs:", error.message);

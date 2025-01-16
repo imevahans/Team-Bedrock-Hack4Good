@@ -85,9 +85,7 @@ const AdminDashboard = () => {
 
   const fetchAuditLogs = async () => {
     try {
-      const response = await api.get("/auth/audit-logs", {
-        params: { searchTerm, filterRole, filterAction },
-      });
+      const response = await api.get("/auth/audit-logs");
       setAuditLogs(response.data.logs);
     } catch (error) {
       showNotification("Error fetching audit logs", "error");
@@ -95,7 +93,6 @@ const AdminDashboard = () => {
   };
 
   const filteredLogs = auditLogs.filter((log) => {
-    console.log("log = ", log);
     const searchTermLower = searchTerm.toLowerCase();
   
     // Name filter
