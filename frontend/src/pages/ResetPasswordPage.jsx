@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { useNotification } from "../context/NotificationContext";
 
 const ResetPasswordPage = () => {
   const [contact, setContact] = useState(""); // For email or phone
@@ -9,9 +10,8 @@ const ResetPasswordPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otpSent, setOtpSent] = useState(false); // Track OTP status
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState(false); // Error state
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   // Send OTP based on selected method
   const handleSendOtp = async () => {
@@ -25,19 +25,16 @@ const ResetPasswordPage = () => {
         [method === "email" ? "email" : "phoneNumber"]: contact,
       });
       setOtpSent(true);
-      setMessage(response.data.message);
-      setError(false);
+      showNotification(response.data.message, "success");
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to send OTP.");
-      setError(true);
+      showNotification(error.response?.data?.error || "Failed to send OTP.", "error");
     }
   };
 
   // Reset password with OTP
   const handleResetPassword = async () => {
     if (newPassword !== confirmPassword) {
-      setMessage("Passwords do not match.");
-      setError(true);
+      showNotification("Passwords do not match.", "error");
       return;
     }
 
@@ -54,14 +51,12 @@ const ResetPasswordPage = () => {
         confirmPassword,
       });
 
-      setMessage(response.data.message);
-      setError(false);
+      showNotification(response.data.message, "success");
       setTimeout(() => {
         navigate("/"); // Redirect to login page
       }, 2000); // Delay to show success message
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to reset password.");
-      setError(true);
+      showNotification(error.response?.data?.error || "Failed to reset password.", "error");
     }
   };
 
@@ -109,16 +104,6 @@ const ResetPasswordPage = () => {
           />
           <button onClick={handleResetPassword}>Reset Password</button>
         </div>
-      )}
-      {message && (
-        <p
-          style={{
-            color: error ? "red" : "green",
-            marginTop: "10px",
-          }}
-        >
-          {message}
-        </p>
       )}
     </div>
   );

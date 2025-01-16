@@ -6,11 +6,12 @@ import profile from "../assets/profile.png";
 import logout from "../assets/logout.png"; 
 import minimart from "../assets/minimart.png";
 import food from "../assets/food.png";
+import { useNotification } from "../context/NotificationContext";
 
 const ResidentDashboard = () => {
   const [vouchers, setVouchers] = useState([]);
   const [products, setProducts] = useState([]);
-
+  const { showNotification } = useNotification();
   
   useEffect(() => {
     const fetchData = async () => {

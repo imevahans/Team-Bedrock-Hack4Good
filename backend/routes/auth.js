@@ -358,6 +358,7 @@ router.post("/bulk-add-users", upload.single("file"), async (req, res) => {
 // Accept invitation and set password
 router.post("/accept-invitation", async (req, res) => {
   const { email, password, confirmPassword, otp, method } = req.body;
+  console.log("req.body = ", req.body);
 
   if (!email || !password || !confirmPassword || !otp || !method) {
     return res.status(400).json({ error: "All fields are required." });

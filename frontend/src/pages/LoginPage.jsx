@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
+import { useNotification } from "../context/NotificationContext";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ const LoginPage = () => {
   const [error, setError] = useState(false); // Error state
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
+  const { showNotification } = useNotification();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,13 +24,13 @@ const LoginPage = () => {
 
       // Check if the user is suspended
       if (response.data.suspended) {
-        setMessage("Your account has been suspended. Please contact support.");
+        showNotification("Your account has been suspended. Please contact support.", "error");
         setError(true);
         return;
       }
 
       login(response.data.token); // Set user in AuthContext
-      setMessage("Login successful!");
+      showNotification("Login successful!", "success");
       setError(false); // Reset error state on success
 
       // Redirect to the appropriate dashboard
@@ -41,7 +43,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("LoginPage: Login failed:", error.response?.data || error.message);
-      setMessage(error.response?.data?.error || "Login failed. Please try again.");
+      showNotification(error.response?.data?.error || "Login failed. Please try again.", "error");
       setError(true); // Set error state to true
     }
   };

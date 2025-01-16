@@ -748,23 +748,24 @@ export const sendEmailOtp = async (email) => {
 
 export const verifyEmailOtp = (email, submittedOtp) => {
   const storedData = otpStorage.get(email);
+  console.log("stored OTP = ", storedData);
 
   if (!storedData) {
-    return { valid: false, message: "No OTP found for this email." };
+    throw new Error("No OTP found for this email.");;
   }
 
   const { otp, expiresAt } = storedData;
 
   if (Date.now() > expiresAt) {
     otpStorage.delete(email); // Remove expired OTP
-    return { valid: false, message: "OTP has expired. Please request a new one." };
+    throw new Error("OTP has expired. Please request a new one.");
   }
 
   if (otp === submittedOtp) {
     otpStorage.delete(email); // Remove OTP after successful verification
     return { valid: true, message: "OTP verified successfully." };
   } else {
-    return { valid: false, message: "Invalid OTP. Please try again." };
+    throw new Error("Invalid OTP. Please try again.");
   }
 
   
@@ -901,4 +902,3 @@ export const deleteProduct = async (productName) => {
     await session.close();
   }
 };
-

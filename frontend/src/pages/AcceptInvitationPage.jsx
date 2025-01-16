@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { useNotification } from "../context/NotificationContext";
 
 const AcceptInvitationPage = () => {
   const [password, setPassword] = useState("");
@@ -8,13 +9,13 @@ const AcceptInvitationPage = () => {
   const [otp, setOtp] = useState("");
   const [name, setName] = useState(""); // User's name
   const [contactMethod, setContactMethod] = useState("email"); // Email or phone
-  const [message, setMessage] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [redirecting, setRedirecting] = useState(false);
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email"); // Default email from URL
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     // Fetch the user's name using the email
@@ -42,9 +43,9 @@ const AcceptInvitationPage = () => {
 
       const response = await api.post(endpoint, { email });
       setOtpSent(true);
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to send OTP.");
+      showNotification(error.response?.data?.error || "Failed to send OTP.", "error");
     }
   };
 
@@ -57,7 +58,7 @@ const AcceptInvitationPage = () => {
         otp,
         method: contactMethod,
       });
-      setMessage(response.data.message);
+      showNotification(response.data.message, "success");
 
       // Start redirect countdown
       setRedirecting(true);
@@ -71,7 +72,7 @@ const AcceptInvitationPage = () => {
         });
       }, 1000);
     } catch (error) {
-      setMessage(error.response?.data?.error || "Failed to accept invitation.");
+      showNotification(error.response?.data?.error || "Failed to accept invitation.", "error");
     }
   };
 
@@ -118,7 +119,6 @@ const AcceptInvitationPage = () => {
           <button onClick={handleAcceptInvitation}>Set Password</button>
         </div>
       )}
-      {message && <p style={{ color: "white" }}>{message}</p>}
       {redirecting && <p>Redirecting to login in {redirectCountdown} seconds...</p>}
     </div>
   );
