@@ -526,19 +526,19 @@ router.post("/products/edit-price", async (req, res) => {
 });
 
 // Route to create a new product
-router.post("/products/create", async (req, res) => {
-  const { name, price, quantity } = req.body;
-
-  if (!name || !price || !quantity) {
-    return res.status(400).json({ error: "Product name, price, and quantity are required." });
+router.post("/products/create", upload.single("image"), async (req, res) => {
+  const { name, price, quantity, image } = req.body;
+  console.log("image = ", image);
+  console.log("req.body = ", req.body);
+  if (!name || !price || !quantity || !image) {
+    console.log("Triggered 3");
+    return res.status(400).json({ error: "Product name, price, quantity, and image are required." });
   }
-
+  console.log("Triggered 2");
   try {
-    const result = await createProduct(name, price, quantity); // Make sure createProduct is being used here
-    if (result.error) {
-      return res.status(400).json({ error: result.error });
-    }
-    res.status(200).json({ message: result.message });
+    console.log("Triggered 1");
+    const result = await createProduct(name, price, quantity, image); // Pass the image file path
+    res.status(200).json({ message: "Product created successfully.", product: result });
   } catch (error) {
     console.error("Error creating product:", error.message);
     res.status(500).json({ error: "Failed to create product." });

@@ -29,7 +29,7 @@ const AdminDashboard = () => {
   const [actions, setActions] = useState([]);
   const [products, setProducts] = useState([]);
   const [editedProduct, setEditedProduct] = useState(null); // For the product being edited
-  const [newProduct, setNewProduct] = useState({ name: "", price: 0, quantity: 0 });
+  const [newProduct, setNewProduct] = useState({ name: "", price: 0, quantity: 0, imageFile: null });
   const [showModal, setShowModal] = useState(false); // For creating product modal
   const [showErrorModal, setShowErrorModal] = useState(false); // For error modal
 
@@ -321,7 +321,7 @@ const handleResetPassword = async (email, name) => {
       setMessage("Failed to fetch products.");
     }
   };
-  
+
   const handleDeleteProduct = async (productName) => {
     try {
       const response = await api.delete("/auth/products/delete", {
@@ -336,12 +336,15 @@ const handleResetPassword = async (email, name) => {
   };
 
   const handleAddProduct = async () => {
-    const { name, price, quantity } = newProduct;
+    const { name, price, quantity, imageFile } = newProduct;
+
+    console.log("imageFile = ", imageFile);
   
     // Validate the fields before sending the request
-    if (!name || !price || !quantity) {
+    if (!name || !price || !quantity || !imageFile) {
       setShowModal(false); // Close the modal
       setShowErrorModal(true); // Show error modal
+      showNotification("All fields are required, including product image.", "error");
       return;
     }
   
@@ -354,11 +357,16 @@ const handleResetPassword = async (email, name) => {
       return;
     }
   
+    // Create form data to send image along with other product details
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("price", price);
+    formData.append("quantity", quantity);
+    formData.append("image", imageFile); // Add image file here
+  
     try {
-      const response = await api.post("/auth/products/create", {
-        name,
-        price,
-        quantity,
+      const response = await api.post("/auth/products/create", formData, {
+        headers: { "Content-Type": "multipart/form-data" }, // Specify multipart/form-data
       });
       showNotification(response.data.message || "Product created successfully!", "success");
       fetchProducts(); // Refresh the product list
@@ -369,6 +377,7 @@ const handleResetPassword = async (email, name) => {
       setShowErrorModal(true); // Show error modal if creation fails
     }
   };
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -386,16 +395,13 @@ const handleResetPassword = async (email, name) => {
     });
   };
 
-  const handleEditProduct = (product) => {
-    setEditedProduct({
-      originalName: product.name, // Store the original name as a reference
-      currentPrice: product.price, // Store the current price as a reference
-      currentQuantity: product.quantity, // Store the current quantity as a reference
-      name: product.name,                    // Editable product name (can be left blank)
-      quantity: product.quantity,  // Editable quantity
-      price: product.price,        // Editable price
-    });
-  };
+const handleEditProduct = (product) => {
+  setEditedProduct({
+    ...product, // Populate the product details
+    imageUrl: product.imageUrl || "", // Make sure image URL is passed
+  });
+};
+
 
   const handleSaveProduct = async () => {
     if (!editedProduct) return;
@@ -434,6 +440,18 @@ const handleResetPassword = async (email, name) => {
     } catch (error) {
       console.error("Error saving product:", error.message);
       showNotification(`Failed to update product due to ${error.message}.`, "error");
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageFile = URL.createObjectURL(file); // Generate a URL for the file
+      setNewProduct((prev) => ({
+        ...prev,
+        imageFile, // Set image URL for the product
+      }));
+      console.log("uploaded image! url = ", imageFile);
     }
   };
   
@@ -864,23 +882,27 @@ const handleResetPassword = async (email, name) => {
               <h2>Add a Product</h2>
               <button onClick={() => setShowModal(true)}>Add Product</button>
               {products.length > 0 ? (
-                products.map((product) => (
-                  <div
-                    key={product.name}
-                    style={{
-                      border: "1px solid #ccc",
-                      padding: "10px",
-                      marginBottom: "10px",
-                      borderRadius: "5px",
-                    }}
-                  >
+                <div className="product-grid">
+                {products.map((product) => (
+                  <div className="product-card" key={product.name}>
+                    <div className="product-image">
+                      <img
+                        src={product.imageUrl || "default-image.jpg"} // Display image or default
+                        alt={product.name}
+                        style={{ width: "100%", height: "auto" }} // Adjust size to fit nicely
+                      />
+                    </div>
                     <p><strong>Name:</strong> {product.name}</p>
                     <p><strong>Price:</strong> ${product.price}</p>
                     <p><strong>Quantity:</strong> {product.quantity}</p>
-                    <button onClick={() => handleEditProduct(product)}>Edit</button>
-                    <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
+                    <div className="product-actions">
+                      <button onClick={() => handleEditProduct(product)}>Edit</button>
+                      <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
+                    </div>
                   </div>
-                ))
+                ))}
+
+                </div>
               ) : (
                 <p>No products available.</p>
               )}
@@ -888,8 +910,8 @@ const handleResetPassword = async (email, name) => {
           </div>
         )}
 
-                {/* Product Creation Modal */}
-                {showModal && (
+        {/* Product Creation Modal */}
+        {showModal && (
           <div
             className="modal"
             style={{
@@ -946,6 +968,17 @@ const handleResetPassword = async (email, name) => {
                   placeholder="Enter product quantity"
                 />
               </div>
+
+              <div>
+                <label>Image:</label>
+                <input
+                  type="file"
+                  name="image"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                />
+              </div>
+
               <div>
                 <button onClick={handleAddProduct}>Add</button>
                 <button onClick={() => setShowModal(false)}>Cancel</button>
@@ -1051,6 +1084,24 @@ const handleResetPassword = async (email, name) => {
                   onChange={handleProductChange}
                   placeholder="Enter Price"
                 />
+              </div>
+
+              {/* Editable Image upload */}
+              <div>
+                <label>Product Image:</label>
+                <input
+                  type="file"
+                  name="image"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                />
+                {editedProduct.imageUrl && (
+                  <img
+                    src={editedProduct.imageUrl}
+                    alt="Product Preview"
+                    style={{ width: "100px", height: "auto", marginTop: "10px" }}
+                  />
+                )}
               </div>
 
               <div>

@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import neo4j from 'neo4j-driver';
-
+import cloudinary from 'cloudinary';
 
 dotenv.config();
 
@@ -808,8 +808,6 @@ export const getAllProducts = async () => {
       RETURN p.name AS name, p.price AS price, p.quantity AS quantity
     `);
 
-    console.log("Neo4j result:", result.records); // Log the result to debug
-
     // Map the result to return a list of products
     const products = result.records.map(record => {
       const price = record.get('price');
@@ -895,19 +893,36 @@ export const updateProductPrice = async (productName, newPrice) => {
   }
 };
 
-export const createProduct = async (name, price, quantity) => {
+export const createProduct = async (name, price, quantity, imageFilePath) => {
+  console.log("Triggered");
   const session = driver.session();
   try {
-    const result = await session.run(`
-      CREATE (p:Product {name: $name, price: $price, quantity: $quantity})
-      RETURN p
-    `, { name, price, quantity });
+    // Upload image to Cloudinary
 
-    if (result.records.length > 0) {
-      return { message: "Product created successfully.", product: result.records[0].get(0).properties };
-    } else {
-      return { error: "Failed to create product." };
-    }
+    console.log("Triggered4");
+    const imageUrl = await uploadImageToCloudinary(imageFilePath);
+    console.log("imageURL created = ", imageUrl);
+
+    const createdAt = formatTimestamp(Date.now());
+    const updatedAt = createdAt;
+
+    // Create the product with the image URL
+    const result = await session.run(
+      `
+      CREATE (p:Product {
+        name: $name,
+        price: $price,
+        quantity: $quantity,
+        imageUrl: $imageUrl,
+        createdAt: $createdAt,
+        updatedAt: $updatedAt
+      })
+      RETURN p
+      `,
+      { name, price, quantity, imageUrl, createdAt, updatedAt }
+    );
+
+    return result.records[0].get('p').properties;
   } finally {
     await session.close();
   }
@@ -976,4 +991,26 @@ export const getAuditActions = async () => {
   } finally {
     await session.close();
   }
+};
+
+// Configure Cloudinary with your credentials
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Upload image function
+const uploadImageToCloudinary = async (filePath) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(filePath, (error, result) => {
+      if (error) {
+        console.log("cloudinary error = ", error);
+        reject(error);
+      } else {
+        console.log("cloudinary result = ", result);
+        resolve(result.url); // Return image URL from Cloudinary
+      }
+    });
+  });
 };

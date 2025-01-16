@@ -21,7 +21,12 @@ const AdminProduct = () => {
   const [failedEntries, setFailedEntries] = useState([]); // Track failed entries
   const [products, setProducts] = useState([]);
   const [editedProduct, setEditedProduct] = useState(null); // For the product being edited
-  const [newProduct, setNewProduct] = useState({ name: "", price: 0, quantity: 0 });
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    price: '',
+    quantity: '',
+    imageFile: null, // Add this state for image file
+  });
   const [showModal, setShowModal] = useState(false); // For creating product modal
   const [showErrorModal, setShowErrorModal] = useState(false); // For error modal
 
@@ -50,47 +55,57 @@ const AdminProduct = () => {
     }
   };
 
-  const handleAddProduct = async () => {
-    const { name, price, quantity } = newProduct;
-  
-    // Validate the fields before sending the request
-    if (!name || !price || !quantity) {
-      setShowModal(false); // Close the modal
-      setShowErrorModal(true); // Show error modal
-      return;
-    }
-  
-    // Check if the product name already exists
-    const productExists = products.some((product) => product.name.toLowerCase() === name.toLowerCase());
-    if (productExists) {
-      setShowModal(false); // Close the modal
-      setShowErrorModal(true); // Show error modal
-      setMessage("Product name already exists.");
-      return;
-    }
-  
-    try {
-      const response = await api.post("/auth/products/create", {
-        name,
-        price,
-        quantity,
-      });
-      setMessage(response.data.message || "Product created successfully!");
-      fetchProducts(); // Refresh the product list
-      setShowModal(false); // Close the modal
-    } catch (error) {
-      console.error("Error creating product:", error.message);
-      setMessage("Failed to create product.");
-      setShowErrorModal(true); // Show error modal if creation fails
-    }
+// Frontend handleAddProduct function
+const handleAddProduct = async () => {
+  const { name, price, quantity, imageFile } = newProduct;
+
+  // Validate the fields before sending the request
+  if (!name || !price || !quantity || !imageFile) {
+    setShowModal(false); // Close the modal
+    setShowErrorModal(true); // Show error modal
+    setMessage("All fields are required, including product image.");
+    return;
+  }
+
+  // Check if the product name already exists
+  const productExists = products.some((product) => product.name.toLowerCase() === name.toLowerCase());
+  if (productExists) {
+    setShowModal(false); // Close the modal
+    setShowErrorModal(true); // Show error modal
+    setMessage("Product name already exists.");
+    return;
+  }
+
+  // Create form data to send image along with other product details
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("price", price);
+  formData.append("quantity", quantity);
+  formData.append("image", imageFile); // Add image file here
+
+  try {
+    const response = await api.post("/auth/products/create", formData, {
+      headers: { "Content-Type": "multipart/form-data" }, // Specify multipart/form-data
+    });
+    setMessage(response.data.message || "Product created successfully!");
+    fetchProducts(); // Refresh the product list
+    setShowModal(false); // Close the modal
+  } catch (error) {
+    console.error("Error creating product:", error.message);
+    setMessage("Failed to create product.");
+    setShowErrorModal(true); // Show error modal if creation fails
+  }
+};
+
+
+  // Handle file input change
+  const handleImageChange = (e) => {
+    setNewProduct({ ...newProduct, imageFile: e.target.files[0] });
   };
 
+  // Handle input change for other fields
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewProduct((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
   };
 
   const handleProductChange = (e) => {
@@ -436,34 +451,13 @@ const AdminProduct = () => {
           </div>
         )}
 
-                {/* Product Creation Modal */}
-                {showModal && (
-          <div
-            className="modal"
-            style={{
-              position: "fixed",
-              top: "0",
-              left: "0",
-              width: "100vw",
-              height: "100vh",
-              background: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: "1000",
-            }}
-          >
-            <div
-              className="modal-content"
-              style={{
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "10px",
-                width: "400px",
-                textAlign: "center",
-              }}
-            >
+        {/* Product Creation Modal */}
+        {showModal && (
+          <div className="modal">
+            <div className="modal-content">
               <h4>Create Product</h4>
+
+              {/* Name field */}
               <div>
                 <label>Name:</label>
                 <input
@@ -474,6 +468,8 @@ const AdminProduct = () => {
                   placeholder="Enter product name"
                 />
               </div>
+
+              {/* Price field */}
               <div>
                 <label>Price:</label>
                 <input
@@ -484,6 +480,8 @@ const AdminProduct = () => {
                   placeholder="Enter product price"
                 />
               </div>
+
+              {/* Quantity field */}
               <div>
                 <label>Quantity:</label>
                 <input
@@ -494,13 +492,24 @@ const AdminProduct = () => {
                   placeholder="Enter product quantity"
                 />
               </div>
+
+              {/* Image file upload */}
               <div>
-                <button onClick={handleAddProduct}>Add</button>
+                <label>Product Image:</label>
+                <input
+                  type="file"
+                  onChange={handleImageChange}
+                />
+              </div>
+
+              <div>
+                <button onClick={handleAddProduct}>Add Product</button>
                 <button onClick={() => setShowModal(false)}>Cancel</button>
               </div>
             </div>
           </div>
         )}
+
 
         {/* Error Modal */}
         {showErrorModal && (
