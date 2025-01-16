@@ -11,7 +11,6 @@ const ResidentDashboard = () => {
   const [activeTab, setActiveTab] = useState("Products");
   const [products, setProducts] = useState([]);
   const [vouchers, setVouchers] = useState([]);
-  const [products, setProducts] = useState([]);
 
   
   useEffect(() => {
