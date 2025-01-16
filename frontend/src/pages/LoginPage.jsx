@@ -20,6 +20,13 @@ const LoginPage = () => {
       const response = await api.post("/auth/login", { email, password });
       console.log("LoginPage: Login successful, response:", response.data);
 
+      // Check if the user is suspended
+      if (response.data.suspended) {
+        setMessage("Your account has been suspended. Please contact support.");
+        setError(true);
+        return;
+      }
+
       login(response.data.token); // Set user in AuthContext
       setMessage("Login successful!");
       setError(false); // Reset error state on success
