@@ -225,7 +225,7 @@ router.post("/unsuspend-user", async (req, res) => {
     return res.status(400).json({ error: "Email is required." });
   }
   try {
-    await unsuspendUser(email);
+    await unsuspendUser(email, adminName, adminEmail);
     res.status(200).json({ message: "User suspended successfully." });
   } catch (error) {
     res.status(500).json({ error: "Failed to suspend user." });
@@ -248,14 +248,14 @@ router.post("/reset-password-admin", async (req, res) => {
 
 // Update user role and phone number
 router.post("/update-user", async (req, res) => {
-  const { email, role, phoneNumber, confirmation } = req.body;
+  const { email, role, phoneNumber, confirmation, adminName, adminEmail } = req.body;
 
   if (!email || confirmation !== "yes") {
     return res.status(400).json({ error: "Email and confirmation are required." });
   }
 
   try {
-    await updateUser(email, role, phoneNumber);
+    await updateUser(email, role, phoneNumber, adminName, adminEmail);
     res.status(200).json({ message: "User details updated successfully." });
   } catch (error) {
     console.error("Error updating user:", error);
@@ -298,12 +298,13 @@ router.get("/download-template", (req, res) => {
 
 // Apply Multer to the route
 router.post("/bulk-add-users", upload.single("file"), async (req, res) => {
+  const { adminName, adminEmail } = req.body; // Get admin details from the formData
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded." });
   }
 
   try {
-    const result = await bulkAddUsers(req.file.path); // Corrected: req.file.path
+    const result = await bulkAddUsers(req.file.path, adminName, adminEmail); // Corrected: req.file.path
     res.status(200).json({
       message: `${result.users.length} users added successfully.`,
       users: result.users,
@@ -388,14 +389,14 @@ router.get("/user-details", async (req, res) => {
 
 
 router.post("/add-user-manual", async (req, res) => {
-  const { email, phoneNumber, name, role } = req.body;
+  const { email, phoneNumber, name, role, adminName, adminEmail } = req.body;
 
   if (!email || !phoneNumber || !name || !role) {
     return res.status(400).json({ error: "Email, phone number, name, and role are required." });
   }
 
   try {
-    const user = await addUserManually(email, phoneNumber, name, role);
+    const user = await addUserManually(email, phoneNumber, name, role, adminName, adminEmail);
     res.status(201).json({ message: "User added successfully.", user });
   } catch (error) {
     console.error("Error adding user manually:", error.message);

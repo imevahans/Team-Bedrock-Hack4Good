@@ -84,7 +84,7 @@ const AdminDashboard = () => {
     }
   
     try {
-      const response = await api.post("/auth/add-user-manual", { email, phoneNumber, name, role });
+      const response = await api.post("/auth/add-user-manual", { email, phoneNumber, name, role, adminName: user.name, adminEmail: user.email });
       showNotification(response.data.message, "success");
       setUsers((prev) => [...prev, response.data.user]); // Update the user list
     } catch (error) {
@@ -125,7 +125,7 @@ const AdminDashboard = () => {
   // Reset password
   const handleResetPassword = async (email) => {
     try {
-      const response = await api.post("/auth/reset-password-admin", { email });
+      const response = await api.post("/auth/reset-password-admin", { email, adminName: user.name, adminEmail: user.email });
       showNotification(response.data.message, "success");
     } catch (error) {
       showNotification(error.response?.data?.error || "Failed to reset password.", "error");
@@ -142,6 +142,8 @@ const AdminDashboard = () => {
         role: editedUser.role || null,
         phoneNumber: editedUser.phoneNumber || null,
         confirmation: "yes",
+        adminName: user.name,
+        adminEmail: user.email
       };
 
       const response = await api.post("/auth/update-user", payload);
@@ -189,6 +191,8 @@ const AdminDashboard = () => {
 
     const formData = new FormData();
     formData.append("file", bulkFile);
+    formData.append("adminName", user.name);
+    formData.append("adminEmail", user.email);
     console.log("formData = ", formData);
 
     // Debugging: Log FormData content

@@ -135,11 +135,11 @@ export const sendOtp = async (phoneNumber) => {
     const verification = await createVerification(phoneNumber); // Send OTP via Twilio
     console.log(`OTP sent to ${phoneNumber}:`, verification.status);
 
-    logAuditAction("System", "", "OTP", `OTP has been sent to ${phoneNumber}`);
+    logAuditAction("System", "", "OTP", `OTP has been sent to ${phoneNumber}.`);
 
     return { success: true, message: "OTP sent successfully." };
   } catch (error) {
-    logAuditAction("System", "", "OTP", `OTP has failed to send to ${phoneNumber} due to ${error.message}`);
+    logAuditAction("System", "", "OTP", `OTP has failed to send to ${phoneNumber} due to ${error.message}.`);
     console.error("Error sending OTP:", error.message);
     throw new Error("Failed to send OTP. Please try again.");
   }
@@ -153,13 +153,13 @@ export const verifyOtp = async (phoneNumber, otp) => {
     console.log(`OTP verification status for ${phoneNumber}:`, verificationCheck.status);
 
     if (verificationCheck.status !== "approved") {
-      logAuditAction("System", "", "OTP", `OTP has failed verification for ${phoneNumber}`);
+      logAuditAction("System", "", "OTP", `OTP has failed verification for ${phoneNumber}.`);
       throw new Error("Invalid or expired OTP.");
     }
-    logAuditAction("System", "", "OTP", `OTP has verified for ${phoneNumber}`);
+    logAuditAction("System", "", "OTP", `OTP has verified for ${phoneNumber}.`);
     return { success: true, message: "OTP verified successfully." };
   } catch (error) {
-    logAuditAction("System", "", "OTP", `Error verifying OTP for ${phoneNumber}`);
+    logAuditAction("System", "", "OTP", `Error verifying OTP for ${phoneNumber} due to ${error.message}.`);
     console.error("Error verifying OTP:", error.message);
     throw new Error("Invalid or expired OTP.");
   }
@@ -182,11 +182,11 @@ export const sendOtpEmail = async (email) => {
     const fullPhoneNumber = `+65${phoneNumber}`;
 
     const verification = await createVerification(fullPhoneNumber); // Send OTP via Twilio
-    logAuditAction("System", "", "OTP", `OTP has been sent to ${fullPhoneNumber}`);
+    logAuditAction("System", "", "OTP", `OTP has been sent to ${fullPhoneNumber}.`);
     console.log(`OTP sent to ${fullPhoneNumber}:`, verification.status);
     return { success: true, message: "OTP sent successfully." };
   } catch (error) {
-    logAuditAction("System", "", "OTP", `OTP has failed to send to ${fullPhoneNumber} due to ${error.message}`);
+    logAuditAction("System", "", "OTP", `OTP has failed to send to ${fullPhoneNumber} due to ${error.message}.`);
     console.error("Error sending OTP:", error.message);
     throw new Error("Failed to send OTP. Please try again.");
   }
@@ -418,7 +418,7 @@ export const searchUsersByEmail = async (searchTerm) => {
 };
 
 // Bulk add users from Excel
-export const bulkAddUsers = async (filePath) => {
+export const bulkAddUsers = async (filePath, adminName, adminEmail) => {
   const session = driver.session();
   const failedEntries = []; // List to track failed entries
 
@@ -486,6 +486,7 @@ export const bulkAddUsers = async (filePath) => {
 
         // Send invitation email
         await sendInvitationEmail(email, name);
+        logAuditAction(adminName, adminEmail, "Bulk User Creation", `User with email ${email} created via bulk upload.`);
       } catch (error) {
         console.error("Error processing row:", row, error.message);
         failedEntries.push({ row, error: error.message });
@@ -525,6 +526,7 @@ const sendInvitationEmail = async (email, name) => {
   };
 
   const info = await transporter.sendMail(mailOptions);
+  logAuditAction("System", "", "Email", `Sent invitation email to ${name} with email ${email}.`);
 
   console.log("Message sent: %s", info.messageId);
 };
@@ -538,11 +540,12 @@ export const acceptInvitation = async (email, password) => {
     const passwordHash = await bcrypt.hash(password, salt);
     const updatedAt = formatTimestamp(Date.now());
 
+    // Match the user by email and check if the invitation is not accepted
     const result = await session.run(
       `
       MATCH (u:User {email: $email, invitationAccepted: false})
       SET u.passwordHash = $passwordHash, u.invitationAccepted = true, u.updatedAt = $updatedAt, u.salt = $salt
-      RETURN u
+      RETURN u.name, u.email
       `,
       { email, passwordHash, updatedAt, salt }
     );
@@ -550,10 +553,18 @@ export const acceptInvitation = async (email, password) => {
     if (result.records.length === 0) {
       throw new Error("Invalid invitation or user already accepted.");
     }
+
+    // Extract user details (name and email)
+    const name = result.records[0].get("u.name");
+
+    // Log the action with admin's details
+    await logAuditAction(name, email, "Email", `Accepted invitation email.`);
+
   } finally {
     await session.close();
   }
 };
+
 
 // Generate Excel Template
 export const generateExcelTemplate = () => {
@@ -731,9 +742,11 @@ export const sendEmailOtp = async (email) => {
 
     // Store OTP in temporary storage with a timestamp (10-minute expiry)
     otpStorage.set(email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 });
+    logAuditAction("System", "", "OTP", `OTP has been sent to ${email}.`);
 
     return { message: "OTP sent successfully to your email." };
   } catch (error) {
+    logAuditAction("System", "", "OTP", `OTP has failed to send to ${email} due to ${error.message}.`);
     console.error("Error sending email OTP:", error);
     throw new Error("Failed to send OTP. Please try again later.");
   }
@@ -756,8 +769,10 @@ export const verifyEmailOtp = (email, submittedOtp) => {
 
   if (otp === submittedOtp) {
     otpStorage.delete(email); // Remove OTP after successful verification
+    logAuditAction("System", "", "OTP", `OTP has verified for ${email}.`);
     return { valid: true, message: "OTP verified successfully." };
   } else {
+    logAuditAction("System", "", "OTP", `OTP has failed verification for ${email}.`);
     throw new Error("Invalid OTP. Please try again.");
   }
 
