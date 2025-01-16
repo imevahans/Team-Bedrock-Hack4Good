@@ -1363,9 +1363,11 @@ export const deleteVoucherTask = async (id, adminName, adminEmail) => {
   }
 };
 
-export const preOrderProduct = async (productName, quantity, userEmail) => {
+export const preOrderProduct = async (productName, quantity, userEmail, price, userName) => {
   const session = driver.session();
-
+  const createdAt = formatTimestamp(Date.now());
+  const updatedAt = createdAt;
+  const totalPrice = price * quantity;
   try {
     // Create PreOrder node
     await session.run(
