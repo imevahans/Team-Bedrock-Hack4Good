@@ -234,30 +234,33 @@ router.post("/unsuspend-user", async (req, res) => {
   }
 });
 
-// Reset password by admin
+// Reset password by admin route
 router.post("/reset-password-admin", async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: "Email is required." });
+  const { email, name, adminName, adminEmail } = req.body;
+
+  if (!email || !name) {
+    return res.status(400).json({ error: "Email and name are required." });
   }
+
   try {
-    const newPassword = await resetPasswordByAdmin(email);
-    res.status(200).json({ message: `Password reset successfully. New password: ${newPassword}` });
+    await resetPasswordByAdmin(email, name, adminName, adminEmail); // Send the reset password email
+    res.status(200).json({ message: "Password reset email sent successfully." });
   } catch (error) {
-    res.status(500).json({ error: "Failed to reset password." });
+    res.status(500).json({ error: "Failed to send password reset email." });
   }
 });
 
+
 // Update user role and phone number
 router.post("/update-user", async (req, res) => {
-  const { email, role, phoneNumber, confirmation, adminName, adminEmail } = req.body;
+  const { name, email, role, phoneNumber, confirmation, adminName, adminEmail } = req.body;
 
   if (!email || confirmation !== "yes") {
     return res.status(400).json({ error: "Email and confirmation are required." });
   }
 
   try {
-    await updateUser(email, role, phoneNumber, adminName, adminEmail);
+    await updateUser(name, email, role, phoneNumber, adminName, adminEmail);
     res.status(200).json({ message: "User details updated successfully." });
   } catch (error) {
     console.error("Error updating user:", error);

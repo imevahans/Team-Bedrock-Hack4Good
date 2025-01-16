@@ -196,16 +196,16 @@ const AdminDashboard = () => {
       showNotification(error.response?.data?.error || "Failed to unsuspend user.", "error");
     }
   };
-
-  // Reset password
-  const handleResetPassword = async (email) => {
-    try {
-      const response = await api.post("/auth/reset-password-admin", { email, adminName: user.name, adminEmail: user.email });
-      showNotification(response.data.message, "success");
-    } catch (error) {
-      showNotification(error.response?.data?.error || "Failed to reset password.", "error");
-    }
-  };
+  
+// Reset password by admin
+const handleResetPassword = async (email, name) => {
+  try {
+    const response = await api.post("/auth/reset-password-admin", { email, name, adminName: user.name, adminEmail: user.email});
+    showNotification(response.data.message, "success");
+  } catch (error) {
+    showNotification(error.response?.data?.error || "Failed to send reset password email.", "error");
+  }
+};
 
   // Save changes
   const handleSaveChanges = async () => {
@@ -214,10 +214,11 @@ const AdminDashboard = () => {
     try {
       const payload = {
         email: editedUser.email,
+        name: editedUser.name, // Include the edited name
         role: editedUser.role || null,
         phoneNumber: editedUser.phoneNumber || null,
         confirmation: "yes",
-        adminName: user.name,
+        adminName: user.name, // Admin details for audit logging
         adminEmail: user.email
       };
 
@@ -226,7 +227,7 @@ const AdminDashboard = () => {
       setUsers((prev) =>
         prev.map((user) =>
           user.email === editedUser.email
-            ? { ...user, role: editedUser.role, phoneNumber: editedUser.phoneNumber }
+            ? { ...user, name: editedUser.name, role: editedUser.role, phoneNumber: editedUser.phoneNumber }
             : user
         )
       );
@@ -236,6 +237,7 @@ const AdminDashboard = () => {
       showNotification(error.response?.data?.error || "Failed to save changes.", "error");
     }
   };
+
 
   // Handle confirmation
   const handleConfirm = () => {
@@ -373,6 +375,7 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
 
         {activeTab === "Audit Logs" && (
           <div>
@@ -556,19 +559,19 @@ const AdminDashboard = () => {
                       {user.invitationAccepted ? "Yes" : "No"}
                     </p>
                     <strong>Suspended:</strong> {user.suspended ? "Yes" : "No"}
+                    
+                    {/* Editable Fields */}
                     <div>
                       <label>Role:</label>
                       <select
-                        value={
-                          editedUser?.email === user.email
-                            ? editedUser.role
-                            : user.role || ""
-                        }
+                        value={editedUser?.email === user.email ? editedUser.role : user.role || ""}
                         onChange={(e) =>
                           setEditedUser({
                             ...user,
                             role: e.target.value,
                             phoneNumber: user.phoneNumber,
+                            name: user.name,
+                            email: user.email // Keep email for editing
                           })
                         }
                       >
@@ -576,6 +579,7 @@ const AdminDashboard = () => {
                         <option value="admin">Admin</option>
                       </select>
                     </div>
+
                     <div>
                       <label>Phone Number:</label>
                       <input
@@ -590,10 +594,30 @@ const AdminDashboard = () => {
                             ...user,
                             phoneNumber: e.target.value,
                             role: user.role,
+                            name: user.name,
+                            email: user.email
                           })
                         }
                       />
                     </div>
+
+                    <div>
+                      <label>Name:</label>
+                      <input
+                        type="text"
+                        value={editedUser?.email === user.email ? editedUser.name : user.name}
+                        onChange={(e) =>
+                          setEditedUser({
+                            ...user,
+                            name: e.target.value,
+                            phoneNumber: user.phoneNumber,
+                            role: user.role,
+                            email: user.email
+                          })
+                        }
+                      />
+                    </div>
+
                     <div>
                       <button
                         onClick={() => {
@@ -625,16 +649,17 @@ const AdminDashboard = () => {
                           Unsuspend
                         </button>
                       )}
-                      <button onClick={() => handleResetPassword(user.email)}>
+                      <button onClick={() => handleResetPassword(user.email, user.name)}>
                         Reset Password
                       </button>
                     </div>
                   </div>
                 ))
               ) : (
-                <p>No users found matching the filters.</p>
+                <p>No users found</p>
               )}
             </div>
+
             {/* Confirmation Popup */}
             {confirmPopup && (
               <div

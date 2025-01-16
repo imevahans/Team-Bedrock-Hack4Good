@@ -348,23 +348,43 @@ export const unsuspendUser = async (email, adminName, adminEmail) => {
 };
 
 
-export const resetPasswordByAdmin = async (email) => {
-  const session = driver.session();
+// Function to send a reset password link via email
+export const resetPasswordByAdmin = async (email, name, adminName, adminEmail) => {
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+  const mailOptions = {
+    to: email,
+    subject: "Reset Your Password",
+    html: `
+      <p>Hello ${name},</p>
+      <p>You have requested to reset your password. Please click the link below to reset your password:</p>
+      <a href="${frontendUrl}/reset-password?email=${encodeURIComponent(email)}">Reset Password</a>
+    `,
+  };
+
   try {
-    const newPassword = Math.random().toString(36).slice(-8); // Generate a random password
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    const updatedAt = formatTimestamp(Date.now());
-    await session.run(
-      "MATCH (u:User {email: $email}) SET u.passwordHash = $passwordHash, u.updatedAt = $updatedAt",
-      { email, passwordHash, updatedAt }
-    );
-    return newPassword;
-  } finally {
-    await session.close();
+    const info = await transporter.sendMail(mailOptions);
+    logAuditAction(adminName, adminEmail, "Update User", `Resetted password for ${name} with email ${email}.`);
+    logAuditAction("System", "", "Email", `Sent password reset email to ${name} with email ${email}.`);
+    console.log("Message sent: %s", info.messageId);
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send password reset email.");
   }
 };
 
-export const updateUser = async (email, role, phoneNumber, adminName, adminEmail) => {
+
+export const updateUser = async (name, email, role, phoneNumber, adminName, adminEmail) => {
   const session = driver.session();
   try {
     const updatedAt = formatTimestamp(Date.now());
@@ -373,12 +393,13 @@ export const updateUser = async (email, role, phoneNumber, adminName, adminEmail
       `
       MATCH (u:User {email: $email})
       SET 
+        u.name = $name,
         u.role = COALESCE($role, u.role),
         u.phoneNumber = COALESCE($phoneNumber, u.phoneNumber),
         u.updatedAt = $updatedAt
       RETURN u
       `,
-      { email, role, phoneNumber, updatedAt }
+      { name, email, role, phoneNumber, updatedAt }
     );
 
     if (result.records.length === 0) {
