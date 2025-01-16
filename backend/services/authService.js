@@ -107,9 +107,9 @@ export const registerUser = async (email, password, phoneNumber, role) => {
 export const loginUser = async (email, password) => {
   const session = driver.session();
   try {
-    // Retrieve the passwordHash and salt for the user
+    // Retrieve the passwordHash, salt, role, and suspended status for the user
     const result = await session.run(
-      "MATCH (u:User {email: $email}) RETURN u.passwordHash AS passwordHash, u.salt AS salt, u.role AS role",
+      "MATCH (u:User {email: $email}) RETURN u.passwordHash AS passwordHash, u.salt AS salt, u.role AS role, u.suspended AS suspended",
       { email }
     );
 
@@ -117,7 +117,7 @@ export const loginUser = async (email, password) => {
       throw new Error("User or Password incorrect.");
     }
 
-    const { passwordHash, role } = result.records[0].toObject();
+    const { passwordHash, role, suspended } = result.records[0].toObject();
 
     // Verify the password by comparing it with the stored hash
     const isMatch = await bcrypt.compare(password, passwordHash);
@@ -129,11 +129,12 @@ export const loginUser = async (email, password) => {
     // Generate a JWT token for the user
     const token = jwt.sign({ email, role }, JWT_SECRET, { expiresIn: "1h" });
 
-    return { token, role };
+    return { token, role, suspended }; // Return suspended status along with token and role
   } finally {
     await session.close();
   }
 };
+
 
 export const sendOtp = async (phoneNumber) => {
   phoneNumber = "+65" + phoneNumber; // Prefix with country code if needed

@@ -108,12 +108,19 @@ router.post("/login", async (req, res) => {
   try {
     const result = await loginUser(email, password);
     console.log("results = ", result);
+
+    // Check if user is suspended
+    if (result.suspended) {
+      return res.status(403).json({ error: "Your account has been suspended. Please contact support." });
+    }
+
     res.status(200).json({ message: "Login successful", token: result.token, role: result.role });
   } catch (error) {
     console.error("Error logging in:", error.message);
     res.status(401).json({ error: error.message });
   }
 });
+
 
 /**
  * Route: Send OTP for password reset
