@@ -33,6 +33,10 @@ const AdminDashboard = () => {
   const [showModal, setShowModal] = useState(false); // For creating product modal
   const [showErrorModal, setShowErrorModal] = useState(false); // For error modal
   const [originalName, setOriginalName] = useState('');
+  const [searchTermProduct, setSearchTermProduct] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
+  const [sortCriteria, setSortCriteria] = useState("name"); // "name", "price", or "quantity"
+
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
@@ -455,6 +459,38 @@ const handleSaveProduct = async () => {
     }
   };
   
+  const handleSearchChange = (e) => {
+    setSearchTermProduct(e.target.value);
+  };
+
+  const handleSortCriteriaChange = (e) => {
+    setSortCriteria(e.target.value);
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+  };
+
+  // Filter and sort products
+  const filteredProducts = products
+    .filter((product) =>
+      product.name.toLowerCase().includes(searchTermProduct.toLowerCase())
+    )
+    .sort((a, b) => {
+      let fieldA = a[sortCriteria];
+      let fieldB = b[sortCriteria];
+
+      if (sortCriteria === "name") {
+        fieldA = fieldA.toLowerCase();
+        fieldB = fieldB.toLowerCase();
+      }
+
+      if (sortOrder === "asc") {
+        return fieldA > fieldB ? 1 : -1;
+      }
+      return fieldA < fieldB ? 1 : -1;
+    });
+
 
   return (
     <div className="dashboard-container">
@@ -877,12 +913,32 @@ const handleSaveProduct = async () => {
           <div>
             <h2>Manage Products</h2>
             <div className="rounded-section">
+
+            <div className="product-controls">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTermProduct}
+                onChange={handleSearchChange}
+                className="search-bar"
+              />
+              <div className="sort-controls">
+                <select value={sortCriteria} onChange={handleSortCriteriaChange} className="sort-criteria">
+                  <option value="name">Name</option>
+                  <option value="price">Price</option>
+                  <option value="quantity">Quantity</option>
+                </select>
+                <button onClick={toggleSortOrder} className="sort-button">
+                  Sort: {sortOrder === "asc" ? "Ascending" : "Descending"}
+                </button>
+              </div>
+            </div>
               <h3>Product List</h3>
               <h2>Add a Product</h2>
               <button onClick={() => setShowModal(true)}>Add Product</button>
               {products.length > 0 ? (
                 <div className="product-grid">
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <div className="product-card" key={product.name}>
                       <div className="product-image">
                         <img src={product.imageUrl} alt={product.name} />
