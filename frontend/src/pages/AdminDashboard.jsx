@@ -44,7 +44,8 @@ const AdminDashboard = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editTask, setEditTask] = useState({});
   const [unfulfilledRequests, setUnfulfilledRequests] = useState([]);
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // State for delete modal
+  const [productToDelete, setProductToDelete] = useState(null); // Product to delete
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
@@ -322,16 +323,23 @@ const handleResetPassword = async (email, name) => {
     }
   };
 
-  const handleDeleteProduct = async (productName) => {
+  const handleDeleteProduct = (product) => {
+    setProductToDelete(product); // Set product to delete
+    setShowDeleteModal(true); // Show delete confirmation modal
+  };
+
+  const deleteProduct = async (productName) => {
     try {
       const response = await api.delete("/auth/products/delete", {
         data: { productName, adminName: user.name, adminEmail: user.email },
       });
       showNotification(response.data.message || "Product deleted successfully.", "success");
       fetchProducts(); // Refresh the product list
+      setShowDeleteModal(false); // Close the delete modal
     } catch (error) {
       console.error("Error deleting product:", error.message);
       showNotification(`Failed to delete product due to ${error.message}.`, "error");
+      setShowDeleteModal(false); // Close the modal if error occurs
     }
   };
 
@@ -1204,7 +1212,7 @@ const markAsFulfilled = async (requestId) => {
                       <p><strong>Quantity:</strong> {product.quantity}</p>
                       <div className="product-actions">
                         <button onClick={() => handleEditProduct(product)}>Edit</button>
-                        <button onClick={() => handleDeleteProduct(product.name)}>Delete</button>
+                        <button onClick={() => handleDeleteProduct(product)}>Delete</button>
                       </div>
                     </div>
                   ))}
@@ -1289,6 +1297,46 @@ const markAsFulfilled = async (requestId) => {
               <div>
                 <button onClick={handleAddProduct}>Add</button>
                 <button onClick={() => setShowModal(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && productToDelete && (
+          <div
+            className="modal"
+            style={{
+              position: "fixed",
+              top: "0",
+              left: "0",
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: "1000",
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "10px",
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
+              <h4>Are you sure you want to delete {productToDelete.name}?</h4>
+              <div>
+                <button
+                  onClick={() => deleteProduct(productToDelete.name)} // Perform the delete action
+                >
+                  Confirm
+                </button>
+                <button onClick={() => setShowDeleteModal(false)}>Cancel</button>
               </div>
             </div>
           </div>
