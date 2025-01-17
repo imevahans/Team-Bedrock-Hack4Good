@@ -164,6 +164,18 @@ This will run the backend at `http://localhost:3000`.
 
 ---
 
+## **Creating the First Admin Account**
+
+To create the first admin account, go to `http://localhost:5173/createadmin` and use the following details:
+- **Email**: admin@a.com
+- **Password**: password
+
+This will allow you to start adding other users, as our app only allows **admins** to add users to prevent non-residents from gaining access to the system.
+
+After that please proceed to login at `http://localhost:5173/createadmin`.
+
+---
+
 ## **Troubleshooting**
 
 - **Backend not connecting to Neo4j**: Ensure the `NEO4J_URI`, `NEO4J_USER`, and `NEO4J_PASSWORD` are correctly set in the backend `.env`.

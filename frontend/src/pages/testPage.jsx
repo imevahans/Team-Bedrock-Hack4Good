@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import api from "../services/api";
+import "../styles/testPage.css";
+import minimart from "../assets/minimart.png";
+import food from "../assets/food.png";
 
 const TestPage = () => {
   const [message, setMessage] = useState("");
@@ -14,16 +17,27 @@ const TestPage = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Test Page</h1>
-      <button onClick={handleTestRequest} style={{ padding: "10px 20px", cursor: "pointer" }}>
-        Send Test Request
-      </button>
-      {message && (
-        <p style={{ marginTop: "20px", color: "green" }}>
-          {message}
+    <div className="test-page">
+      {/* Header Section */}
+      <div className="header-container">
+        <h1 className="main-title">
+          <img src={minimart} className="dashboard-image" alt="MiniMart" />
+          Muhammadiyah Minimart
+          <img src={food} className="dashboard-image" alt="Food Icon" />
+        </h1>
+        <p className="subtitle">
+          Your one-stop shop for fresh produce, groceries, and exclusive deals!
         </p>
-      )}
+      </div>
+
+      {/* Main Content */}
+      <div className="content-container">
+        <h1 className="page-title">Create Admin Account</h1>
+        <button onClick={handleTestRequest} className="test-button">
+          Create Admin Account
+        </button>
+        {message && <p className="response-message">{message}</p>}
+      </div>
     </div>
   );
 };

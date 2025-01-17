@@ -1,0 +1,91 @@
+/* General Page Styling */
+.test-page {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  /* Header Container */
+  .header-container {
+    background: linear-gradient(135deg, #3498db, #2ecc71); /* Gradient background */
+    padding: 40px 20px;
+    border-radius: 12px; /* Rounded corners for the header box */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    color: #ffffff; /* White text for contrast */
+    text-align: center;
+    margin: 20px 0;
+  }
+  
+  .main-title {
+    font-size: 36px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px; /* Space between images and text */
+  }
+  
+  .dashboard-image {
+    width: 50px;
+    height: auto;
+    border-radius: 8px;
+  }
+  
+  .subtitle {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 10px;
+  }
+  
+  /* Content Container */
+  .content-container {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+  }
+  
+  .page-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+  
+  /* Test Button */
+  .test-button {
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #3498db;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .test-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+  }
+  
+  .test-button:active {
+    background-color: #1e6fa0;
+    transform: translateY(0);
+  }
+  
+  /* Response Message */
+  .response-message {
+    font-size: 16px;
+    color: green;
+    margin-top: 20px;
+    font-weight: bold;
+  }
+  

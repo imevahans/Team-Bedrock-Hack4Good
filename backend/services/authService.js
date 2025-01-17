@@ -783,7 +783,7 @@ export const createBasicAdminAccount = async () => {
   const session = driver.session();
   try {
     const salt = await bcrypt.genSalt(12); // Stronger hash
-    const passwordHash = await bcrypt.hash("123", salt);
+    const passwordHash = await bcrypt.hash("password", salt);
     const createdAt = formatTimestamp(Date.now());
     const updatedAt = createdAt;
     const email = "admin@a.com";

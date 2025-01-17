@@ -42,7 +42,7 @@ const MainContent = () => {
         <Route path="/admin-dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
         <Route path="/logout" element={<LogoutPage />} />
         <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-        <Route path="/testpage" element={<TestPage />} />
+        <Route path="/createAdmin" element={<TestPage />} />
       </Routes>
     </AuthProvider>
   );
