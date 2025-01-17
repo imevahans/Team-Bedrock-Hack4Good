@@ -1846,3 +1846,210 @@ export const getVoucherInsights = async () => {
   }
 };
 
+export const endAuction = async (auctionId, adminName, adminEmail) => {
+  const session = driver.session();
+  try {
+    // Fetch all bidders ordered by bid amount
+    const auctionResult = await session.run(`
+      MATCH (a:Auction)<-[b:BID_BY]-(u:User)
+      WHERE elementId(a) = $auctionId
+      RETURN u.email AS email, b.amount AS bidAmount
+      ORDER BY b.amount DESC
+    `, { auctionId });
+
+    if (auctionResult.records.length === 0) {
+      throw new Error("No bids found for this auction.");
+    }
+
+    const bidders = auctionResult.records.map((record) => ({
+      email: record.get("email"),
+      bidAmount: record.get("bidAmount"),
+    }));
+
+    let winner = null;
+    for (const bidder of bidders) {
+      const { email, bidAmount } = bidder;
+
+      // Check if the bidder has enough balance
+      const userBalanceResult = await session.run(`
+        MATCH (u:User {email: $email})
+        RETURN u.balance AS balance
+      `, { email });
+
+      const balance = userBalanceResult.records[0]?.get("balance") || 0;
+
+      if (balance >= bidAmount) {
+        // Deduct the bid amount
+        await session.run(`
+          MATCH (u:User {email: $email})
+          SET u.balance = u.balance - $bidAmount
+        `, { email, bidAmount });
+
+        // Mark the winner
+        winner = { email, bidAmount };
+
+        // Create a relationship indicating the user won the auction
+        await session.run(`
+          MATCH (a:Auction), (u:User {email: $email})
+          WHERE elementId(a) = $auctionId
+          CREATE (u)-[:WON {status: "pending", wonAt: timestamp()}]->(a)
+        `, { auctionId, email });
+
+        break;
+      }
+    }
+
+    // Refund all losing bidders
+    await session.run(`
+      MATCH (a:Auction)<-[b:BID_BY]-(u:User)
+      WHERE elementId(a) = $auctionId AND u.email <> $winnerEmail
+      SET u.balance = u.balance + b.amount
+    `, { auctionId, winnerEmail: winner?.email });
+
+    // Update auction status
+    await session.run(`
+      MATCH (a:Auction)
+      WHERE elementId(a) = $auctionId
+      SET a.status = "ended", a.winner = $winnerEmail, a.finalPrice = $finalPrice
+    `, { auctionId, winnerEmail: winner?.email || null, finalPrice: winner?.bidAmount || 0 });
+
+    logAuditAction(
+      adminName,
+      adminEmail,
+      "End Auction",
+      `Auction ${auctionId} ended. Winner: ${winner?.email || "No one"} with a bid of $${winner?.bidAmount || 0}.`
+    );
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const createAuction = async (itemName, description, startingBid, endTime, imageFilePath, adminName, adminEmail) => {
+  const session = driver.session();
+  try {
+    const imageUrl = await uploadImageToCloudinary(imageFilePath);
+    const createdAt = formatTimestamp(Date.now());
+    await session.run(
+      `
+      CREATE (a:Auction {
+        itemName: $itemName,
+        description: $description,
+        startingBid: $startingBid,
+        currentBid: $startingBid,
+        highestBidder: null,
+        endTime: $endTime,
+        status: "active",
+        imageUrl: $imageUrl,
+        createdAt: $createdAt
+      })
+      `,
+      { itemName, description, startingBid, endTime, imageUrl, createdAt }
+    );
+    logAuditAction(adminName, adminEmail, "Create Auction", `Created auction: ${itemName}`);
+  } finally {
+    await session.close();
+  }
+};
+
+export const placeBid = async (auctionId, userEmail, bidAmount, userName) => {
+  const session = driver.session();
+  try {
+    // Fetch current auction details
+    const auctionResult = await session.run(`
+      MATCH (a:Auction)
+      WHERE elementId(a) = $auctionId AND a.status = "active"
+      RETURN a.currentBid AS currentBid, a.endTime AS endTime
+    `, { auctionId });
+
+    if (auctionResult.records.length === 0) {
+      throw new Error("Auction not found or has already ended.");
+    }
+
+    const { currentBid, endTime } = auctionResult.records[0].toObject();
+    const now = new Date();
+    if (new Date(endTime) < now) {
+      throw new Error("The auction has already ended.");
+    }
+
+    if (bidAmount <= currentBid) {
+      throw new Error("Your bid must be higher than the current bid.");
+    }
+
+    // Deduct the bid amount from the user's balance
+    await updateUserBalance(userEmail, bidAmount);
+
+    // Update auction with new bid
+    await session.run(`
+      MATCH (a:Auction)
+      WHERE elementId(a) = $auctionId
+      SET a.currentBid = $bidAmount, a.highestBidder = $userEmail
+    `, { auctionId, bidAmount, userEmail });
+
+    // Create or update the BID_BY relationship
+    await session.run(`
+      MATCH (a:Auction), (u:User {email: $userEmail})
+      WHERE elementId(a) = $auctionId
+      MERGE (u)-[b:BID_BY]->(a)
+      SET b.amount = $bidAmount, b.createdAt = timestamp()
+    `, { auctionId, userEmail, bidAmount });
+
+    logAuditAction(userName, userEmail, "Place Bid", `Bid $${bidAmount} on auction ${auctionId}.`);
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const getActiveAuctions = async () => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (a:Auction)
+      WHERE a.status = "active"
+      RETURN a, elementId(a) AS id
+    `);
+
+    return result.records.map((record) => ({
+      id: record.get("id"), // Use elementId(a) as the ID
+      ...record.get("a").properties,
+    }));
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const getWonAuctions = async (userEmail) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (u:User {email: $userEmail})-[w:WON]->(a:Auction)
+      RETURN a.itemName AS itemName, a.description AS description, w.status AS status, a.finalPrice AS winningBid
+    `, { userEmail });
+
+    return result.records.map((record) => ({
+      itemName: record.get("itemName"),
+      description: record.get("description"),
+      status: record.get("status"),
+      winningBid: record.get("winningBid"),
+    }));
+  } finally {
+    await session.close();
+  }
+};
+
+export const fulfillAuction = async (auctionId, adminName, adminEmail) => {
+  const session = driver.session();
+  try {
+    await session.run(`
+      MATCH (u:User)-[w:WON]->(a:Auction)
+      WHERE elementId(a) = $auctionId
+      SET w.status = "fulfilled"
+    `, { auctionId });
+
+    logAuditAction(adminName, adminEmail, "Fulfill Auction", `Auction ${auctionId} marked as fulfilled.`);
+  } finally {
+    await session.close();
+  }
+};

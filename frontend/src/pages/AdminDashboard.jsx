@@ -64,6 +64,15 @@ const AdminDashboard = () => {
   const [reportType, setReportType] = useState("weeklyRequests");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [reportData, setReportData] = useState([]);
+  const [auctions, setAuctions] = useState([]);
+  const [auctionDetails, setAuctionDetails] = useState({
+    itemName: '',
+    description: '',
+    startingBid: '',
+    endTime: '',
+  });
+  const [imageFile, setImageFile] = useState(null);
+
 
 
 
@@ -85,6 +94,8 @@ const AdminDashboard = () => {
       fetchPendingApprovals();
     } else if (activeTab === "Reports") {
       fetchReportData();
+    } else if (activeTab === 'Auction') {
+      fetchAuctions();
     }
   
   }, [activeTab]);
@@ -112,6 +123,14 @@ const logAuditAction = async (action, details) => {
   }
 };
 
+const fetchAuctions = async () => {
+  try {
+    const response = await api.get('/auth/auctions');
+    setAuctions(response.data);
+  } catch (error) {
+    console.error('Error fetching auctions:', error.message);
+  }
+};
 
   const fetchReportData = async () => {
     try {
@@ -1072,6 +1091,51 @@ const exportReportPDFWithChart = async (chartRef, data, title, headers, dateRang
 };
 
 
+const handleCreateAuction = async () => {
+  const { itemName, description, startingBid, endTime } = auctionDetails;
+
+  if (!itemName || !description || !startingBid || !endTime || !imageFile) {
+    alert('All fields and an image are required.');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('itemName', itemName);
+  formData.append('description', description);
+  formData.append('startingBid', parseFloat(startingBid));
+  formData.append('endTime', endTime);
+  formData.append('image', imageFile);
+  formData.append('adminName', user.name);
+  formData.append('adminEmail', user.email);
+
+  try {
+    await api.post('/auth/auctions/create', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    alert('Auction created successfully.');
+    fetchAuctions();
+    setAuctionDetails({ itemName: '', description: '', startingBid: '', endTime: '' });
+    setImageFile(null);
+  } catch (error) {
+    console.error('Error creating auction:', error.message);
+  }
+};
+
+const handleEndAuction = async (auctionId) => {
+  try {
+    await api.post('/auth/auctions/end', {
+      auctionId,
+      adminName: user.name,
+      adminEmail: user.email,
+    });
+    alert('Auction ended successfully.');
+    fetchAuctions();
+  } catch (error) {
+    console.error('Error ending auction:', error.message);
+  }
+};
+
+
 
 
   return (
@@ -1101,6 +1165,14 @@ const exportReportPDFWithChart = async (chartRef, data, title, headers, dateRang
           onClick={() => setActiveTab("Products")}
         >
           Products
+        </button>
+        <button
+          className={`sidebar-button ${
+            activeTab === "Auction" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("Auction")}
+        >
+          Auction
         </button>
         <button
           className={`sidebar-button ${
@@ -1203,6 +1275,54 @@ const exportReportPDFWithChart = async (chartRef, data, title, headers, dateRang
           </div>
         </div>
       )}
+
+      {activeTab === "Auction" && (
+        <div>
+          <h2>Manage Auctions</h2>
+          <div>
+            <input
+              type="text"
+              placeholder="Item Name"
+              value={auctionDetails.itemName}
+              onChange={(e) => setAuctionDetails({ ...auctionDetails, itemName: e.target.value })}
+            />
+            <textarea
+              placeholder="Description"
+              value={auctionDetails.description}
+              onChange={(e) => setAuctionDetails({ ...auctionDetails, description: e.target.value })}
+            />
+            <input
+              type="number"
+              placeholder="Starting Bid"
+              value={auctionDetails.startingBid}
+              onChange={(e) => setAuctionDetails({ ...auctionDetails, startingBid: e.target.value })}
+            />
+            <input
+              type="datetime-local"
+              placeholder="End Time"
+              value={auctionDetails.endTime}
+              onChange={(e) => setAuctionDetails({ ...auctionDetails, endTime: e.target.value })}
+            />
+            <input type="file" onChange={(e) => setImageFile(e.target.files[0])} />
+            <button onClick={handleCreateAuction}>Create Auction</button>
+          </div>
+
+          <div>
+            <h3>Active Auctions</h3>
+            {auctions.map((auction) => (
+              <div key={auction.id}>
+                <img src={auction.imageUrl} alt={auction.itemName} />
+                <p><strong>{auction.itemName}</strong></p>
+                <p>{auction.description}</p>
+                <p>Current Bid: {auction.currentBid}</p>
+                <p>Highest Bidder: {auction.highestBidder || 'None'}</p>
+                <button onClick={() => handleEndAuction(auction.id)}>End Auction</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {activeTab === "Reports" && (
         <div>

@@ -782,3 +782,14 @@ table th, table td {
 table th {
   background-color: #f2f2f2;
 }
+
+.auction-card {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 10px;
+  border-radius: 5px;
+  background: #f9f9f9;
+}
+.auction-card input {
+  margin-top: 10px;
+}

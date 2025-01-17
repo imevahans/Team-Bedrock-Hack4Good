@@ -44,6 +44,10 @@ const ResidentDashboard = () => {
   const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("preorderDate"); // Default: "purchaseDate"
   const [filterStatusPreorder, setFilterStatusPreorder] = useState("all"); // "all", "pending", "approved", "rejected"
   const [filterStatusPurchase, setFilterStatusPurchase] = useState("all"); // "all", "fulfilled", "pending"
+  const [auctions, setAuctions] = useState([]);
+  const [userBid, setUserBid] = useState({});
+  const [wonAuctions, setWonAuctions] = useState([]);
+
 
 
 
@@ -58,11 +62,31 @@ const ResidentDashboard = () => {
     } else if(activeTab === "Dashboard") {
       fetchVoucherTasks();
       fetchAttemptHistory();
+    } else if (activeTab === 'Auction') {
+      fetchAuctions();
+      fetchWonAuctions();
     }
     fetchUserDetails(); // Fetch both user name and balance
   }, [activeTab]); // Re-fetch products, vouchers, and user details when active tab changes
   
-
+  const fetchAuctions = async () => {
+    try {
+      const response = await api.get('/auth/auctions');
+      setAuctions(response.data);
+    } catch (error) {
+      console.error('Error fetching auctions:', error.message);
+    }
+  };
+  
+  const fetchWonAuctions = async () => {
+    try {
+      const response = await api.get(`/auth/auctions/won?email=${user.email}`);
+      setWonAuctions(response.data);
+    } catch (error) {
+      console.error('Error fetching won auctions:', error.message);
+    }
+  };
+  
   const fetchTransactionHistory = async () => {
     try {
       const purchaseResponse = await api.get(`/auth/transactions/purchases?email=${user.email}`);
@@ -414,6 +438,29 @@ const ResidentDashboard = () => {
     }
   };
 
+  const handlePlaceBid = async (auctionId) => {
+    const bidAmount = parseFloat(userBid[auctionId]);
+    if (!bidAmount || isNaN(bidAmount)) {
+      alert('Please enter a valid bid amount.');
+      return;
+    }
+  
+    try {
+      await api.post('/auth/auctions/bid', {
+        auctionId,
+        userEmail: user.email,
+        bidAmount,
+        userName: user.name,
+      });
+      alert('Bid placed successfully.');
+      fetchAuctions();
+      setUserBid({ ...userBid, [auctionId]: '' });
+    } catch (error) {
+      console.error('Error placing bid:', error.message);
+    }
+  };
+  
+
 
   return (
     <div className="dashboard-container">
@@ -442,6 +489,12 @@ const ResidentDashboard = () => {
           onClick={() => setActiveTab("Products")}
         >
           Products
+        </button>
+        <button
+          className={`sidebar-button ${activeTab === "Auction" ? "active" : ""}`}
+          onClick={() => setActiveTab("Auction")}
+        >
+          Auction
         </button>
         <button
           className={`sidebar-button ${activeTab === "Voucher Tasks" ? "active" : ""}`}
@@ -521,6 +574,54 @@ const ResidentDashboard = () => {
                 <button onClick={() => setActiveTab("Products")}>Go to Products</button>
               </div>
             </div>
+          </div>
+        )}
+        
+        {activeTab === "Auction" && (
+          <div>
+            <h2>Participate in Auctions</h2>
+            {auctions.map((auction) => (
+              <div key={auction.id}>
+                <img src={auction.imageUrl} alt={auction.itemName} />
+                <p><strong>{auction.itemName}</strong></p>
+                <p>{auction.description}</p>
+                <p>Current Bid: {auction.currentBid}</p>
+                <input
+                  type="number"
+                  placeholder="Your Bid"
+                  value={userBid[auction.id] || ''}
+                  onChange={(e) => setUserBid({ ...userBid, [auction.id]: e.target.value })}
+                />
+                <button onClick={() => handlePlaceBid(auction.id)}>Place Bid</button>
+              </div>
+            ))}
+
+            <h3>Your Won Auctions</h3>
+            <table className="won-auctions-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item Name</th>
+                <th>Status</th>
+                <th>Winning Bid</th>
+              </tr>
+            </thead>
+            <tbody>
+              {wonAuctions.map((auction, index) => (
+                <tr key={auction.id || index}>
+                  <td>{index + 1}</td>
+                  <td>{auction.itemName}</td>
+                  {/* Apply conditional styling for the status */}
+                  <td className={auction.status === "fulfilled" ? "status-fulfilled" : "status-pending"}>
+                    {auction.status.charAt(0).toUpperCase() + auction.status.slice(1)} {/* Capitalize */}
+                  </td>
+                  <td>${auction.winningBid}</td>
+                </tr>
+              ))}
+            </tbody>
+</table>
+
+
           </div>
         )}
 

@@ -406,3 +406,64 @@ body {
   font-weight: bold;
 }
 
+.won-auctions-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.won-auctions-table th,
+.won-auctions-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.won-auctions-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+.won-auctions-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.won-auctions-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.won-auctions-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.won-auctions-table th,
+.won-auctions-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.won-auctions-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+.won-auctions-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.won-auctions-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.status-pending {
+  color: #ffc107; /* Yellow for pending */
+  font-weight: bold;
+}
+
+.status-fulfilled {
+  color: #28a745; /* Green for fulfilled */
+  font-weight: bold;
+}

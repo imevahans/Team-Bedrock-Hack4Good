@@ -50,7 +50,13 @@ import {
   approvePreOrder,
   rejectPreOrder,
   getVoucherInsights,
-  logAuditAction
+  logAuditAction,
+  createAuction,
+  placeBid,
+  endAuction,
+  getActiveAuctions,
+  getWonAuctions,
+  fulfillAuction
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -880,8 +886,97 @@ router.post("/create-audit-log", async (req, res) => {
   }
 });
 
+router.post("/auctions/create", upload.single("image"), async (req, res) => {
+  const { itemName, description, startingBid, endTime, adminName, adminEmail } = req.body;
+  const image = req.file;
+
+  if (!itemName || !description || !startingBid || !endTime || !image) {
+    return res.status(400).json({ error: "All fields and an image are required." });
+  }
+
+  try {
+    await createAuction(itemName, description, parseFloat(startingBid), endTime, image.path, adminName, adminEmail);
+    res.status(201).json({ message: "Auction created successfully." });
+  } catch (error) {
+    console.error("Error creating auction:", error.message);
+    res.status(500).json({ error: "Failed to create auction." });
+  }
+});
+
+router.post("/auctions/bid", async (req, res) => {
+  const { auctionId, userEmail, bidAmount, userName } = req.body;
+
+  if (!auctionId || !userEmail || !bidAmount) {
+    return res.status(400).json({ error: "Auction ID, user email, and bid amount are required." });
+  }
+
+  try {
+    await placeBid(auctionId, userEmail, parseFloat(bidAmount), userName);
+    res.status(200).json({ message: "Bid placed successfully." });
+  } catch (error) {
+    console.error("Error placing bid:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/auctions/end", async (req, res) => {
+  const { auctionId, adminName, adminEmail } = req.body;
+
+  if (!auctionId) {
+    return res.status(400).json({ error: "Auction ID is required." });
+  }
+
+  try {
+    await endAuction(auctionId, adminName, adminEmail);
+    res.status(200).json({ message: "Auction ended successfully." });
+  } catch (error) {
+    console.error("Error ending auction:", error.message);
+    res.status(500).json({ error: "Failed to end auction." });
+  }
+});
+
+router.get("/auctions", async (req, res) => {
+  try {
+    const auctions = await getActiveAuctions();
+    res.status(200).json(auctions);
+  } catch (error) {
+    console.error("Error fetching auctions:", error.message);
+    res.status(500).json({ error: "Failed to fetch auctions." });
+  }
+});
+
+router.get("/auctions/won", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "User email is required." });
+  }
+
+  try {
+    const wonAuctions = await getWonAuctions(email);
+    res.status(200).json(wonAuctions);
+  } catch (error) {
+    console.error("Error fetching won auctions:", error.message);
+    res.status(500).json({ error: "Failed to fetch won auctions." });
+  }
+});
 
 
+router.post("/auctions/fulfill", async (req, res) => {
+  const { auctionId, adminName, adminEmail } = req.body;
+
+  if (!auctionId) {
+    return res.status(400).json({ error: "Auction ID is required." });
+  }
+
+  try {
+    await fulfillAuction(auctionId, adminName, adminEmail);
+    res.status(200).json({ message: "Auction fulfilled successfully." });
+  } catch (error) {
+    console.error("Error fulfilling auction:", error.message);
+    res.status(500).json({ error: "Failed to fulfill auction." });
+  }
+});
 
 
 
