@@ -3,6 +3,9 @@ import api from "../services/api";
 import "../styles/AdminDashboard.css"; // Use the same style file
 import { useNotification } from "../context/NotificationContext";
 import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import WeeklyRequestsChart from "../components/WeeklyRequestsChart";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -43,6 +46,7 @@ const AdminDashboard = () => {
   const [voucherTasks, setVoucherTasks] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editTask, setEditTask] = useState({});
+  const [unfulfilledRequests, setUnfulfilledRequests] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false); // State for delete modal
   const [productToDelete, setProductToDelete] = useState(null); // Product to delete
   const [pendingApprovals, setPendingApprovals] = useState([]);
@@ -56,6 +60,9 @@ const AdminDashboard = () => {
   const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("createdAt");
   const [showDeleteVoucherModal, setShowDeleteVoucherModal] = useState(false);
   const [voucherTaskToDelete, setVoucherTaskToDelete] = useState(null);
+  const [reportType, setReportType] = useState("weeklyRequests");
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [reportData, setReportData] = useState([]);
 
 
 
@@ -75,10 +82,114 @@ const AdminDashboard = () => {
     } else if (activeTab === "Voucher Tasks") {
       fetchVoucherTasks();
       fetchPendingApprovals();
+    } else if (activeTab === "Reports") {
+      fetchReportData();
     }
   
   }, [activeTab]);
 
+  const fetchReportData = async () => {
+    try {
+      let response;
+      switch (reportType) {
+        case "weeklyRequests":
+          response = await api.get(`/auth/requests/all`);
+
+          // console.log("Raw Data for Reports:", response.data);
+
+          if (response.data) {
+            const combinedRequests = [
+              ...(response.data.purchaseRequests || []),
+              ...(response.data.preorderRequests || []),
+            ];
+            setReportData(combinedRequests);
+          } else {
+            setReportData([]);
+          }
+          break;
+        case "inventorySummary":
+          response = await api.get(`/auth/products`);
+          setReportData(response.data.products || []);
+          break;
+        case "voucherInsights":
+          response = await api.get(`/auth/vouchers/insights`);
+          setReportData(response.data || []);
+          break;
+        default:
+          setReportData([]);
+      }
+
+      
+    } catch (error) {
+      console.error("Error fetching report data:", error.message);
+      setReportData([]);
+    }
+  };
+
+  const resetTimeToMidnight = (date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
+    return d;
+  };
+
+
+  const filterByDate = (data) => {
+    if (!Array.isArray(data)) return [];
+    const start = dateRange.start ? resetTimeToMidnight(new Date(dateRange.start)) : null;
+    const end = dateRange.end ? resetTimeToMidnight(new Date(dateRange.end)) : null;
+  
+    return data.filter((item) => {
+      const createdAt = resetTimeToMidnight(new Date(item.createdAt || item.timestamp));
+      return (!start || createdAt >= start) && (!end || createdAt <= end);
+    });
+  };
+  
+  
+  const filteredReportData = filterByDate(reportData);
+
+
+  useEffect(() => {
+    fetchReportData();
+    // console.log("Report Data Updated:", reportData);
+  }, [reportType]);
+  
+  
+
+  const exportPDF = (data, title) => {
+    const doc = new jsPDF();
+    doc.text(title, 14, 10);
+  
+    // Add table data
+    autoTable(doc, {
+      head: [["Product Name", "Quantity", "Requested By", "Date"]],
+      body: data.map((request) => [
+        request.productName,
+        request.quantity,
+        request.userName,
+        new Date(request.createdAt).toLocaleString(),
+      ]),
+    });
+  
+    doc.save(`${title.replace(" ", "_").toLowerCase()}.pdf`);
+  };
+  
+  const generateCSVData = (data) => {
+    if (!Array.isArray(data)) {
+      console.error("generateCSVData: data is not an array", data);
+      return []; // Return an empty array to avoid breaking the application
+    }
+  
+    return [
+      ["Product Name", "Quantity", "Requested By", "Date"],
+      ...data.map((request) => [
+        request.productName,
+        request.quantity,
+        request.userName,
+        new Date(request.createdAt).toLocaleString(),
+      ]),
+    ];
+  };
+  
 
   const fetchDashboardStats = async () => {
     try {
@@ -127,16 +238,22 @@ const AdminDashboard = () => {
       showNotification("Failed to fetch pending approvals.", "error");
     }
   };
+
+  // Fetch unfulfilled product requests
+const fetchUnfulfilledRequests = async () => {
+  try {
+    const response = await api.get("/auth/requests/unfulfilled");
+    setUnfulfilledRequests(response.data.requests);
+  } catch (error) {
+    showNotification("Failed to fetch unfulfilled requests.", "error");
+  }
+};
   
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
 
 
-  const resetTimeToMidnight = (date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
-    return d;
-  };
+
 
   const fetchAuditLogs = async () => {
     try {
@@ -735,9 +852,83 @@ const handleSaveProduct = async () => {
       showNotification("Failed to reject preorder request.", "error");
     }
   };
+
+
+  const WeeklyRequestsReport = ({ data }) => (
+    <div>
+      <h3>Weekly Requests</h3>
+      <ul>
+        {data.map((request, index) => (
+          <li key={index}>
+            {request.userName} requested {request.productName} ({request.quantity}) on {new Date(request.createdAt).toLocaleString()}.
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
   
-  
-  
+const InventorySummaryReport = ({ data }) => (
+  <div>
+    <h3>Inventory Summary</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Quantity</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((product, index) => (
+          <tr key={index}>
+            <td>{product.name || "Unknown"}</td>
+            <td>{product.quantity || 0}</td>
+            <td>${product.price ? product.price.toFixed(2) : "0.00"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+const VoucherInsightsReport = ({ data }) => (
+  <div>
+    <h3>Voucher Insights</h3>
+    {data.length > 0 ? (
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Points</th>
+            <th>Unique Users</th>
+            <th>Approved</th>
+            <th>Pending</th>
+            <th>Rejected</th>
+            <th>Total Points Distributed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((voucher, index) => (
+            <tr key={index}>
+              <td>{voucher.title}</td>
+              <td>{voucher.description}</td>
+              <td>{voucher.points}</td>
+              <td>{voucher.uniqueUsers}</td>
+              <td>{voucher.approvedCount}</td>
+              <td>{voucher.pendingCount}</td>
+              <td>{voucher.rejectedCount}</td>
+              <td>{voucher.totalPointsDistributed}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ) : (
+      <p>No voucher insights available.</p>
+    )}
+  </div>
+);
+
 
   return (
     <div className="dashboard-container">
@@ -865,6 +1056,55 @@ const handleSaveProduct = async () => {
               <p>Generate and view detailed reports.</p>
               <button>Go to Reports</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Reports" && (
+        <div>
+          <h2>Reports</h2>
+          <div className="report-controls">
+            <label>Select Report Type:</label>
+            <select value={reportType} onChange={(e) => setReportType(e.target.value)}>
+              <option value="weeklyRequests">Weekly Requests</option>
+              <option value="inventorySummary">Inventory Summary</option>
+              <option value="voucherInsights">Voucher Insights</option>
+            </select>
+            
+            <label>Start Date:</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
+            />
+            
+            <label>End Date:</label>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
+            />
+            
+            <button onClick={fetchReportData}>Generate Report</button>
+          </div>
+
+          <div className="report-content">
+            {filteredReportData.length > 0 ? (
+              <>
+                {reportType === "weeklyRequests" && (
+                  <WeeklyRequestsChart data={filteredReportData} />
+                )}
+                {reportType === "inventorySummary" && (
+                  <InventorySummaryReport data={filteredReportData} />
+                )}
+                {reportType === "voucherInsights" && (
+                  <VoucherInsightsReport data={filteredReportData} />
+                )}
+
+              </>
+            ) : (
+              <p>No data available. Please generate a report.</p>
+            )}
           </div>
         </div>
       )}

@@ -6,12 +6,12 @@ const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
 
   if (!user) {
-    console.log("ProtectedRoute - Redirecting to login.");
+    // console.log("ProtectedRoute - Redirecting to login.");
     return <Navigate to="/" replace />;
   }
 
   if (role && user.role !== role) {
-    console.log(`ProtectedRoute - Role mismatch: ${user.role}`);
+    // console.log(`ProtectedRoute - Role mismatch: ${user.role}`);
     return <Navigate to="/" replace />;
   }
 

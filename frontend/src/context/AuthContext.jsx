@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
     if (token && !user) { // Only decode the token if user is not already set
       try {
         const payload = decodeJwt(token);
-        console.log("AuthContext: Initializing user from token:", payload);
+        // console.log("AuthContext: Initializing user from token:", payload);
         setUser({
           email: payload.email,
           role: payload.role,
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
   const login = (token) => {
     try {
       const payload = decodeJwt(token);
-      console.log("AuthContext: Setting user:", payload);
+      // console.log("AuthContext: Setting user:", payload);
       setUser({
         email: payload.email,
         role: payload.role,

@@ -4,7 +4,6 @@ import fs from "fs";
 import {
   loginUser,
   sendOtp,
-  verifyOtp,
   sendOtpEmail,
   verifyOtpEmail,
   resetPassword,
@@ -49,7 +48,8 @@ import {
   fetchPurchaseHistory,
   fetchAllRequests,
   approvePreOrder,
-  rejectPreOrder
+  rejectPreOrder,
+  getVoucherInsights
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -857,6 +857,15 @@ router.post("/requests/preorder/reject/:requestId", async (req, res) => {
 });
 
 
+router.get("/vouchers/insights", async (req, res) => {
+  try {
+    const insights = await getVoucherInsights();
+    res.status(200).json(insights);
+  } catch (error) {
+    console.error("Error fetching voucher insights:", error.message);
+    res.status(500).json({ error: "Failed to fetch voucher insights." });
+  }
+});
 
 
 

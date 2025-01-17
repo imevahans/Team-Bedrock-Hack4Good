@@ -1813,3 +1813,36 @@ export const fetchAllRequests = async () => {
     await session.close();
   }
 };
+
+export const getVoucherInsights = async () => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (v:VoucherTask)
+      OPTIONAL MATCH (v)-[c:COMPLETED_BY]->(u:User)
+      RETURN 
+        v.title AS title,
+        v.description AS description,
+        COALESCE(toInteger(v.points), 0) AS points,
+        COUNT(DISTINCT u) AS uniqueUsers,
+        COUNT(CASE WHEN c.status = 'approved' THEN 1 ELSE null END) AS approvedCount,
+        COUNT(CASE WHEN c.status = 'pending' THEN 1 ELSE null END) AS pendingCount,
+        COUNT(CASE WHEN c.status = 'rejected' THEN 1 ELSE null END) AS rejectedCount,
+        SUM(CASE WHEN c.status = 'approved' THEN COALESCE(toInteger(v.points), 0) ELSE 0 END) AS totalPointsDistributed
+    `);
+
+    return result.records.map((record) => ({
+      title: record.get("title"),
+      description: record.get("description"),
+      points: Number(record.get("points")),
+      uniqueUsers: Number(record.get("uniqueUsers")),
+      approvedCount: Number(record.get("approvedCount")),
+      pendingCount: Number(record.get("pendingCount")),
+      rejectedCount: Number(record.get("rejectedCount")),
+      totalPointsDistributed: Number(record.get("totalPointsDistributed")),
+    }));
+  } finally {
+    await session.close();
+  }
+};
+
