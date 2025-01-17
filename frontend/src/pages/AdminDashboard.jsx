@@ -2330,7 +2330,7 @@ const handleFulfillAuctionRequest = async (request) => {
                   left: "0",
                   width: "100vw",
                   height: "100vh",
-                  background: "rgba(0, 0, 0, 0.7)",
+                  background: "rgba(0, 0, 0, 0.7)", // Darker overlay
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
@@ -2345,11 +2345,11 @@ const handleFulfillAuctionRequest = async (request) => {
                     width: "400px",
                     maxWidth: "90%",
                     textAlign: "center",
-                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)", // Shadow for depth
                   }}
                 >
                   <h4>Create Product</h4>
-                  <div>
+                  <div style={{ marginBottom: "15px" }}>
                     <label>Name:</label>
                     <input
                       type="text"
@@ -2357,9 +2357,20 @@ const handleFulfillAuctionRequest = async (request) => {
                       value={newProduct.name}
                       onChange={handleInputChange}
                       placeholder="Enter product name"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                        marginTop: "5px",
+                      }}
+
                     />
                   </div>
-                  <div>
+                  <div style={{ marginBottom: "15px" }}>
                     <label>Price:</label>
                     <input
                       type="number"
@@ -2367,9 +2378,19 @@ const handleFulfillAuctionRequest = async (request) => {
                       value={newProduct.price}
                       onChange={handleInputChange}
                       placeholder="Enter product price"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                        marginTop: "5px",
+                      }}
                     />
                   </div>
-                  <div>
+                  <div style={{ marginBottom: "15px" }}>
                     <label>Quantity:</label>
                     <input
                       type="number"
@@ -2377,24 +2398,75 @@ const handleFulfillAuctionRequest = async (request) => {
                       value={newProduct.quantity}
                       onChange={handleInputChange}
                       placeholder="Enter product quantity"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                        marginTop: "5px",
+                      }}
                     />
                   </div>
-                  <div>
+                  <div style={{ marginBottom: "15px" }}>
                     <label>Image:</label>
                     <input
                       type="file"
                       name="image"
                       onChange={handleImageUpload}
                       accept="image/*"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                        marginTop: "5px",
+                      }}
+
                     />
                   </div>
                   <div>
-                    <button onClick={handleAddProduct}>Add</button>
-                    <button onClick={() => setShowModal(false)}>Cancel</button>
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        marginRight: "10px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#3498db",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                      onClick={handleAddProduct}
+                    >
+                      Add
+                    </button>
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#e74c3c",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setShowModal(false)}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               </div>
             )}
+
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && productToDelete && (
@@ -2461,6 +2533,7 @@ const handleFulfillAuctionRequest = async (request) => {
               </div>
             )}
 
+
             {/* Error Modal */}
             {showErrorModal && (
               <div
@@ -2470,7 +2543,7 @@ const handleFulfillAuctionRequest = async (request) => {
                   left: "0",
                   width: "100vw",
                   height: "100vh",
-                  background: "rgba(0, 0, 0, 0.7)", // Darker overlay
+                  background: "rgba(0, 0, 0, 0.7)",
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
@@ -2485,12 +2558,13 @@ const handleFulfillAuctionRequest = async (request) => {
                     width: "400px",
                     maxWidth: "90%",
                     textAlign: "center",
-                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)", // Shadow for depth
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
                   }}
                 >
                   <h4 style={{ color: "#e74c3c", marginBottom: "20px" }}>Error</h4>
                   <p style={{ color: "#7f8c8d", fontSize: "14px", marginBottom: "20px" }}>
-                    There was an issue creating the product. Please fill out all fields or the product already exists.
+                    There was an issue creating the product. Please fill out all fields or
+                    the product already exists.
                   </p>
                   <button
                     style={{
@@ -2511,6 +2585,7 @@ const handleFulfillAuctionRequest = async (request) => {
               </div>
             )}
 
+
             {/* Modal for editing product */}
             {editedProduct && (
               <div
@@ -2520,7 +2595,7 @@ const handleFulfillAuctionRequest = async (request) => {
                   left: "0",
                   width: "100vw",
                   height: "100vh",
-                  background: "rgba(0, 0, 0, 0.7)", // Darker overlay
+                  background: "rgba(0, 0, 0, 0.7)", // Overlay with focus effect
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
@@ -2535,14 +2610,14 @@ const handleFulfillAuctionRequest = async (request) => {
                     width: "400px",
                     maxWidth: "90%",
                     textAlign: "center",
-                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)", // Shadow for depth
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)", // Subtle shadow
                   }}
                 >
                   <h4 style={{ marginBottom: "20px", color: "#2c3e50" }}>Edit Product</h4>
 
-                  {/* Editable field for new name */}
+                  {/* Editable Field for Name */}
                   <div style={{ marginBottom: "15px" }}>
-                    <label>Name:</label>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Name:</label>
                     <input
                       type="text"
                       name="name"
@@ -2553,16 +2628,18 @@ const handleFulfillAuctionRequest = async (request) => {
                         width: "100%",
                         padding: "10px",
                         fontSize: "14px",
-                        marginTop: "5px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
                         borderRadius: "5px",
                         border: "1px solid #ddd",
+                        marginTop: "5px",
                       }}
                     />
                   </div>
 
-                  {/* Editable field for quantity */}
+                  {/* Editable Field for Quantity */}
                   <div style={{ marginBottom: "15px" }}>
-                    <label>Quantity:</label>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Quantity:</label>
                     <input
                       type="number"
                       name="quantity"
@@ -2573,16 +2650,18 @@ const handleFulfillAuctionRequest = async (request) => {
                         width: "100%",
                         padding: "10px",
                         fontSize: "14px",
-                        marginTop: "5px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
                         borderRadius: "5px",
                         border: "1px solid #ddd",
+                        marginTop: "5px",
                       }}
                     />
                   </div>
 
-                  {/* Editable field for price */}
+                  {/* Editable Field for Price */}
                   <div style={{ marginBottom: "15px" }}>
-                    <label>Price:</label>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Price:</label>
                     <input
                       type="number"
                       name="price"
@@ -2593,16 +2672,19 @@ const handleFulfillAuctionRequest = async (request) => {
                         width: "100%",
                         padding: "10px",
                         fontSize: "14px",
-                        marginTop: "5px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
                         borderRadius: "5px",
                         border: "1px solid #ddd",
+                        marginTop: "5px",
                       }}
+
                     />
                   </div>
 
-                  {/* Editable Image upload */}
+                  {/* Editable Image Upload */}
                   <div style={{ marginBottom: "15px" }}>
-                    <label>Product Image:</label>
+                    <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>Product Image:</label>
                     <input
                       type="file"
                       name="image"
@@ -2612,9 +2694,11 @@ const handleFulfillAuctionRequest = async (request) => {
                         width: "100%",
                         padding: "10px",
                         fontSize: "14px",
-                        marginTop: "5px",
+                        backgroundColor: "#ffffff", // Explicitly set background color
+                        color: "#2c3e50", // Text color for better readability
                         borderRadius: "5px",
                         border: "1px solid #ddd",
+                        marginTop: "5px",
                       }}
                     />
                     {editedProduct.imageUrl && (
@@ -2631,6 +2715,7 @@ const handleFulfillAuctionRequest = async (request) => {
                     )}
                   </div>
 
+                  {/* Save and Cancel Buttons */}
                   <div>
                     <button
                       style={{
@@ -2643,6 +2728,7 @@ const handleFulfillAuctionRequest = async (request) => {
                         border: "none",
                         borderRadius: "5px",
                         cursor: "pointer",
+                        transition: "background-color 0.3s ease",
                       }}
                       onClick={handleSaveProduct}
                     >
@@ -2658,6 +2744,7 @@ const handleFulfillAuctionRequest = async (request) => {
                         border: "none",
                         borderRadius: "5px",
                         cursor: "pointer",
+                        transition: "background-color 0.3s ease",
                       }}
                       onClick={() => setEditedProduct(null)}
                     >
@@ -2667,6 +2754,7 @@ const handleFulfillAuctionRequest = async (request) => {
                 </div>
               </div>
             )}
+
           </div>
         )}
       </div>
