@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import WeeklyRequestsChart from "../components/WeeklyRequestsChart";
+import html2canvas from "html2canvas";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -88,6 +89,30 @@ const AdminDashboard = () => {
   
   }, [activeTab]);
 
+  // Format timestamp in GMT+8
+const formatTimestamp = (timestamp) => {
+  const date = new Date(timestamp);
+  const gmt8Offset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+  const gmt8Date = new Date(date.getTime() + gmt8Offset);
+
+  return gmt8Date.toISOString().replace("T", " ").split(".")[0]; // Format: YYYY-MM-DD HH:mm:ss
+};
+
+const logAuditAction = async (action, details) => {
+  try {
+    await api.post("/auth/create-audit-log", {
+      adminName: user.name,
+      adminEmail: user.email,
+      action,
+      details,
+      timestamp: formatTimestamp(Date.now()),
+    });
+  } catch (error) {
+    console.error("Error logging audit action:", error.message);
+  }
+};
+
+
   const fetchReportData = async () => {
     try {
       let response;
@@ -115,6 +140,11 @@ const AdminDashboard = () => {
           response = await api.get(`/auth/vouchers/insights`);
           setReportData(response.data || []);
           break;
+        case "weeklyItemPurchase":
+          response = await api.get(`/auth/requests/all`);
+          setReportData(response.data.purchaseRequests || []);
+          break;
+
         default:
           setReportData([]);
       }
@@ -154,43 +184,6 @@ const AdminDashboard = () => {
   }, [reportType]);
   
   
-
-  const exportPDF = (data, title) => {
-    const doc = new jsPDF();
-    doc.text(title, 14, 10);
-  
-    // Add table data
-    autoTable(doc, {
-      head: [["Product Name", "Quantity", "Requested By", "Date"]],
-      body: data.map((request) => [
-        request.productName,
-        request.quantity,
-        request.userName,
-        new Date(request.createdAt).toLocaleString(),
-      ]),
-    });
-  
-    doc.save(`${title.replace(" ", "_").toLowerCase()}.pdf`);
-  };
-  
-  const generateCSVData = (data) => {
-    if (!Array.isArray(data)) {
-      console.error("generateCSVData: data is not an array", data);
-      return []; // Return an empty array to avoid breaking the application
-    }
-  
-    return [
-      ["Product Name", "Quantity", "Requested By", "Date"],
-      ...data.map((request) => [
-        request.productName,
-        request.quantity,
-        request.userName,
-        new Date(request.createdAt).toLocaleString(),
-      ]),
-    ];
-  };
-  
-
   const fetchDashboardStats = async () => {
     try {
       const response = await api.get("/auth/dashboard-stats");
@@ -251,8 +244,6 @@ const fetchUnfulfilledRequests = async () => {
   
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
-
-
 
 
   const fetchAuditLogs = async () => {
@@ -854,42 +845,56 @@ const handleSaveProduct = async () => {
   };
 
 
-  const WeeklyRequestsReport = ({ data }) => (
+  const WeeklyItemPurchaseReport = ({ data }) => (
     <div>
-      <h3>Weekly Requests</h3>
-      <ul>
-        {data.map((request, index) => (
-          <li key={index}>
-            {request.userName} requested {request.productName} ({request.quantity}) on {new Date(request.createdAt).toLocaleString()}.
-          </li>
-        ))}
-      </ul>
+      <h3>Weekly Item Purchase</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>User Name</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Purchase Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((request, index) => (
+            <tr key={index}>
+              <td>{request.userName}</td>
+              <td>{request.productName}</td>
+              <td>{request.quantity}</td>
+              <td>{new Date(request.createdAt).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
   
-const InventorySummaryReport = ({ data }) => (
-  <div>
-    <h3>Inventory Summary</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Product Name</th>
-          <th>Quantity</th>
-          <th>Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((product, index) => (
-          <tr key={index}>
-            <td>{product.name || "Unknown"}</td>
-            <td>{product.quantity || 0}</td>
-            <td>${product.price ? product.price.toFixed(2) : "0.00"}</td>
+  const InventorySummaryReport = ({ data }) => (
+    <div>
+      <h3>Inventory Summary</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Price</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+        </thead>
+        <tbody>
+          {data.map((product, index) => (
+            <tr key={index} style={{ color: product.quantity === 0 ? "red" : "inherit" }}>
+              <td>{product.name || "Unknown"}</td>
+              <td>{product.quantity || 0}</td>
+              <td>${product.price ? product.price.toFixed(2) : "0.00"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+  
 
 const VoucherInsightsReport = ({ data }) => (
   <div>
@@ -928,6 +933,145 @@ const VoucherInsightsReport = ({ data }) => (
     )}
   </div>
 );
+
+const headerMapping = {
+  weeklyRequests: {
+    userName: "User Name",
+    productName: "Product Name",
+    quantity: "Quantity",
+    createdAt: "Requested Date",
+  },
+  inventorySummary: {
+    name: "Product Name",
+    quantity: "Quantity",
+    price: "Price",
+  },
+  voucherInsights: {
+    title: "Title",
+    description: "Description",
+    points: "Points",
+    uniqueUsers: "Unique Users",
+    approvedCount: "Approved",
+    pendingCount: "Pending",
+    rejectedCount: "Rejected",
+    totalPointsDistributed: "Total Points Distributed",
+  },
+  weeklyItemPurchase: {
+    userName: "User Name",
+    productName: "Product Name",
+    quantity: "Quantity",
+    createdAt: "Purchase Date",
+  },
+};
+
+
+
+const exportReportPDF = (data, title, headers, dateRange, actionDetails) => {
+  const doc = new jsPDF();
+  const currentTimestamp = formatTimestamp(Date.now());
+  
+  const userFriendlyHeaders = Object.values(headers);
+  const mappedData = data.map((row) =>
+    Object.keys(headers).map((key) => (row[key] === 0 ? 0 : row[key] || "N/A"))
+  );
+
+  doc.text(title, 14, 10);
+  doc.text(`Generated on: ${currentTimestamp} (GMT+8)`, 14, 20);
+  if (dateRange.start || dateRange.end) {
+    doc.text(
+      `Date Range: ${dateRange.start || "N/A"} to ${dateRange.end || "N/A"}`,
+      14,
+      30
+    );
+  }
+
+  autoTable(doc, {
+    startY: 40,
+    head: [userFriendlyHeaders],
+    body: mappedData,
+  });
+
+  doc.save(`${title.replace(" ", "_").toLowerCase()}_${currentTimestamp}.pdf`);
+
+  logAuditAction("Export PDF", actionDetails);
+};
+
+const exportReportCSV = (data, headers, fileName, dateRange, actionDetails) => {
+  const currentTimestamp = formatTimestamp(Date.now());
+  const userFriendlyHeaders = Object.values(headers);
+  const mappedData = data.map((row) =>
+    Object.keys(headers).map((key) => (row[key] === 0 ? 0 : row[key] || ""))
+  );
+
+  const csvContent = [
+    `Report: ${fileName}`,
+    `Generated on: ${currentTimestamp} (GMT+8)`,
+    dateRange.start || dateRange.end
+      ? `Date Range: ${dateRange.start || "N/A"} to ${dateRange.end || "N/A"}`
+      : "",
+    userFriendlyHeaders.join(","),
+    ...mappedData.map((row) => row.join(",")),
+  ]
+    .filter((line) => line)
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute(
+    "download",
+    `${fileName}_${currentTimestamp.replace(/:/g, "-")}.csv`
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  logAuditAction("Export CSV", actionDetails);
+};
+
+const exportReportPDFWithChart = async (chartRef, data, title, headers, dateRange, actionDetails) => {
+  const doc = new jsPDF();
+  const currentTimestamp = formatTimestamp(Date.now());
+  
+  // Include metadata at the top
+  doc.text(title, 14, 10);
+  doc.text(`Generated on: ${currentTimestamp} (GMT+8)`, 14, 20);
+  if (dateRange.start || dateRange.end) {
+    doc.text(
+      `Date Range: ${dateRange.start || "N/A"} to ${dateRange.end || "N/A"}`,
+      14,
+      30
+    );
+  }
+
+  // Capture chart as an image
+  if (chartRef && chartRef.current) {
+    const chartCanvas = await html2canvas(chartRef.current);
+    const chartImage = chartCanvas.toDataURL("image/png");
+
+    // Add the chart image to the PDF
+    doc.addImage(chartImage, "PNG", 10, 40, 190, 90); // Adjust dimensions as needed
+  }
+
+  // Include table data below the chart
+  const userFriendlyHeaders = Object.values(headers);
+  const mappedData = data.map((row) =>
+    Object.keys(headers).map((key) => row[key] === 0 ? 0 : row[key] || "N/A")
+  );
+
+  doc.autoTable({
+    startY: 140, // Start below the chart
+    head: [userFriendlyHeaders],
+    body: mappedData,
+  });
+
+  doc.save(`${title.replace(" ", "_").toLowerCase()}_${currentTimestamp}.pdf`);
+
+  // Log the action
+  logAuditAction("Export PDF with Chart", actionDetails);
+};
+
+
 
 
   return (
@@ -1064,12 +1208,14 @@ const VoucherInsightsReport = ({ data }) => (
         <div>
           <h2>Reports</h2>
           <div className="report-controls">
-            <label>Select Report Type:</label>
-            <select value={reportType} onChange={(e) => setReportType(e.target.value)}>
-              <option value="weeklyRequests">Weekly Requests</option>
-              <option value="inventorySummary">Inventory Summary</option>
-              <option value="voucherInsights">Voucher Insights</option>
-            </select>
+          <label>Select Report Type:</label>
+          <select value={reportType} onChange={(e) => setReportType(e.target.value)}>
+            <option value="weeklyRequests">Weekly Requests</option>
+            <option value="weeklyItemPurchase">Weekly Item Purchase</option>
+            <option value="inventorySummary">Inventory Summary</option>
+            <option value="voucherInsights">Voucher Insights</option>
+          </select>
+
             
             <label>Start Date:</label>
             <input
@@ -1085,14 +1231,55 @@ const VoucherInsightsReport = ({ data }) => (
               onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
             />
             
-            <button onClick={fetchReportData}>Generate Report</button>
+            <button
+              onClick={() => {
+                const headers = headerMapping[reportType];
+                exportReportCSV(
+                  filteredReportData,
+                  headers,
+                  `${reportType}_report`,
+                  dateRange,
+                  `Exported ${reportType} report as CSV.`
+                );
+                logAuditAction("Export CSV", `Exported ${reportType} report.`);
+              }}
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => {
+                const headers = headerMapping[reportType];
+                exportReportPDF(
+                  filteredReportData,
+                  `${reportType} Report`,
+                  headers,
+                  dateRange,
+                  `Exported ${reportType} report as PDF.`
+                );
+                logAuditAction("Export PDF", `Exported ${reportType} report.`);
+              }}
+            >
+              Export PDF
+            </button>
           </div>
 
           <div className="report-content">
             {filteredReportData.length > 0 ? (
               <>
                 {reportType === "weeklyRequests" && (
-                  <WeeklyRequestsChart data={filteredReportData} />
+                  <WeeklyRequestsChart
+                    data={filteredReportData}
+                    onExportPDF={(chartRef) =>
+                      exportReportPDFWithChart(
+                        chartRef,
+                        filteredReportData,
+                        "Weekly Requests Report",
+                        headerMapping.weeklyRequests,
+                        dateRange,
+                        `Exported weekly requests report as PDF with chart.`
+                      )
+                    }
+                  />
                 )}
                 {reportType === "inventorySummary" && (
                   <InventorySummaryReport data={filteredReportData} />
@@ -1100,12 +1287,14 @@ const VoucherInsightsReport = ({ data }) => (
                 {reportType === "voucherInsights" && (
                   <VoucherInsightsReport data={filteredReportData} />
                 )}
-
+                {reportType === "weeklyItemPurchase" && (
+                  <WeeklyItemPurchaseReport data={filteredReportData} />
+                )}
               </>
             ) : (
               <p>No data available. Please generate a report.</p>
             )}
-          </div>
+          </div>;
         </div>
       )}
 

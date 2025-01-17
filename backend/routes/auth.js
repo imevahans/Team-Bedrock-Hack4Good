@@ -49,7 +49,8 @@ import {
   fetchAllRequests,
   approvePreOrder,
   rejectPreOrder,
-  getVoucherInsights
+  getVoucherInsights,
+  logAuditAction
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -867,7 +868,17 @@ router.get("/vouchers/insights", async (req, res) => {
   }
 });
 
+router.post("/create-audit-log", async (req, res) => {
+  const { adminName, adminEmail, action, details } = req.body;
 
+  try {
+    await logAuditAction(adminName, adminEmail, action, details);
+    res.status(201).json({ message: "Audit log created successfully." });
+  } catch (error) {
+    console.error("Error creating audit log:", error.message);
+    res.status(500).json({ error: "Failed to create audit log." });
+  }
+});
 
 
 
