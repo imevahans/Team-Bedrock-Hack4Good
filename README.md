@@ -19,8 +19,9 @@ The application consists of two parts:
 - [Troubleshooting](#troubleshooting)
 - [Features](#features)
   - [Special Features](#special-features)
-- [Contributing](#contributing)
-- [License](#license)
+- [Pitch Deck](#pitch-deck)
+- [Demo Video](#demo-video)
+- [Contributors](#contributors)
 
 ---
 
@@ -146,7 +147,7 @@ CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 
 ## **Running the Application**
 
-Once you've set up each `.env` files in both "/backend" and "/frontend" respectively, and installed the dependencies, you can run both the frontend and backend applications locally.
+Once you've set up each `.env` file in both "/backend" and "/frontend" respectively, and installed the dependencies, you can run both the frontend and backend applications locally.
 
 ### **Frontend**:
 ```bash
@@ -172,7 +173,7 @@ To create the first admin account, go to `http://localhost:5173/createadmin` and
 
 This will allow you to start adding other users, as our app only allows **admins** to add users to prevent non-residents from gaining access to the system.
 
-After that please proceed to login at `http://localhost:5173/createadmin`.
+After that, please proceed to login at `http://localhost:5173/createadmin`.
 
 ---
 
@@ -200,6 +201,18 @@ After that please proceed to login at `http://localhost:5173/createadmin`.
 - **No Password Exposure**: Passwords are never sent through email or mobile phone, ensuring they remain secure and are not vulnerable to leakage.
 - **OTP for Invitation**: Even the invitation process requires an OTP to prevent unauthorized access.
 - **Admin Controls**: Only admins can add users, ensuring that only legitimate residents can log in. Admins can add users either one by one or in bulk for ease of use.
+
+---
+
+## **Pitch Deck**
+You can view the pitch deck for the project here:  
+[**Pitch Deck**](https://docs.google.com/presentation/d/1HR37_GAUfmAjE2TfHsGruDAovHrvgnZ1ZBYbeRBM5EM/edit?usp=sharing)
+
+---
+
+## **Demo Video**
+Watch the demo video of the project on YouTube:  
+[**Demo Video**](https://youtu.be/L0EQNueS9L4)
 
 ---
 
