@@ -34,6 +34,16 @@ const ResidentDashboard = () => {
   const [sortCriteriaVoucher, setSortCriteriaVoucher] = useState("title"); // Default: "title"
   const [sortOrderVoucher, setSortOrderVoucher] = useState("asc"); // Default: "asc"
   const [filterStatus, setFilterStatus] = useState("all"); // Default: "all"
+  const [purchaseHistory, setPurchaseHistory] = useState([]);
+  const [preOrderHistory, setPreOrderHistory] = useState([]);
+  const [searchTermPurchase, setSearchTermPurchase] = useState("");
+  const [sortOrderPurchase, setSortOrderPurchase] = useState("asc"); // "asc" or "desc"
+  const [sortCriteriaPurchase, setSortCriteriaPurchase] = useState("purchaseDate"); // Default: "purchaseDate"
+  const [searchTermPreorder, setSearchTermPreorder] = useState("");
+  const [sortOrderPreorder, setSortOrderPreorder] = useState("asc"); // "asc" or "desc"
+  const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("purchaseDate"); // Default: "purchaseDate"
+  const [filterStatusPreorder, setFilterStatusPreorder] = useState("all"); // "all", "pending", "approved", "rejected"
+
 
   useEffect(() => {
     if (activeTab === "Products") {
@@ -41,14 +51,74 @@ const ResidentDashboard = () => {
     } else if (activeTab === "Voucher Tasks") {
       fetchVoucherTasks();
       fetchAttemptHistory();
+    } else if (activeTab === "Transaction History") {
+      fetchTransactionHistory();
+    } else if(activeTab === "Dashboard") {
+      fetchVoucherTasks();
+      fetchAttemptHistory();
     }
     fetchUserDetails(); // Fetch both user name and balance
   }, [activeTab]); // Re-fetch products, vouchers, and user details when active tab changes
   
+
+  const fetchTransactionHistory = async () => {
+    try {
+      const purchaseResponse = await api.get(`/auth/transactions/purchases?email=${user.email}`);
+      setPurchaseHistory(purchaseResponse.data);
+  
+      const preorderResponse = await api.get(`/auth/transactions/preorders?email=${user.email}`);
+      setPreOrderHistory(preorderResponse.data);
+    } catch (error) {
+      console.error("Error fetching transaction history:", error.message);
+      showNotification("Failed to fetch transaction history.", "error");
+    }
+  };
+
+  const filteredSortedPurchaseHistory = [...purchaseHistory]
+  .filter((purchase) =>
+    purchase.productName.toLowerCase().includes(searchTermPurchase.toLowerCase())
+  )
+  .sort((a, b) => {
+    let fieldA = a[sortCriteriaPurchase];
+    let fieldB = b[sortCriteriaPurchase];
+
+    if (sortCriteriaPurchase === "purchaseDate") {
+      fieldA = new Date(a.purchaseDate);
+      fieldB = new Date(b.purchaseDate);
+    }
+
+    return sortOrderPurchase === "asc"
+      ? fieldA > fieldB ? 1 : -1
+      : fieldA < fieldB ? 1 : -1;
+  });
+
+
+  const filteredSortedPreOrderHistory = [...preOrderHistory]
+  .filter((preOrder) =>
+    preOrder.productName.toLowerCase().includes(searchTermPreorder.toLowerCase()) &&
+    (filterStatusPreorder === "all" || preOrder.status.toLowerCase() === filterStatusPreorder.toLowerCase())
+  )
+  .sort((a, b) => {
+    let fieldA = a[sortCriteriaPreorder];
+    let fieldB = b[sortCriteriaPreorder];
+
+    if (sortCriteriaPreorder === "preorderDate") {
+      fieldA = new Date(a.preorderDate);
+      fieldB = new Date(b.preorderDate);
+    }
+
+    return sortOrderPreorder === "asc"
+      ? fieldA > fieldB ? 1 : -1
+      : fieldA < fieldB ? 1 : -1;
+  });
+
+
+
   const handlePreOrderClick = (product) => {
     setSelectedPreOrderProduct(product);
     setPreOrderQuantity(1); // Set the initial quantity to 1
     setShowPreOrderModal(true); // Show the pre-order modal
+    setPreOrderTotalPrice(preOrderQuantity * selectedPreOrderProduct.price);
   };  
   
   // Handle Pre-order modal close
@@ -59,15 +129,14 @@ const ResidentDashboard = () => {
     setPreOrderTotalPrice(0);
   };
   
-  // Handle Pre-order quantity change
   const handlePreOrderQuantityChange = (e) => {
     const newQuantity = Number(e.target.value);
     setPreOrderQuantity(newQuantity);
     if (selectedPreOrderProduct) {
-      const newTotalPrice = newQuantity * selectedPreOrderProduct.price; // Recalculate the total price
-      setPreOrderTotalPrice(newTotalPrice); // Update the total price state
+      setPreOrderTotalPrice(newQuantity * selectedPreOrderProduct.price);
     }
   };
+
   
   const handlePreOrderSubmit = async () => {
     try {
@@ -181,7 +250,7 @@ const ResidentDashboard = () => {
       filterStatus === "all" || attempt.attemptStatus.toLowerCase() === filterStatus.toLowerCase()
   );
   
-
+  
   
   
   
@@ -200,7 +269,6 @@ const ResidentDashboard = () => {
   const handleBuyProduct = async () => {
     try {
       if (!selectedProduct) return;
-      console.log(userBalance);
 
       const totalCost = totalPrice;
       if (userBalance < totalCost) {
@@ -373,7 +441,6 @@ const ResidentDashboard = () => {
         >
           Transaction History
         </button>
-        <button className="sidebar-button">Nav Bar Item 4</button>
         <div className="logout-container">
           <button className="logout-button" onClick={handleLogout}>
             Log Out
@@ -591,6 +658,127 @@ const ResidentDashboard = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "Transaction History" && (
+          <div>
+            <h2>Your Transaction History</h2>
+            
+            <h3>Purchase History</h3>
+            <div className="controls">
+              <input
+                type="text"
+                placeholder="Search Purchase History..."
+                value={searchTermPurchase}
+                onChange={(e) => setSearchTermPurchase(e.target.value)}
+                className="search-bar"
+              />
+              <select
+                value={sortCriteriaPurchase}
+                onChange={(e) => setSortCriteriaPurchase(e.target.value)}
+                className="sort-criteria"
+              >
+                <option value="productName">Product Name</option>
+                <option value="quantity">Quantity</option>
+                <option value="totalPrice">Total Price</option>
+                <option value="purchaseDate">Date</option>
+              </select>
+              <button onClick={() => setSortOrderPurchase((prev) => (prev === "asc" ? "desc" : "asc"))}>
+                Sort: {sortOrderPurchase === "asc" ? "Ascending" : "Descending"}
+              </button>
+            </div>
+
+
+            {filteredSortedPurchaseHistory.length > 0 ? (
+              <table className="transaction-history-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSortedPurchaseHistory.map((purchase, index) => (
+                    <tr key={index}>
+                      <td>{purchase.productName}</td>
+                      <td>{purchase.quantity}</td>
+                      <td>${purchase.totalPrice ? purchase.totalPrice.toFixed(2) : "N/A"}</td>
+                      <td>{new Date(purchase.purchaseDate).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No purchases found.</p>
+            )}
+
+
+            <h3>Preorder History</h3>
+            <div className="controls">
+              <input
+                type="text"
+                placeholder="Search Preorder History..."
+                value={searchTermPreorder}
+                onChange={(e) => setSearchTermPreorder(e.target.value)}
+                className="search-bar"
+              />
+              <select
+                value={sortCriteriaPreorder}
+                onChange={(e) => setSortCriteriaPreorder(e.target.value)}
+                className="sort-criteria"
+              >
+                <option value="productName">Product Name</option>
+                <option value="quantity">Quantity</option>
+                <option value="totalPrice">Total Price</option>
+                <option value="preorderDate">Date</option>
+              </select>
+              <select
+                value={filterStatusPreorder}
+                onChange={(e) => setFilterStatusPreorder(e.target.value)}
+                className="status-filter"
+              >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button onClick={() => setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))}>
+                Sort: {sortOrderPreorder === "asc" ? "Ascending" : "Descending"}
+              </button>
+            </div>
+
+
+            {filteredSortedPreOrderHistory.length > 0 ? (
+              <table className="transaction-history-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSortedPreOrderHistory.map((preOrder, index) => (
+                    <tr key={index}>
+                      <td>{preOrder.productName}</td>
+                      <td>{preOrder.quantity}</td>
+                      <td>${preOrder.totalPrice ? preOrder.totalPrice.toFixed(2) : "N/A"}</td>
+                      <td className={`status-${preOrder.status.toLowerCase()}`}>{preOrder.status}</td>
+                      <td>{new Date(preOrder.preorderDate).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No preorders found.</p>
+            )}
+
+
           </div>
         )}
 

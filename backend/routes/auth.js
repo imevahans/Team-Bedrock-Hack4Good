@@ -44,7 +44,9 @@ import {
   attemptVoucherTask,
   fetchUserAttempts,
   getPendingVoucherApprovals,
-  fetchUserAttemptHistory
+  fetchUserAttemptHistory,
+  fetchPreOrderHistory,
+  fetchPurchaseHistory
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -622,7 +624,6 @@ router.post("/requests/mark-fulfilled/:requestId", async (req, res) => {
 router.get("/vouchers/tasks", async (req, res) => {
   try {
     const tasks = await getAllVoucherTasks();
-    console.log("tasks.attempts = ",tasks.attempts);
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch voucher tasks." });
@@ -687,7 +688,7 @@ router.delete("/vouchers/delete/:id", async (req, res) => {
 });
 
 router.post("/products/preorder", async (req, res) => {
-  const { productName, quantity, userEmail } = req.body;
+  const { productName, quantity, userEmail, userName, price } = req.body;
 
   if (!productName || !quantity || !userEmail) {
     return res.status(400).json({
@@ -697,7 +698,7 @@ router.post("/products/preorder", async (req, res) => {
 
   try {
     // Call the pre-order function
-    const result = await preOrderProduct(productName, quantity, userEmail);
+    const result = await preOrderProduct(productName, quantity, userEmail, price, userName);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error placing pre-order:", error.message);
@@ -768,6 +769,38 @@ router.get("/resident/vouchers/attempt-history", async (req, res) => {
   } catch (error) {
     console.error("Error fetching attempt history:", error.message);
     res.status(500).json({ error: "Failed to fetch attempt history." });
+  }
+});
+
+router.get("/transactions/purchases", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "User email is required." });
+  }
+
+  try {
+    const purchases = await fetchPurchaseHistory(email);
+    res.status(200).json(purchases);
+  } catch (error) {
+    console.error("Error fetching purchase history:", error.message);
+    res.status(500).json({ error: "Failed to fetch purchase history." });
+  }
+});
+
+router.get("/transactions/preorders", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "User email is required." });
+  }
+
+  try {
+    const preorders = await fetchPreOrderHistory(email);
+    res.status(200).json(preorders);
+  } catch (error) {
+    console.error("Error fetching preorder history:", error.message);
+    res.status(500).json({ error: "Failed to fetch preorder history." });
   }
 });
 

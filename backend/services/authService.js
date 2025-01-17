@@ -1048,14 +1048,11 @@ export const buyProduct = async (productName, quantity, userEmail) => {
   const session = driver.session();
 
   try {
-    // Step 1: Fetch product details
-    const productResult = await session.run(
-      `
+    // Fetch product details
+    const productResult = await session.run(`
       MATCH (p:Product {name: $productName})
       RETURN p.price AS price, p.quantity AS quantity
-      `,
-      { productName }
-    );
+    `, { productName });
 
     if (productResult.records.length === 0) {
       throw new Error("Product not found.");
@@ -1063,16 +1060,18 @@ export const buyProduct = async (productName, quantity, userEmail) => {
 
     const price = productResult.records[0].get("price");
     const currentQuantity = productResult.records[0].get("quantity");
+
+    if (quantity > currentQuantity) {
+      throw new Error("Requested quantity exceeds available stock.");
+    }
+
     const totalPrice = price * quantity;
 
-    // Step 2: Check if user has enough balance
-    const userResult = await session.run(
-      `
+    // Check user balance
+    const userResult = await session.run(`
       MATCH (u:User {email: $userEmail})
       RETURN u.balance AS balance, u.name AS name
-      `,
-      { userEmail }
-    );
+    `, { userEmail });
 
     if (userResult.records.length === 0) {
       throw new Error("User not found.");
@@ -1085,42 +1084,32 @@ export const buyProduct = async (productName, quantity, userEmail) => {
       throw new Error("Insufficient balance.");
     }
 
-    // Step 3: Update product quantity
+    // Update product quantity
     await updateProductQuantity(productName, currentQuantity - quantity);
 
-    // Step 4: Deduct user balance
+    // Deduct user balance
     await updateUserBalance(userEmail, totalPrice);
 
-    // Step 5: Create a relationship between User and Product
-    await session.run(
-      `
+    // Create purchase relationship
+    await session.run(`
       MATCH (u:User {email: $userEmail}), (p:Product {name: $productName})
       MERGE (u)-[r:PURCHASED]->(p)
-      SET r.quantity = $quantity, r.fulfilled = false, r.createdAt = $createdAt
+      SET r.quantity = $quantity, r.fulfilled = true, r.createdAt = $createdAt
       RETURN r
-      `,
-      {
-        userEmail,
-        productName,
-        quantity,
-        createdAt: formatTimestamp(Date.now()),
-      }
-    );
-
-    logAuditAction(
-      userName,
+    `, {
       userEmail,
-      "Buy",
-      `Purchased ${quantity} piece(s) of ${productName}.`
-    );
+      productName,
+      quantity,
+      createdAt: formatTimestamp(Date.now()),
+    });
 
+    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} of ${productName}.`);
     return { message: "Product purchased successfully." };
-  } catch (error) {
-    throw error;
   } finally {
     await session.close();
   }
 };
+
 
 export const fetchUnfulfilledRequests = async () => {
   const session = driver.session();
@@ -1419,12 +1408,14 @@ export const preOrderProduct = async (productName, quantity, userEmail, price, u
   const session = driver.session();
   const createdAt = formatTimestamp(Date.now());
   const updatedAt = createdAt;
-  const totalPrice = price * quantity;
+  const totalPrice = Number(price) * Number(quantity);
+
   try {
-    // Create PreOrder node
-    await session.run(
-      `
-      MATCH (p:Product {name: $productName})
+    // Deduct user balance
+    await updateUserBalance(userEmail, totalPrice);
+
+    // Create preorder
+    await session.run(`
       CREATE (preOrder:PreOrder {
         userEmail: $userEmail,
         productName: $productName,
@@ -1434,33 +1425,75 @@ export const preOrderProduct = async (productName, quantity, userEmail, price, u
         createdAt: $createdAt,
         updatedAt: $updatedAt
       })
-      MERGE (preOrder)-[:PREORDERS]->(p)
       RETURN preOrder
-      `,
-      {
-        userEmail,
-        productName,
-        quantity,
-        totalPrice,
-        createdAt: formatTimestamp(Date.now()),
-        updatedAt: formatTimestamp(Date.now())
-      }
-    );
-
-    logAuditAction(
-      userName,
+    `, {
       userEmail,
-      "PreOrder",
-      `Pre-ordered ${quantity} piece(s) of ${productName}.`
-    );
+      productName,
+      quantity,
+      totalPrice,
+      createdAt,
+      updatedAt,
+    });
 
-    return { message: "Pre-order placed successfully." };
-  } catch (error) {
-    throw error;
+    logAuditAction(userName, userEmail, "PreOrder", `Preordered ${quantity} of ${productName}.`);
+    return { message: "Preorder placed successfully." };
   } finally {
     await session.close();
   }
 };
+
+export const approvePreOrder = async (preOrderId, adminName, adminEmail) => {
+  const session = driver.session();
+
+  try {
+    await session.run(`
+      MATCH (preOrder:PreOrder)
+      WHERE elementId(preOrder) = $preOrderId
+      SET preOrder.status = 'approved'
+    `, { preOrderId });
+
+    logAuditAction(adminName, adminEmail, "Approve PreOrder", `Approved preorder with ID: ${preOrderId}.`);
+  } finally {
+    await session.close();
+  }
+};
+
+export const rejectPreOrder = async (preOrderId, adminName, adminEmail) => {
+  const session = driver.session();
+
+  try {
+    const result = await session.run(`
+      MATCH (preOrder:PreOrder)
+      WHERE elementId(preOrder) = $preOrderId
+      RETURN preOrder.userEmail AS userEmail, preOrder.totalPrice AS totalPrice
+    `, { preOrderId });
+
+    if (result.records.length === 0) {
+      throw new Error("Preorder not found.");
+    }
+
+    const userEmail = result.records[0].get("userEmail");
+    const totalPrice = result.records[0].get("totalPrice");
+
+    // Refund balance
+    await session.run(`
+      MATCH (u:User {email: $userEmail})
+      SET u.balance = u.balance + $totalPrice
+    `, { userEmail, totalPrice });
+
+    // Update preorder status
+    await session.run(`
+      MATCH (preOrder:PreOrder)
+      WHERE elementId(preOrder) = $preOrderId
+      SET preOrder.status = 'rejected'
+    `, { preOrderId });
+
+    logAuditAction(adminName, adminEmail, "Reject PreOrder", `Rejected preorder with ID: ${preOrderId}. Refunded $${totalPrice}.`);
+  } finally {
+    await session.close();
+  }
+};
+
 
 export const attemptVoucherTask = async (taskId, userEmail, imageFilePath, userName) => {
   const session = driver.session();
@@ -1613,6 +1646,50 @@ export const fetchUserAttemptHistory = async (email) => {
       taskDescription: record.get("taskDescription"),
       attemptStatus: record.get("attemptStatus"),
       updatedAt: record.get("updatedAt"),
+    }));
+  } finally {
+    await session.close();
+  }
+};
+
+export const fetchPurchaseHistory = async (userEmail) => {
+  const session = driver.session();
+
+  try {
+    const result = await session.run(`
+      MATCH (u:User {email: $userEmail})-[r:PURCHASED]->(p:Product)
+      RETURN p.name AS productName, r.quantity AS quantity, r.createdAt AS purchaseDate, p.price AS price
+      ORDER BY r.createdAt DESC
+    `, { userEmail });
+
+    return result.records.map((record) => ({
+      productName: record.get("productName"),
+      quantity: record.get("quantity"),
+      purchaseDate: record.get("purchaseDate"),
+      totalPrice: record.get("quantity") * record.get("price"),
+    }));
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const fetchPreOrderHistory = async (userEmail) => {
+  const session = driver.session();
+
+  try {
+    const result = await session.run(`
+      MATCH (preOrder:PreOrder {userEmail: $userEmail})
+      RETURN preOrder.productName AS productName, preOrder.quantity AS quantity, preOrder.totalPrice AS totalPrice, preOrder.status AS status, preOrder.createdAt AS preorderDate
+      ORDER BY preOrder.createdAt DESC
+    `, { userEmail });
+
+    return result.records.map((record) => ({
+      productName: record.get("productName"),
+      quantity: record.get("quantity"),
+      totalPrice: record.get("totalPrice"),
+      status: record.get("status"),
+      preorderDate: record.get("preorderDate"),
     }));
   } finally {
     await session.close();

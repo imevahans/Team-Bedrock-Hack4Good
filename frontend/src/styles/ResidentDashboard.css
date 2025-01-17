@@ -364,3 +364,45 @@ body {
   transform: scale(1.03);
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
+
+.transaction-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.transaction-history-table th,
+.transaction-history-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.transaction-history-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+.transaction-history-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.transaction-history-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.status-approved {
+  color: #28a745; /* Green */
+  font-weight: bold;
+}
+
+.status-rejected {
+  color: #dc3545; /* Red */
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #ffc107; /* Yellow */
+  font-weight: bold;
+}
+
