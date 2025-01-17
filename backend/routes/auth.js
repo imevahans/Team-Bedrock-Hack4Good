@@ -43,7 +43,8 @@ import {
   deleteVoucherTask,
   attemptVoucherTask,
   fetchUserAttempts,
-  getPendingVoucherApprovals
+  getPendingVoucherApprovals,
+  fetchUserAttemptHistory
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -753,6 +754,23 @@ router.get("/vouchers/pending-approvals", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch pending approvals." });
   }
 });
+
+router.get("/resident/vouchers/attempt-history", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "User email is required." });
+  }
+
+  try {
+    const history = await fetchUserAttemptHistory(email);
+    res.status(200).json(history);
+  } catch (error) {
+    console.error("Error fetching attempt history:", error.message);
+    res.status(500).json({ error: "Failed to fetch attempt history." });
+  }
+});
+
 
 
 

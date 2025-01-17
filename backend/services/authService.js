@@ -1589,3 +1589,32 @@ export const getPendingVoucherApprovals = async () => {
     await session.close();
   }
 };
+
+export const fetchUserAttemptHistory = async (email) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      `
+      MATCH (v:VoucherTask)-[c:COMPLETED_BY]->(u:User {email: $email})
+      RETURN 
+        elementId(c) AS attemptId,
+        v.title AS taskTitle,
+        v.description AS taskDescription,
+        c.status AS attemptStatus,
+        c.updatedAt AS updatedAt
+      ORDER BY c.updatedAt DESC
+      `,
+      { email }
+    );
+
+    return result.records.map((record) => ({
+      attemptId: record.get("attemptId"),
+      taskTitle: record.get("taskTitle"),
+      taskDescription: record.get("taskDescription"),
+      attemptStatus: record.get("attemptStatus"),
+      updatedAt: record.get("updatedAt"),
+    }));
+  } finally {
+    await session.close();
+  }
+};

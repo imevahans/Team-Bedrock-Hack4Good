@@ -29,7 +29,21 @@ const ResidentDashboard = () => {
   const [voucherTasks, setVoucherTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
-  
+  const [attemptHistory, setAttemptHistory] = useState([]);
+  const [searchTermVoucher, setSearchTermVoucher] = useState("");
+  const [sortCriteriaVoucher, setSortCriteriaVoucher] = useState("title"); // Default: "title"
+  const [sortOrderVoucher, setSortOrderVoucher] = useState("asc"); // Default: "asc"
+  const [filterStatus, setFilterStatus] = useState("all"); // Default: "all"
+
+  useEffect(() => {
+    if (activeTab === "Products") {
+      fetchProducts();
+    } else if (activeTab === "Voucher Tasks") {
+      fetchVoucherTasks();
+      fetchAttemptHistory();
+    }
+    fetchUserDetails(); // Fetch both user name and balance
+  }, [activeTab]); // Re-fetch products, vouchers, and user details when active tab changes
   
   const handlePreOrderClick = (product) => {
     setSelectedPreOrderProduct(product);
@@ -96,15 +110,9 @@ const ResidentDashboard = () => {
       showNotification("Failed to place pre-order.", "error");
     }
   };
-  useEffect(() => {
-    if (activeTab === "Products") {
-      fetchProducts();
-    } else if (activeTab === "Voucher Tasks") {
-      fetchVoucherTasks();
-    }
-    fetchUserDetails(); // Fetch both user name and balance
-  }, [activeTab]); // Re-fetch products, vouchers, and user details when active tab changes
 
+
+  
   const fetchProducts = async () => {
     try {
       const response = await api.get("/auth/products");
@@ -147,6 +155,33 @@ const ResidentDashboard = () => {
       showNotification("Failed to fetch voucher tasks.", "error");
     }
   };
+
+  // Filter, search, and sort voucher tasks
+  const filteredVoucherTasks = voucherTasks
+  .filter(
+    (task) =>
+      task.title.toLowerCase().includes(searchTermVoucher.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchTermVoucher.toLowerCase())
+  )
+  .sort((a, b) => {
+    let fieldA = a[sortCriteriaVoucher];
+    let fieldB = b[sortCriteriaVoucher];
+
+    // Handle string comparison for title
+    if (sortCriteriaVoucher === "title") {
+      fieldA = fieldA.toLowerCase();
+      fieldB = fieldB.toLowerCase();
+    }
+
+    return sortOrderVoucher === "asc" ? (fieldA > fieldB ? 1 : -1) : (fieldA < fieldB ? 1 : -1);
+  });
+
+  const filteredAttemptHistory = attemptHistory.filter(
+    (attempt) =>
+      filterStatus === "all" || attempt.attemptStatus.toLowerCase() === filterStatus.toLowerCase()
+  );
+  
+
   
   
   
@@ -281,8 +316,19 @@ const ResidentDashboard = () => {
       setUploadedImage(null); // Reset uploaded image
       setSelectedTask(null); // Reset selected task
       fetchVoucherTasks(); // Refresh tasks
+      fetchAttemptHistory();
     } catch (error) {
       showNotification("Failed to mark task as complete.", "error");
+    }
+  };
+
+  const fetchAttemptHistory = async () => {
+    try {
+      const response = await api.get(`/auth/resident/vouchers/attempt-history?email=${user.email}`);
+      setAttemptHistory(response.data);
+    } catch (error) {
+      console.error("Error fetching attempt history:", error.message);
+      showNotification("Failed to fetch attempt history.", "error");
     }
   };
 
@@ -344,10 +390,34 @@ const ResidentDashboard = () => {
         {activeTab === "Voucher Tasks" && (
           <div>
             <h2>Available Voucher Tasks</h2>
-            {voucherTasks.length === 0 ? (
+            <div className="controls">
+              <div className="search-bar">
+                <input
+                  type="text"
+                  placeholder="Search voucher tasks..."
+                  value={searchTermVoucher}
+                  onChange={(e) => setSearchTermVoucher(e.target.value)}
+                />
+              </div>
+
+              <div className="sort-controls">
+                <select
+                  value={sortCriteriaVoucher}
+                  onChange={(e) => setSortCriteriaVoucher(e.target.value)}
+                >
+                  <option value="title">Title</option>
+                  <option value="points">Points</option>
+                  <option value="attempts">Number of Attempts</option>
+                </select>
+                <button onClick={() => setSortOrderVoucher((prev) => (prev === "asc" ? "desc" : "asc"))}>
+                  Sort: {sortOrderVoucher === "asc" ? "Ascending" : "Descending"}
+                </button>
+              </div>
+            </div>
+            {filteredVoucherTasks.length === 0 ? (
               <p>No voucher tasks available.</p>
             ) : (
-              voucherTasks.map((task) => {
+              filteredVoucherTasks.map((task) => {
                 const remainingAttempts = task.maxAttempts - task.attempts;
                 return (
                   <div key={task.id} className="voucher-task-card">
@@ -369,6 +439,53 @@ const ResidentDashboard = () => {
                 );
               })
             )}
+
+            {/* Users' Voucher Tasks History */}
+            <div>
+              <h2>Your Attempt History</h2>
+              <div className="filter-controls">
+                <label>Status:</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                >
+                  <option value="all">Show All</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+              {filteredAttemptHistory.length === 0 ? (
+                <p>No attempts found.</p>
+              ) : (
+                <table className="attempt-history-table">
+                  <thead>
+                    <tr>
+                      <th>Task</th>
+                      <th>Description</th>
+                      <th>Status</th>
+                      <th>Updated At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAttemptHistory.map((attempt) => (
+                      <tr key={attempt.attemptId}>
+                        <td>{attempt.taskTitle}</td>
+                        <td>{attempt.taskDescription}</td>
+                        <td>
+                          <span
+                            className={`status-${attempt.attemptStatus.toLowerCase()}`}
+                          >
+                            {attempt.attemptStatus}
+                          </span>
+                        </td>
+                        <td>{new Date(attempt.updatedAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
 
 
             {/* Modal for Attempt Task */}
