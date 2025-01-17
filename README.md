@@ -5,7 +5,7 @@ This project is a **Minimart and Voucher System** designed for **Muhammadiyah We
 The application consists of two parts:
 
 - **Frontend**: A React application built with Vite.
-- **Backend**: A Node.js/Express backend with JWT authentication, Twilio integration, Google OAuth, and integration with Neo4j.
+- **Backend**: A Node.js/Express backend with JWT authentication, Twilio integration, and integration with Neo4j Graphical Database.
 
 ## **Table of Contents**
 - [Installation](#installation)
