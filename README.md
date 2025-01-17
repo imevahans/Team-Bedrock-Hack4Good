@@ -1,4 +1,4 @@
-# **Project Name: Team Bedrock Web-based Minimart and Voucher System**
+# **Team Bedrock Web-based Minimart and Voucher System**
 
 This project is a **Minimart and Voucher System** designed for **Muhammadiyah Welfare Home**. The application consists of two parts:
 
