@@ -367,9 +367,29 @@ export const resetPasswordByAdmin = async (email, name, adminName, adminEmail) =
     to: email,
     subject: "Reset Your Password",
     html: `
-      <p>Hello ${name},</p>
-      <p>You have requested to reset your password. Please click the link below to reset your password:</p>
-      <a href="${frontendUrl}/reset-password?email=${encodeURIComponent(email)}">Reset Password</a>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        <h2 style="color: #2c3e50; text-align: center; margin-bottom: 20px;">Reset Your Password</h2>
+        <p style="font-size: 16px; color: #34495e; line-height: 1.5;">
+          Hello <strong>${name}</strong>,
+        </p>
+        <p style="font-size: 16px; color: #34495e; line-height: 1.5;">
+          You have requested to reset your password. Please click the button below to reset your password:
+        </p>
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="${frontendUrl}/reset-password?email=${encodeURIComponent(email)}" 
+             style="display: inline-block; background-color: #3498db; color: white; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+            Reset Password
+          </a>
+        </div>
+        <p style="font-size: 14px; color: #7f8c8d; line-height: 1.5;">
+          If you did not request this password reset, please ignore this email. This link will expire in 24 hours.
+        </p>
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 14px; color: #7f8c8d; text-align: center;">
+          Regards,<br>
+          The Muhammadiyah Minimart Team
+        </p>
+      </div>
     `,
   };
 
@@ -540,11 +560,31 @@ const sendInvitationEmail = async (email, name) => {
 
   const mailOptions = {
     to: email,
-    subject: "Welcome to the Minimart!",
+    subject: "Welcome to Muhammadiyah Minimart!",
     html: `
-      <p>Hello ${name},</p>
-      <p>Welcome to the Minimart! Please click the link below to accept your invitation and set your password:</p>
-      <a href="${frontendUrl}/accept-invitation?email=${encodeURIComponent(email)}">Accept Invitation</a>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        <h2 style="color: #2c3e50; text-align: center; margin-bottom: 20px;">Welcome to Muhammadiyah Minimart!</h2>
+        <p style="font-size: 16px; color: #34495e; line-height: 1.5;">
+          Hello <strong>${name}</strong>,
+        </p>
+        <p style="font-size: 16px; color: #34495e; line-height: 1.5;">
+          We are excited to have you on board! Please click the button below to accept your invitation and set your password:
+        </p>
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="${frontendUrl}/accept-invitation?email=${encodeURIComponent(email)}" 
+             style="display: inline-block; background-color: #3498db; color: white; padding: 12px 20px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
+            Accept Invitation
+          </a>
+        </div>
+        <p style="font-size: 14px; color: #7f8c8d; line-height: 1.5;">
+          If you did not expect this email, please ignore it. The invitation will expire in 48 hours.
+        </p>
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 14px; color: #7f8c8d; text-align: center;">
+          Regards,<br>
+          The Muhammadiyah Minimart Team
+        </p>
+      </div>
     `,
   };
 
@@ -797,9 +837,31 @@ export const sendEmailOtp = async (email) => {
     to: email,
     subject: "Your OTP Code",
     html: `
-      <p>Hello,</p>
-      <p>Your OTP code is <strong>${otp}</strong>.</p>
-      <p>Please use this code to complete your action. This code is valid for 10 minutes.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        <h2 style="color: #2c3e50; text-align: center; margin-bottom: 20px;">Your OTP Code</h2>
+        <p style="font-size: 16px; color: #34495e; line-height: 1.5;">
+          Hello,
+        </p>
+        <p style="font-size: 16px; color: #34495e; line-height: 1.5;">
+          Your OTP code is:
+        </p>
+        <div style="text-align: center; margin: 20px 0;">
+          <span style="display: inline-block; font-size: 24px; font-weight: bold; color: #3498db; background-color: #ecf9ff; padding: 10px 20px; border-radius: 8px; border: 1px solid #3498db;">
+            ${otp}
+          </span>
+        </div>
+        <p style="font-size: 16px; color: #34495e; line-height: 1.5;">
+          Please use this code to complete your action. This code is valid for <strong>10 minutes</strong>.
+        </p>
+        <p style="font-size: 14px; color: #7f8c8d; line-height: 1.5;">
+          If you did not request this OTP, please ignore this email. For security reasons, do not share this code with anyone.
+        </p>
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 14px; color: #7f8c8d; text-align: center;">
+          Regards,<br>
+          The Muhammadiyah Minimart Team
+        </p>
+      </div>
     `,
   };
 
