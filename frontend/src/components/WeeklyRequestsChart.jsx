@@ -11,11 +11,12 @@ import {
 import { Bar } from "react-chartjs-2";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import "../styles/WeeklyRequestsChart.css";
 
 // Register required components for Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const WeeklyRequestsChart = ({ data, onExportPDF }) => {
+const WeeklyRequestsChart = ({ data }) => {
   const chartRef = useRef();
 
   useEffect(() => {
@@ -61,7 +62,7 @@ const WeeklyRequestsChart = ({ data, onExportPDF }) => {
   };
 
   return (
-    <div>
+    <div className="chart-container">
       <div ref={chartRef}>
         <Bar data={chartData} />
       </div>

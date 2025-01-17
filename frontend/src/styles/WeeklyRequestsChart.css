@@ -1,0 +1,59 @@
+/* Chart Container */
+.chart-container {
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff; /* White background */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  max-width: 800px; /* Limit container width */
+  text-align: center; /* Center align content */
+}
+
+/* Chart */
+.chart-container canvas {
+  max-width: 100%; /* Responsive chart */
+  height: auto;
+}
+
+/* Export Button */
+.chart-container button {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 25px; /* Adjusted padding for a larger, nicer button */
+  font-size: 16px; /* Slightly larger font */
+  font-weight: bold;
+  color: #ffffff; /* White text */
+  background-color: #3498db; /* Primary blue */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease; /* Smooth transition */
+}
+
+.chart-container button:hover {
+  background-color: #2980b9; /* Darker blue on hover */
+  transform: translateY(-2px); /* Lift effect */
+}
+
+.chart-container button:active {
+  background-color: #1e6fa0; /* Even darker blue on click */
+  transform: translateY(0); /* Reset lift */
+}
+
+.chart-container button:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.6); /* Focus glow effect */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .chart-container {
+    padding: 15px;
+  }
+
+  .chart-container button {
+    width: 100%; /* Full-width button for smaller screens */
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+}

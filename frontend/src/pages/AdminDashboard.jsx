@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
-import "../styles/AdminDashboard.css"; // Use the same style file
+import "../styles/AdminDashboard.css";
 import { useNotification } from "../context/NotificationContext";
 import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import WeeklyRequestsChart from "../components/WeeklyRequestsChart";
 import html2canvas from "html2canvas";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHome,
+  faUsers,
+  faBox,
+  faGavel,
+  faList,
+  faTasks,
+  faClipboardList,
+  faFileAlt,
+  faSignOutAlt,
+} from "@fortawesome/free-solid-svg-icons"
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -1163,67 +1175,59 @@ const handleFulfillAuctionRequest = async (request) => {
       {/* Sidebar */}
       <div className="sidebar">
         <button
-          className={`sidebar-button ${
-            activeTab === "Dashboard" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Dashboard" ? "active" : ""}`}
           onClick={() => setActiveTab("Dashboard")}
         >
+          <FontAwesomeIcon icon={faHome} className="sidebar-icon" />
           Dashboard
         </button>
         <button
-          className={`sidebar-button ${
-            activeTab === "Users" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Users" ? "active" : ""}`}
           onClick={() => setActiveTab("Users")}
         >
+          <FontAwesomeIcon icon={faUsers} className="sidebar-icon" />
           Users
         </button>
         <button
-          className={`sidebar-button ${
-            activeTab === "Products" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Products" ? "active" : ""}`}
           onClick={() => setActiveTab("Products")}
         >
+          <FontAwesomeIcon icon={faBox} className="sidebar-icon" />
           Products
         </button>
         <button
-          className={`sidebar-button ${
-            activeTab === "Auction" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Auction" ? "active" : ""}`}
           onClick={() => setActiveTab("Auction")}
         >
+          <FontAwesomeIcon icon={faGavel} className="sidebar-icon" />
           Auction
         </button>
         <button
-          className={`sidebar-button ${
-            activeTab === "Product Requests" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Product Requests" ? "active" : ""}`}
           onClick={() => setActiveTab("Product Requests")}
         >
+          <FontAwesomeIcon icon={faList} className="sidebar-icon" />
           Product Requests
         </button>
         <button
-          className={`sidebar-button ${
-            activeTab === "Voucher Tasks" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Voucher Tasks" ? "active" : ""}`}
           onClick={() => setActiveTab("Voucher Tasks")}
         >
+          <FontAwesomeIcon icon={faTasks} className="sidebar-icon" />
           Voucher Tasks
         </button>
         <button
-          className={`sidebar-button ${
-            activeTab === "Audit Logs" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Audit Logs" ? "active" : ""}`}
           onClick={() => setActiveTab("Audit Logs")}
         >
+          <FontAwesomeIcon icon={faClipboardList} className="sidebar-icon" />
           Audit Logs
         </button>
         <button
-          className={`sidebar-button ${
-            activeTab === "Report" ? "active" : ""
-          }`}
+          className={`sidebar-button ${activeTab === "Reports" ? "active" : ""}`}
           onClick={() => setActiveTab("Reports")}
         >
+          <FontAwesomeIcon icon={faFileAlt} className="sidebar-icon" />
           Reports
         </button>
         <div className="logout-container">
@@ -1231,10 +1235,12 @@ const handleFulfillAuctionRequest = async (request) => {
             className="logout-button"
             onClick={() => window.location.href = "/logout"}
           >
+            <FontAwesomeIcon icon={faSignOutAlt} className="sidebar-icon" />
             Log Out
           </button>
         </div>
       </div>
+
 
       {/* Main Content */}
       <div className="main-content">
@@ -1247,12 +1253,12 @@ const handleFulfillAuctionRequest = async (request) => {
               <p>Total Users: <strong>{dashboardStats.totalUsers || 0}</strong></p>
               <p>Invitations Accepted: <strong>{dashboardStats.invitationsAccepted || 0}</strong></p>
               <p>Invitations Not Accepted: <strong>{dashboardStats.invitationsNotAccepted || 0}</strong></p>
-              <button>Go to Users</button>
+              <button className="button">Go to Users</button>
             </div>
             <div className="dashboard-card" onClick={() => setActiveTab("Products")}>
               <h3>Products</h3>
               <p>Active Products: <strong>{dashboardStats.activeProducts || 0}</strong></p>
-              <button>Go to Products</button>
+              <button className="button">Go to Products</button>
             </div>
             <div className="dashboard-card" onClick={() => setActiveTab("Product Requests")}>
               <h3>Product Requests</h3>
@@ -1260,22 +1266,22 @@ const handleFulfillAuctionRequest = async (request) => {
               <p>Purchase Requests: <strong>{dashboardStats.productRequests?.purchase || 0}</strong></p>
               <p>Preorder Requests: <strong>{dashboardStats.productRequests?.preorder || 0}</strong></p>
               <p>Auction Requests: <strong>{dashboardStats.productRequests?.auction || 0}</strong></p>
-              <button>Go to Product Requests</button>
+              <button className="button">Go to Product Requests</button>
             </div>
             <div className="dashboard-card" onClick={() => setActiveTab("Voucher Tasks")}>
               <h3>Voucher Tasks</h3>
               <p>Active Tasks: <strong>{dashboardStats.activeVoucherTasks || 0}</strong></p>
-              <button>Go to Voucher Tasks</button>
+              <button className="button">Go to Voucher Tasks</button>
             </div>
             <div className="dashboard-card" onClick={() => setActiveTab("Audit Logs")}>
               <h3>Audit Logs</h3>
               <p>Review system actions and logs.</p>
-              <button>Go to Audit Logs</button>
+              <button className="button">Go to Audit Logs</button>
             </div>
             <div className="dashboard-card" onClick={() => setActiveTab("Reports")}>
               <h3>Reports</h3>
               <p>Generate and view detailed reports.</p>
-              <button>Go to Reports</button>
+              <button className="button">Go to Reports</button>
             </div>
           </div>
         </div>
@@ -1283,46 +1289,64 @@ const handleFulfillAuctionRequest = async (request) => {
 
 
       {activeTab === "Auction" && (
-        <div>
+        <div className="auction-management">
           <h2>Manage Auctions</h2>
-          <div>
+          
+          {/* Auction Form */}
+          <div className="auction-form">
             <input
               type="text"
               placeholder="Item Name"
               value={auctionDetails.itemName}
-              onChange={(e) => setAuctionDetails({ ...auctionDetails, itemName: e.target.value })}
+              onChange={(e) =>
+                setAuctionDetails({ ...auctionDetails, itemName: e.target.value })
+              }
             />
             <textarea
               placeholder="Description"
               value={auctionDetails.description}
-              onChange={(e) => setAuctionDetails({ ...auctionDetails, description: e.target.value })}
+              onChange={(e) =>
+                setAuctionDetails({ ...auctionDetails, description: e.target.value })
+              }
             />
             <input
               type="number"
               placeholder="Starting Bid"
               value={auctionDetails.startingBid}
-              onChange={(e) => setAuctionDetails({ ...auctionDetails, startingBid: e.target.value })}
+              onChange={(e) =>
+                setAuctionDetails({ ...auctionDetails, startingBid: e.target.value })
+              }
             />
             <input
               type="datetime-local"
               placeholder="End Time"
               value={auctionDetails.endTime}
-              onChange={(e) => setAuctionDetails({ ...auctionDetails, endTime: e.target.value })}
+              onChange={(e) =>
+                setAuctionDetails({ ...auctionDetails, endTime: e.target.value })
+              }
             />
-            <input type="file" onChange={(e) => setImageFile(e.target.files[0])} />
+            <input
+              type="file"
+              onChange={(e) => setImageFile(e.target.files[0])}
+            />
             <button onClick={handleCreateAuction}>Create Auction</button>
           </div>
 
-          <div>
+          {/* Active Auctions */}
+          <div className="active-auctions">
             <h3>Active Auctions</h3>
             {auctions.map((auction) => (
-              <div key={auction.id}>
+              <div className="auction-card" key={auction.id}>
                 <img src={auction.imageUrl} alt={auction.itemName} />
-                <p><strong>{auction.itemName}</strong></p>
+                <p>
+                  <strong>{auction.itemName}</strong>
+                </p>
                 <p>{auction.description}</p>
                 <p>Current Bid: {auction.currentBid}</p>
-                <p>Highest Bidder: {auction.highestBidder || 'None'}</p>
-                <button onClick={() => handleEndAuction(auction.id)}>End Auction</button>
+                <p>Highest Bidder: {auction.highestBidder || "None"}</p>
+                <button onClick={() => handleEndAuction(auction.id)}>
+                  End Auction
+                </button>
               </div>
             ))}
           </div>
@@ -1331,90 +1355,164 @@ const handleFulfillAuctionRequest = async (request) => {
 
 
       {activeTab === "Reports" && (
-        <div>
+        <div className="reports-container">
           <h2>Reports</h2>
-          <div className="report-controls">
-          <label>Select Report Type:</label>
-          <select value={reportType} onChange={(e) => setReportType(e.target.value)}>
-            <option value="weeklyRequests">Weekly Requests</option>
-            <option value="weeklyItemPurchase">Weekly Item Purchase</option>
-            <option value="inventorySummary">Inventory Summary</option>
-            <option value="voucherInsights">Voucher Insights</option>
-          </select>
 
-            
+          {/* Controls Section */}
+          <div className="report-controls">
+            <label>Select Report Type:</label>
+            <select
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value)}
+            >
+              <option value="weeklyRequests">Weekly Requests</option>
+              <option value="weeklyItemPurchase">Weekly Item Purchase</option>
+              <option value="inventorySummary">Inventory Summary</option>
+              <option value="voucherInsights">Voucher Insights</option>
+            </select>
+
             <label>Start Date:</label>
             <input
               type="date"
               value={dateRange.start}
-              onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
+              onChange={(e) =>
+                setDateRange((prev) => ({ ...prev, start: e.target.value }))
+              }
             />
-            
+
             <label>End Date:</label>
             <input
               type="date"
               value={dateRange.end}
-              onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
+              onChange={(e) =>
+                setDateRange((prev) => ({ ...prev, end: e.target.value }))
+              }
             />
-            
-            <button
-              onClick={() => {
-                const headers = headerMapping[reportType];
-                exportReportCSV(
-                  filteredReportData,
-                  headers,
-                  `${reportType}_report`,
-                  dateRange,
-                  `Exported ${reportType} report as CSV.`
-                );
-                logAuditAction("Export CSV", `Exported ${reportType} report.`);
-              }}
-            >
-              Export CSV
-            </button>
-            <button
-              onClick={() => {
-                const headers = headerMapping[reportType];
-                exportReportPDF(
-                  filteredReportData,
-                  `${reportType} Report`,
-                  headers,
-                  dateRange,
-                  `Exported ${reportType} report as PDF.`
-                );
-                logAuditAction("Export PDF", `Exported ${reportType} report.`);
-              }}
-            >
-              Export PDF
-            </button>
+
+            <div className="export-buttons">
+              <button
+                onClick={() => {
+                  const headers = headerMapping[reportType];
+                  exportReportCSV(
+                    filteredReportData,
+                    headers,
+                    `${reportType}_report`,
+                    dateRange,
+                    `Exported ${reportType} report as CSV.`
+                  );
+                  logAuditAction("Export CSV", `Exported ${reportType} report.`);
+                }}
+              >
+                Export CSV
+              </button>
+              <button
+                onClick={() => {
+                  const headers = headerMapping[reportType];
+                  exportReportPDF(
+                    filteredReportData,
+                    `${reportType} Report`,
+                    headers,
+                    dateRange,
+                    `Exported ${reportType} report as PDF.`
+                  );
+                  logAuditAction("Export PDF", `Exported ${reportType} report.`);
+                }}
+              >
+                Export PDF
+              </button>
+            </div>
           </div>
 
+          {/* Content Section */}
           <div className="report-content">
             {filteredReportData.length > 0 ? (
               <>
                 {reportType === "weeklyRequests" && (
-                  <WeeklyRequestsChart
-                    data={filteredReportData}
-                    onExportPDF={(chartRef) =>
-                      exportReportPDFWithChart(
-                        chartRef,
-                        filteredReportData,
-                        "Weekly Requests Report",
-                        headerMapping.weeklyRequests,
-                        dateRange,
-                        `Exported weekly requests report as PDF with chart.`
-                      )
-                    }
-                  />
-                )}
-                {reportType === "inventorySummary" && (
-                  <InventorySummaryReport data={filteredReportData} />
-                )}
-                {reportType === "voucherInsights" && (
-                  <VoucherInsightsReport data={filteredReportData} />
+                  <WeeklyRequestsChart data={filteredReportData} />
                 )}
                 {reportType === "weeklyItemPurchase" && (
-                  <WeeklyItemPurchaseReport data={filteredReportData} />
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>User Name</th>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Purchase Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredReportData.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.userName}</td>
+                          <td>{item.productName}</td>
+                          <td>{item.quantity}</td>
+                          <td>
+                            {item.createdAt
+                              ? new Date(item.createdAt).toLocaleString()
+                              : "N/A"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {reportType === "inventorySummary" && (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredReportData.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.name || "Unknown"}</td>
+                          <td>{item.quantity || 0}</td>
+                          <td>
+                            $
+                            {(item.price !== undefined && item.price !== null
+                              ? item.price
+                              : 0
+                            ).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {reportType === "voucherInsights" && (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Points</th>
+                        <th>Unique Users</th>
+                        <th>Approved</th>
+                        <th>Pending</th>
+                        <th>Rejected</th>
+                        <th>Total Points Distributed</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredReportData.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.title}</td>
+                          <td>{item.description}</td>
+                          <td>{item.points}</td>
+                          <td>{item.uniqueUsers}</td>
+                          <td>{item.approvedCount}</td>
+                          <td>{item.pendingCount}</td>
+                          <td>{item.rejectedCount}</td>
+                          <td>{item.totalPointsDistributed}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </>
             ) : (
@@ -1425,422 +1523,285 @@ const handleFulfillAuctionRequest = async (request) => {
       )}
 
 
-        {activeTab === "Voucher Tasks" && (
-          <div>
-            <h2>Manage Voucher Tasks</h2>
+      {activeTab === "Voucher Tasks" && (
+        <div className="voucher-tasks-container">
+          <h2>Manage Voucher Tasks</h2>
 
-            {/* Create Voucher Task */}
+          {/* Create Voucher Task */}
+          <div className="create-voucher-form">
+            <h3>Create Voucher Task</h3>
+            <input
+              type="text"
+              placeholder="Voucher Title"
+              value={voucherTitle}
+              onChange={(e) => setVoucherTitle(e.target.value)}
+            />
+            <textarea
+              placeholder="Task Description"
+              value={taskDescription}
+              onChange={(e) => setTaskDescription(e.target.value)}
+            ></textarea>
+            <input
+              type="number"
+              placeholder="Max Attempts"
+              value={maxAttempts}
+              onChange={(e) => setMaxAttempts(e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Points"
+              value={voucherPoints}
+              onChange={(e) => setVoucherPoints(e.target.value)}
+            />
+            <button onClick={handleCreateVoucherTask}>Create Task</button>
+          </div>
+
+          {/* Current Active Tasks */}
+          <h3>Active Voucher Tasks</h3>
+          {voucherTasks
+            .filter((task) => task.status === "active")
+            .map((task) => (
+              <div key={task.id} className="voucher-task-card">
+                <p><strong>{task.title}</strong></p>
+                <p>{task.description}</p>
+                <p>Max Attempts: {task.maxAttempts}</p>
+                <p>Points: {task.points}</p>
+                <button onClick={() => handleEditTask(task)}>Edit</button>
+                <button onClick={() => handleDeleteTask(task)}>Delete</button>
+              </div>
+            ))}
+
+          {/* Pending Approvals */}
+          <h3>Pending Approvals</h3>
+          {pendingApprovals.length === 0 ? (
+            <p>No pending approvals.</p>
+          ) : (
+            pendingApprovals.map((attempt) => (
+              <div key={attempt.attemptId} className="voucher-approval-card">
+                <p><strong>Task Title:</strong> {attempt.taskTitle}</p>
+                <p><strong>Description:</strong> {attempt.taskDescription}</p>
+                <p><strong>Points:</strong> {attempt.taskPoints}</p>
+                <p><strong>Resident:</strong> {attempt.userName} ({attempt.userEmail})</p>
+                <img src={attempt.imageProofUrl} alt="Proof" />
+                <div className="approval-buttons">
+                  <button onClick={() => handleApproveAttempt(attempt.attemptId)}>Approve</button>
+                  <button onClick={() => handleRejectAttempt(attempt.attemptId)}>Reject</button>
+                </div>
+              </div>
+            ))
+          )}
+
+          {/* Edit Modal */}
+          {isEditModalOpen && (
+            <div
+            className="modal"
+            style={{
+              position: "fixed",
+              top: "0",
+              left: "0",
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: "1000",
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "10px",
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
+                <h3>Edit Voucher Task</h3>
+                <div>
+                  <label>Voucher Title:</label>
+                  <input
+                    type="text"
+                    value={editTask.title || ""}
+                    onChange={(e) =>
+                      setEditTask({ ...editTask, title: e.target.value })
+                    }
+                    placeholder="Voucher Title"
+                  />
+                </div>
+                <div>
+                  <label>Task Description:</label>
+                  <textarea
+                    value={editTask.description || ""}
+                    onChange={(e) =>
+                      setEditTask({ ...editTask, description: e.target.value })
+                    }
+                    placeholder="Task Description"
+                  ></textarea>
+                </div>
+                <div>
+                  <label>Max Attempts:</label>
+                  <input
+                    type="number"
+                    value={editTask.maxAttempts || 0}
+                    onChange={(e) =>
+                      setEditTask({ ...editTask, maxAttempts: e.target.value })
+                    }
+                    placeholder="Max Attempts"
+                  />
+                </div>
+                <div>
+                  <label>Points:</label>
+                  <input
+                    type="number"
+                    value={editTask.points || 0}
+                    onChange={(e) =>
+                      setEditTask({ ...editTask, points: e.target.value })
+                    }
+                    placeholder="Points"
+                  />
+                </div>
+                <div>
+                  <button onClick={handleUpdateTask}>Save</button>
+                  <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteVoucherModal && voucherTaskToDelete && (
+            <div
+            className="modal"
+            style={{
+              position: "fixed",
+              top: "0",
+              left: "0",
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: "1000",
+            }}
+          >
+            <div
+              className="modal-content"
+              style={{
+                background: "#fff",
+                padding: "20px",
+                borderRadius: "10px",
+                width: "400px",
+                textAlign: "center",
+              }}
+            >
+                <h4>Are you sure you want to delete the voucher task: "{voucherTaskToDelete.title}"?</h4>
+                <div>
+                  <button
+                    onClick={() => {
+                      deleteVoucherTask(voucherTaskToDelete.id); // Perform the delete action
+                      setShowDeleteVoucherModal(false); // Close the modal
+                    }}
+                  >
+                    Confirm
+                  </button>
+                  <button onClick={() => setShowDeleteVoucherModal(false)}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "Audit Logs" && (
+        <div className="audit-logs-container">
+          <h2>Audit Logs</h2>
+
+          {/* Filter Section */}
+          <div className="filter-section">
+            <input
+              type="text"
+              placeholder="Search by name, email, or details"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button onClick={handleAuditSearch}>Search</button>
+
+            <select
+              value={filterAction}
+              onChange={(e) => setFilterAction(e.target.value)}
+            >
+              <option value="all">All Actions</option>
+              {actions.map((action, index) => (
+                <option key={index} value={action}>
+                  {action}
+                </option>
+              ))}
+            </select>
+
             <div>
-              <h3>Create Voucher Task</h3>
+              <label>Start Date:</label>
               <input
-                type="text"
-                placeholder="Voucher Title"
-                value={voucherTitle}
-                onChange={(e) => setVoucherTitle(e.target.value)}
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
               />
-              <textarea
-                placeholder="Task Description"
-                value={taskDescription}
-                onChange={(e) => setTaskDescription(e.target.value)}
-              ></textarea>
-              <input
-                type="number"
-                placeholder="Max Attempts"
-                value={maxAttempts}
-                onChange={(e) => setMaxAttempts(e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Points"
-                value={voucherPoints}
-                onChange={(e) => setVoucherPoints(e.target.value)}
-              />
-              <button onClick={handleCreateVoucherTask}>Create Task</button>
             </div>
 
-            {/* Current Active Tasks */}
             <div>
-              <h3>Active Voucher Tasks</h3>
-              {voucherTasks
-                .filter((task) => task.status === "active")
-                .map((task) => (
-                  <div key={task.id} className="voucher-task-card">
-                    <p><strong>{task.title}</strong></p>
-                    <p>{task.description}</p>
-                    <p>Max Attempts: {task.maxAttempts}</p>
-                    <p>Points: {task.points}</p>
-                    <button onClick={() => handleEditTask(task)}>Edit</button>
-                    <button onClick={() => handleDeleteTask(task)}>Delete</button>
-                  </div>
-                ))}
+              <label>End Date:</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
+          </div>
 
-            {/* Pending Approvals */}
-            <div>
-              <h3>Pending Approvals</h3>
-              {pendingApprovals.length === 0 ? (
-                <p>No pending approvals.</p>
+          {/* Audit Log Table */}
+          <h3>Audit Logs</h3>
+          <div className="audit-log-table-wrapper">
+            <div className="audit-log-table">
+              {filteredLogs.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User Name</th>
+                      <th>Email</th>
+                      <th>Action</th>
+                      <th>Details</th>
+                      <th>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLogs.map((log, index) => (
+                      <tr key={index}>
+                        <td>{log.userName}</td>
+                        <td>{log.userEmail}</td>
+                        <td>{log.action}</td>
+                        <td
+                          className="details-column"
+                          data-full-text={log.details}
+                          title={log.details} // Fallback for browsers without `data-full-text` support
+                        >
+                          {log.details.length > 50
+                            ? `${log.details.substring(0, 50)}...`
+                            : log.details}
+                        </td>
+                        <td>{log.timestamp}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
-                pendingApprovals.map((attempt) => (
-                  <div key={attempt.attemptId} className="voucher-approval-card">
-                    <p><strong>Task Title:</strong> {attempt.taskTitle}</p>
-                    <p><strong>Description:</strong> {attempt.taskDescription}</p>
-                    <p><strong>Points:</strong> {attempt.taskPoints}</p>
-                    <p><strong>Resident:</strong> {attempt.userName} ({attempt.userEmail})</p>
-                    <img src={attempt.imageProofUrl} alt="Proof" style={{ maxWidth: "100%", borderRadius: "5px" }} />
-                    <div className="approval-buttons">
-                      <button onClick={() => handleApproveAttempt(attempt.attemptId)}>Approve</button>
-                      <button onClick={() => handleRejectAttempt(attempt.attemptId)}>Reject</button>
-                    </div>
-                  </div>
-                ))
+                <p>No audit logs found matching the criteria.</p>
               )}
             </div>
-
-            {/* Edit Modal */}
-            {isEditModalOpen && (
-              <div
-                className="modal"
-                style={{
-                  position: "fixed",
-                  top: "0",
-                  left: "0",
-                  width: "100vw",
-                  height: "100vh",
-                  background: "rgba(0, 0, 0, 0.5)",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  zIndex: "1000",
-                }}
-              >
-                <div
-                  className="modal-content"
-                  style={{
-                    background: "#fff",
-                    padding: "20px",
-                    borderRadius: "10px",
-                    width: "400px",
-                    textAlign: "center",
-                  }}
-                >
-                  <h3>Edit Voucher Task</h3>
-
-                  {/* Editable Title */}
-                  <div>
-                    <label>Voucher Title:</label>
-                    <input
-                      type="text"
-                      value={editTask.title || ""}
-                      onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
-                      placeholder="Voucher Title"
-                    />
-                  </div>
-
-                  {/* Editable Description */}
-                  <div>
-                    <label>Task Description:</label>
-                    <textarea
-                      value={editTask.description || ""}
-                      onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
-                      placeholder="Task Description"
-                    ></textarea>
-                  </div>
-
-                  {/* Editable Max Attempts */}
-                  <div>
-                    <label>Max Attempts:</label>
-                    <input
-                      type="number"
-                      value={editTask.maxAttempts || 0}
-                      onChange={(e) => setEditTask({ ...editTask, maxAttempts: e.target.value })}
-                      placeholder="Max Attempts"
-                    />
-                  </div>
-
-                  {/* Editable Points */}
-                  <div>
-                    <label>Points:</label>
-                    <input
-                      type="number"
-                      value={editTask.points || 0}
-                      onChange={(e) => setEditTask({ ...editTask, points: e.target.value })}
-                      placeholder="Points"
-                    />
-                  </div>
-
-                  <div>
-                    <button onClick={handleUpdateTask}>Save</button>
-                    <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-
-            {showDeleteVoucherModal && voucherTaskToDelete && (
-              <div
-                className="modal"
-                style={{
-                  position: "fixed",
-                  top: "0",
-                  left: "0",
-                  width: "100vw",
-                  height: "100vh",
-                  background: "rgba(0, 0, 0, 0.5)",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  zIndex: "1000",
-                }}
-              >
-                <div
-                  className="modal-content"
-                  style={{
-                    background: "#fff",
-                    padding: "20px",
-                    borderRadius: "10px",
-                    width: "400px",
-                    textAlign: "center",
-                  }}
-                >
-                  <h4>Are you sure you want to delete the voucher task: "{voucherTaskToDelete.title}"?</h4>
-                  <div>
-                    <button
-                      onClick={() => {
-                        deleteVoucherTask(voucherTaskToDelete.id); // Perform the delete action
-                        setShowDeleteVoucherModal(false); // Close the modal
-                      }}
-                    >
-                      Confirm
-                    </button>
-                    <button onClick={() => setShowDeleteVoucherModal(false)}>Cancel</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-
           </div>
-        )}
-
-
-        {activeTab === "Product Requests" && (
-          <div>
-          <h2>Manage Product Requests</h2>
-
-          <h3>Purchase Requests</h3>
-          <div className="controls">
-            <input
-              type="text"
-              placeholder="Search Purchase Requests..."
-              value={searchTermPurchase}
-              onChange={(e) => setSearchTermPurchase(e.target.value)}
-              className="search-bar"
-            />
-            <select
-              value={sortCriteriaPurchase}
-              onChange={(e) => setSortCriteriaPurchase(e.target.value)}
-              className="sort-criteria"
-            >
-              <option value="productName">Product Name</option>
-              <option value="quantity">Quantity</option>
-              <option value="createdAt">Date</option>
-            </select>
-            <button onClick={() => setSortOrderPurchase((prev) => (prev === "asc" ? "desc" : "asc"))}>
-              Sort: {sortOrderPurchase === "asc" ? "Ascending" : "Descending"}
-            </button>
-          </div>
-          <table className="transaction-history-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSortedPurchaseRequests.map((request, index) => (
-                <tr key={index}>
-                  <td>{request.userName}</td>
-                  <td>{request.productName}</td>
-                  <td>{request.quantity}</td>
-                  <td>{new Date(request.createdAt).toLocaleString()}</td>
-                  <td>
-                    <button onClick={() => handleApprovePurchaseRequest(request)}>Fulfilled</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h3>Preorder Requests</h3>
-          <div className="controls">
-            <input
-              type="text"
-              placeholder="Search Preorder Requests..."
-              value={searchTermPreorder}
-              onChange={(e) => setSearchTermPreorder(e.target.value)}
-              className="search-bar"
-            />
-            <select
-              value={sortCriteriaPreorder}
-              onChange={(e) => setSortCriteriaPreorder(e.target.value)}
-              className="sort-criteria"
-            >
-              <option value="productName">Product Name</option>
-              <option value="quantity">Quantity</option>
-              <option value="createdAt">Date</option>
-            </select>
-            <button onClick={() => setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))}>
-              Sort: {sortOrderPreorder === "asc" ? "Ascending" : "Descending"}
-            </button>
-          </div>
-          <table className="transaction-history-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSortedPreorderRequests.map((request, index) => (
-                <tr key={index}>
-                  <td>{request.userName}</td>
-                  <td>{request.productName}</td>
-                  <td>{request.quantity}</td>
-                  <td className={`status-${request.status.toLowerCase()}`}>{request.status}</td>
-                  <td>{new Date(request.createdAt).toLocaleString()}</td>
-                  <td>
-                    <button onClick={() => handleApprovePreorderRequest(request)}>Approve</button>
-                    <button onClick={() => handleRejectPreorderRequest(request)}>Reject</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <h3>Auction Requests</h3>
-          <table className="transaction-history-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Item</th>
-                <th>Status</th>
-                <th>Winning Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auctionRequests.map((request, index) => (
-                <tr key={index}>
-                  <td>{request.userName}</td>
-                  <td>{request.productName}</td>
-                  <td className={`status-${request.status.toLowerCase()}`}>{request.status}</td>
-                  <td>{new Date(request.createdAt).toLocaleString()}</td>
-                  <td>
-                    <button onClick={() => handleFulfillAuctionRequest(request)}>Fulfill</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-
-
-          </div>
-        )}
-
-
-        {activeTab === "Audit Logs" && (
-          <div>
-            <h2>Audit Logs</h2>
-            <div className="filter-section">
-              <input
-                type="text"
-                placeholder="Search by name, email, or details"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button onClick={handleAuditSearch}>Search</button>
-
-              <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
-                <option value="all">All Actions</option>
-                {actions.map((action, index) => (
-                  <option key={index} value={action}>
-                    {action}
-                  </option>
-                ))}
-              </select>
-
-              <div>
-                <label>Start Date:</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label>End Date:</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-
-            <h3>Audit Logs</h3>
-            <div className="audit-log-table-wrapper">
-              <div className="audit-log-table">
-                {filteredLogs.length > 0 ? (
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>User Name</th>
-                        <th>Email</th>
-                        <th>Action</th>
-                        <th>Details</th>
-                        <th>Timestamp</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredLogs.map((log, index) => (
-                        <tr key={index}>
-                          <td>{log.userName}</td>
-                          <td>{log.userEmail}</td>
-                          <td>{log.action}</td>
-                          <td
-                            className="details-column"
-                            data-full-text={log.details}
-                            title={log.details} // Fallback for browsers without `data-full-text` support
-                          >
-                            {log.details.length > 50
-                              ? `${log.details.substring(0, 50)}...`
-                              : log.details}
-                          </td>
-
-                          <td>{log.timestamp}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p>No audit logs found matching the criteria.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
+      )}
 
 
         {activeTab === "Users" && (
@@ -2057,30 +2018,29 @@ const handleFulfillAuctionRequest = async (request) => {
               <div
                 style={{
                   position: "fixed",
-                  top: "0",
-                  left: "0",
+                  top: 0,
+                  left: 0,
                   width: "100vw",
                   height: "100vh",
-                  background: "rgba(0, 0, 0, 0.5)",
+                  background: "rgba(0, 0, 0, 0.6)", // Slightly darker overlay
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
-                  zIndex: "1000",
+                  zIndex: 1000,
                 }}
               >
                 <div
                   style={{
-                    background: "#fff",
-                    color: "#000",
-                    padding: "20px",
-                    borderRadius: "10px",
+                    background: "#ffffff",
+                    padding: "30px",
+                    borderRadius: "12px",
                     width: "400px",
                     textAlign: "center",
-                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)", // Deeper shadow for prominence
                   }}
                 >
-                  <h4>Confirm Action</h4>
-                  <p>
+                  <h4 style={{ color: "#2c3e50", marginBottom: "20px" }}>Confirm Action</h4>
+                  <p style={{ color: "#7f8c8d", fontSize: "14px", marginBottom: "20px" }}>
                     Are you sure you want to{" "}
                     {popupAction === "suspend"
                       ? "suspend"
@@ -2089,9 +2049,36 @@ const handleFulfillAuctionRequest = async (request) => {
                       : "update"}{" "}
                     the user <b>{editedUser?.email}</b>?
                   </p>
-                  <div style={{ marginTop: "20px" }}>
-                    <button onClick={handleConfirm}>Confirm</button>
+                  <div>
                     <button
+                      style={{
+                        padding: "10px 20px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#3498db", // Blue for Confirm
+                        border: "none",
+                        borderRadius: "5px",
+                        marginRight: "10px",
+                        cursor: "pointer",
+                        transition: "background-color 0.3s ease",
+                      }}
+                      onClick={handleConfirm}
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#e74c3c", // Red for Cancel
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                        transition: "background-color 0.3s ease",
+                      }}
                       onClick={() => {
                         setConfirmPopup(false);
                         setEditedUser(editedUser);
@@ -2103,14 +2090,155 @@ const handleFulfillAuctionRequest = async (request) => {
                 </div>
               </div>
             )}
+
           </div>
         )}
 
-        {activeTab === "Products" && (
-          <div>
-            <h2>Manage Products</h2>
-            <div className="rounded-section">
+        {activeTab === "Product Requests" && (
+          <div className="product-requests-container">
+            <h2>Manage Product Requests</h2>
 
+            {/* Purchase Requests Section */}
+            <div className="request-section">
+              <h3>Purchase Requests</h3>
+              <div className="controls">
+                <input
+                  type="text"
+                  placeholder="Search Purchase Requests..."
+                  value={searchTermPurchase}
+                  onChange={(e) => setSearchTermPurchase(e.target.value)}
+                  className="search-bar"
+                />
+                <select
+                  value={sortCriteriaPurchase}
+                  onChange={(e) => setSortCriteriaPurchase(e.target.value)}
+                  className="sort-criteria"
+                >
+                  <option value="productName">Product Name</option>
+                  <option value="quantity">Quantity</option>
+                  <option value="createdAt">Date</option>
+                </select>
+                <button onClick={() => setSortOrderPurchase((prev) => (prev === "asc" ? "desc" : "asc"))}>
+                  Sort: {sortOrderPurchase === "asc" ? "Ascending" : "Descending"}
+                </button>
+              </div>
+              <table className="transaction-history-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSortedPurchaseRequests.map((request, index) => (
+                    <tr key={index}>
+                      <td>{request.userName}</td>
+                      <td>{request.productName}</td>
+                      <td>{request.quantity}</td>
+                      <td>{new Date(request.createdAt).toLocaleString()}</td>
+                      <td>
+                        <button onClick={() => handleApprovePurchaseRequest(request)}>Fulfilled</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Preorder Requests Section */}
+            <div className="request-section">
+              <h3>Preorder Requests</h3>
+              <div className="controls">
+                <input
+                  type="text"
+                  placeholder="Search Preorder Requests..."
+                  value={searchTermPreorder}
+                  onChange={(e) => setSearchTermPreorder(e.target.value)}
+                  className="search-bar"
+                />
+                <select
+                  value={sortCriteriaPreorder}
+                  onChange={(e) => setSortCriteriaPreorder(e.target.value)}
+                  className="sort-criteria"
+                >
+                  <option value="productName">Product Name</option>
+                  <option value="quantity">Quantity</option>
+                  <option value="createdAt">Date</option>
+                </select>
+                <button onClick={() => setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))}>
+                  Sort: {sortOrderPreorder === "asc" ? "Ascending" : "Descending"}
+                </button>
+              </div>
+              <table className="transaction-history-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSortedPreorderRequests.map((request, index) => (
+                    <tr key={index}>
+                      <td>{request.userName}</td>
+                      <td>{request.productName}</td>
+                      <td>{request.quantity}</td>
+                      <td className={`status-${request.status.toLowerCase()}`}>{request.status}</td>
+                      <td>{new Date(request.createdAt).toLocaleString()}</td>
+                      <td>
+                        <button onClick={() => handleApprovePreorderRequest(request)}>Approve</button>
+                        <button onClick={() => handleRejectPreorderRequest(request)}>Reject</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Auction Requests Section */}
+            <div className="request-section">
+              <h3>Auction Requests</h3>
+              <table className="transaction-history-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Item</th>
+                    <th>Status</th>
+                    <th>Winning Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auctionRequests.map((request, index) => (
+                    <tr key={index}>
+                      <td>{request.userName}</td>
+                      <td>{request.productName}</td>
+                      <td className={`status-${request.status.toLowerCase()}`}>{request.status}</td>
+                      <td>{new Date(request.createdAt).toLocaleString()}</td>
+                      <td>
+                        <button onClick={() => handleFulfillAuctionRequest(request)}>Fulfill</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+
+
+        {activeTab === "Products" && (
+          <div className="product-management-container">
+            <h2>Manage Products</h2>
+
+            {/* Search and Sort Controls */}
             <div className="product-controls">
               <input
                 type="text"
@@ -2120,7 +2248,11 @@ const handleFulfillAuctionRequest = async (request) => {
                 className="search-bar"
               />
               <div className="sort-controls">
-                <select value={sortCriteria} onChange={handleSortCriteriaChange} className="sort-criteria">
+                <select
+                  value={sortCriteria}
+                  onChange={handleSortCriteriaChange}
+                  className="sort-criteria"
+                >
                   <option value="name">Name</option>
                   <option value="price">Price</option>
                   <option value="quantity">Quantity</option>
@@ -2130,9 +2262,16 @@ const handleFulfillAuctionRequest = async (request) => {
                 </button>
               </div>
             </div>
+
+            <div className="rounded-section">
               <h3>Product List</h3>
-              <h2>Add a Product</h2>
-              <button onClick={() => setShowModal(true)}>Add Product</button>
+              <button
+                className="add-product-button"
+                onClick={() => setShowModal(true)}
+              >
+                Add Product
+              </button>
+
               {filteredProducts.length > 0 ? (
                 <div className="product-grid">
                   {filteredProducts.map((product) => (
@@ -2144,8 +2283,18 @@ const handleFulfillAuctionRequest = async (request) => {
                       <p><strong>Price:</strong> ${product.price}</p>
                       <p><strong>Quantity:</strong> {product.quantity}</p>
                       <div className="product-actions">
-                        <button onClick={() => handleEditProduct(product)}>Edit</button>
-                        <button onClick={() => handleDeleteProduct(product)}>Delete</button>
+                        <button
+                          className="edit-button"
+                          onClick={() => handleEditProduct(product)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="delete-button"
+                          onClick={() => handleDeleteProduct(product)}
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -2154,252 +2303,355 @@ const handleFulfillAuctionRequest = async (request) => {
                 <p>No products available.</p>
               )}
             </div>
-          </div>
-        )}
-        
 
-        {/* Product Creation Modal */}
-        {showModal && (
-          <div
-            className="modal"
-            style={{
-              position: "fixed",
-              top: "0",
-              left: "0",
-              width: "100vw",
-              height: "100vh",
-              background: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: "1000",
-            }}
-          >
-            <div
-              className="modal-content"
-              style={{
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "10px",
-                width: "400px",
-                textAlign: "center",
-              }}
-            >
-              <h4>Create Product</h4>
-              <div>
-                <label>Name:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={newProduct.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter product name"
-                />
-              </div>
-              <div>
-                <label>Price:</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={newProduct.price}
-                  onChange={handleInputChange}
-                  placeholder="Enter product price"
-                />
-              </div>
-              <div>
-                <label>Quantity:</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={newProduct.quantity}
-                  onChange={handleInputChange}
-                  placeholder="Enter product quantity"
-                />
-              </div>
-
-              <div>
-                <label>Image:</label>
-                <input
-                  type="file"
-                  name="image"
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                />
-              </div>
-
-              <div>
-                <button onClick={handleAddProduct}>Add</button>
-                <button onClick={() => setShowModal(false)}>Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && productToDelete && (
-          <div
-            className="modal"
-            style={{
-              position: "fixed",
-              top: "0",
-              left: "0",
-              width: "100vw",
-              height: "100vh",
-              background: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: "1000",
-            }}
-          >
-            <div
-              className="modal-content"
-              style={{
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "10px",
-                width: "400px",
-                textAlign: "center",
-              }}
-            >
-              <h4>Are you sure you want to delete {productToDelete.name}?</h4>
-              <div>
-                <button
-                  onClick={() => deleteProduct(productToDelete.name)} // Perform the delete action
+            {/* Product Creation Modal */}
+            {showModal && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  width: "100vw",
+                  height: "100vh",
+                  background: "rgba(0, 0, 0, 0.7)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: "1000",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#ffffff",
+                    padding: "25px",
+                    borderRadius: "12px",
+                    width: "400px",
+                    maxWidth: "90%",
+                    textAlign: "center",
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
+                  }}
                 >
-                  Confirm
-                </button>
-                <button onClick={() => setShowDeleteModal(false)}>Cancel</button>
+                  <h4>Create Product</h4>
+                  <div>
+                    <label>Name:</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={newProduct.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter product name"
+                    />
+                  </div>
+                  <div>
+                    <label>Price:</label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={newProduct.price}
+                      onChange={handleInputChange}
+                      placeholder="Enter product price"
+                    />
+                  </div>
+                  <div>
+                    <label>Quantity:</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      value={newProduct.quantity}
+                      onChange={handleInputChange}
+                      placeholder="Enter product quantity"
+                    />
+                  </div>
+                  <div>
+                    <label>Image:</label>
+                    <input
+                      type="file"
+                      name="image"
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                    />
+                  </div>
+                  <div>
+                    <button onClick={handleAddProduct}>Add</button>
+                    <button onClick={() => setShowModal(false)}>Cancel</button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && productToDelete && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  width: "100vw",
+                  height: "100vh",
+                  background: "rgba(0, 0, 0, 0.7)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: "1000",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#ffffff",
+                    padding: "25px",
+                    borderRadius: "12px",
+                    width: "400px",
+                    maxWidth: "90%",
+                    textAlign: "center",
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)",
+                  }}
+                >
+                  <h4>Are you sure you want to delete {productToDelete.name}?</h4>
+                  <div>
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        marginRight: "10px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#e74c3c",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => deleteProduct(productToDelete.name)}
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#3498db",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setShowDeleteModal(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Modal */}
+            {showErrorModal && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  width: "100vw",
+                  height: "100vh",
+                  background: "rgba(0, 0, 0, 0.7)", // Darker overlay
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: "1000",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#ffffff",
+                    padding: "25px",
+                    borderRadius: "12px",
+                    width: "400px",
+                    maxWidth: "90%",
+                    textAlign: "center",
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)", // Shadow for depth
+                  }}
+                >
+                  <h4 style={{ color: "#e74c3c", marginBottom: "20px" }}>Error</h4>
+                  <p style={{ color: "#7f8c8d", fontSize: "14px", marginBottom: "20px" }}>
+                    There was an issue creating the product. Please fill out all fields or the product already exists.
+                  </p>
+                  <button
+                    style={{
+                      padding: "10px 20px",
+                      fontSize: "14px",
+                      fontWeight: "bold",
+                      color: "#ffffff",
+                      backgroundColor: "#e74c3c",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setShowErrorModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modal for editing product */}
+            {editedProduct && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  width: "100vw",
+                  height: "100vh",
+                  background: "rgba(0, 0, 0, 0.7)", // Darker overlay
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: "1000",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#ffffff",
+                    padding: "25px",
+                    borderRadius: "12px",
+                    width: "400px",
+                    maxWidth: "90%",
+                    textAlign: "center",
+                    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.15)", // Shadow for depth
+                  }}
+                >
+                  <h4 style={{ marginBottom: "20px", color: "#2c3e50" }}>Edit Product</h4>
+
+                  {/* Editable field for new name */}
+                  <div style={{ marginBottom: "15px" }}>
+                    <label>Name:</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={editedProduct.name}
+                      onChange={handleProductChange}
+                      placeholder="Enter new name or leave blank"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        marginTop: "5px",
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+
+                  {/* Editable field for quantity */}
+                  <div style={{ marginBottom: "15px" }}>
+                    <label>Quantity:</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      value={editedProduct.quantity}
+                      onChange={handleProductChange}
+                      placeholder="Enter quantity"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        marginTop: "5px",
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+
+                  {/* Editable field for price */}
+                  <div style={{ marginBottom: "15px" }}>
+                    <label>Price:</label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={editedProduct.price}
+                      onChange={handleProductChange}
+                      placeholder="Enter price"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        marginTop: "5px",
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+
+                  {/* Editable Image upload */}
+                  <div style={{ marginBottom: "15px" }}>
+                    <label>Product Image:</label>
+                    <input
+                      type="file"
+                      name="image"
+                      onChange={handleEditImageUpload}
+                      accept="image/*"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        fontSize: "14px",
+                        marginTop: "5px",
+                        borderRadius: "5px",
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                    {editedProduct.imageUrl && (
+                      <img
+                        src={editedProduct.imageUrl}
+                        alt="Product Preview"
+                        style={{
+                          width: "100px",
+                          height: "auto",
+                          marginTop: "10px",
+                          borderRadius: "5px",
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        marginRight: "10px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#3498db",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                      onClick={handleSaveProduct}
+                    >
+                      Save
+                    </button>
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        color: "#ffffff",
+                        backgroundColor: "#e74c3c",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setEditedProduct(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
-
-        {/* Error Modal */}
-        {showErrorModal && (
-          <div
-            className="modal"
-            style={{
-              position: "fixed",
-              top: "0",
-              left: "0",
-              width: "100vw",
-              height: "100vh",
-              background: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: "1000",
-            }}
-          >
-            <div
-              className="modal-content"
-              style={{
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "10px",
-                width: "400px",
-                textAlign: "center",
-              }}
-            >
-              <h4>Error</h4>
-              <p>There was an issue creating the product. Please fill out all fields or the Product already Exists.</p>
-              <button onClick={() => setShowErrorModal(false)}>Close</button>
-            </div>
-          </div>
-        )}
-
-        {/* Modal for editing product */}
-        {editedProduct && (
-          <div
-            className="modal"
-            style={{
-              position: "fixed",
-              top: "0",
-              left: "0",
-              width: "100vw",
-              height: "100vh",
-              background: "rgba(0, 0, 0, 0.5)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: "1000",
-            }}
-          >
-            <div
-              className="modal-content"
-              style={{
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "10px",
-                width: "400px",
-                textAlign: "center",
-              }}
-            >
-              <h4>Edit Product</h4>
-
-              {/* Editable field for new name */}
-              <div>
-                <label>Name:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editedProduct.name}
-                  onChange={handleProductChange}
-                  placeholder="Enter New Name or Leave Blank"
-                />
-              </div>
-
-              {/* Editable field for quantity */}
-              <div>
-                <label>Quantity:</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={editedProduct.quantity}
-                  onChange={handleProductChange}
-                  placeholder="Enter Quantity"
-                />
-              </div>
-
-              {/* Editable field for price */}
-              <div>
-                <label>Price:</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={editedProduct.price}
-                  onChange={handleProductChange}
-                  placeholder="Enter Price"
-                />
-              </div>
-
-              {/* Editable Image upload */}
-              <div>
-                <label>Product Image:</label>
-                <input
-                  type="file"
-                  name="image"
-                  onChange={handleEditImageUpload}
-                  accept="image/*"
-                />
-                {editedProduct.imageUrl && (
-                  <img
-                    src={editedProduct.imageUrl}
-                    alt="Product Preview"
-                    style={{ width: "100px", height: "auto", marginTop: "10px" }}
-                  />
-                )}
-              </div>
-
-              <div>
-                <button onClick={handleSaveProduct}>Save</button>
-                <button onClick={() => setEditedProduct(null)}>Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-
       </div>
     </div>
   );
