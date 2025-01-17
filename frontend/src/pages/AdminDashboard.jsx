@@ -1240,56 +1240,37 @@ const handleFulfillAuctionRequest = async (request) => {
         <div className="dashboard">
           <h2>Admin Dashboard</h2>
           <div className="dashboard-grid">
-            <div
-              className="dashboard-card"
-              onClick={() => setActiveTab("Users")}
-            >
+            <div className="dashboard-card" onClick={() => setActiveTab("Users")}>
               <h3>Users</h3>
-              <p>Manage user accounts, invitations, and roles.</p>
+              <p>Total Users: <strong>{dashboardStats.totalUsers || 0}</strong></p>
+              <p>Invitations Accepted: <strong>{dashboardStats.invitationsAccepted || 0}</strong></p>
+              <p>Invitations Not Accepted: <strong>{dashboardStats.invitationsNotAccepted || 0}</strong></p>
               <button>Go to Users</button>
             </div>
-            <div
-              className="dashboard-card"
-              onClick={() => setActiveTab("Products")}
-            >
+            <div className="dashboard-card" onClick={() => setActiveTab("Products")}>
               <h3>Products</h3>
-              <p>Manage products in the Minimart.</p>
+              <p>Active Products: <strong>{dashboardStats.activeProducts || 0}</strong></p>
               <button>Go to Products</button>
             </div>
-            <div
-              className="dashboard-card"
-              onClick={() => setActiveTab("Product Requests")}
-            >
-            <h3>Product Requests</h3>
-              <p>Total Requests: {dashboardStats.productRequests?.total || 0}</p>
-              <ul>
-                <li>Purchase Requests: {dashboardStats.productRequests?.purchase || 0}</li>
-                <li>Preorder Requests: {dashboardStats.productRequests?.preorder || 0}</li>
-                <li>Auction Requests: {dashboardStats.productRequests?.auction || 0}</li>
-              </ul>
-              <button onClick={() => setActiveTab("Product Requests")}>Go to Product Requests</button>
+            <div className="dashboard-card" onClick={() => setActiveTab("Product Requests")}>
+              <h3>Product Requests</h3>
+              <p>Total Requests: <strong>{dashboardStats.productRequests?.total || 0}</strong></p>
+              <p>Purchase Requests: <strong>{dashboardStats.productRequests?.purchase || 0}</strong></p>
+              <p>Preorder Requests: <strong>{dashboardStats.productRequests?.preorder || 0}</strong></p>
+              <p>Auction Requests: <strong>{dashboardStats.productRequests?.auction || 0}</strong></p>
+              <button>Go to Product Requests</button>
             </div>
-            <div
-              className="dashboard-card"
-              onClick={() => setActiveTab("Voucher Tasks")}
-            >
+            <div className="dashboard-card" onClick={() => setActiveTab("Voucher Tasks")}>
               <h3>Voucher Tasks</h3>
-              <p>Create and manage voucher tasks.</p>
-              <p>Pending Approvals: {dashboardStats.voucherTasksPending}</p>
+              <p>Active Tasks: <strong>{dashboardStats.activeVoucherTasks || 0}</strong></p>
               <button>Go to Voucher Tasks</button>
             </div>
-            <div
-              className="dashboard-card"
-              onClick={() => setActiveTab("Audit Logs")}
-            >
+            <div className="dashboard-card" onClick={() => setActiveTab("Audit Logs")}>
               <h3>Audit Logs</h3>
               <p>Review system actions and logs.</p>
               <button>Go to Audit Logs</button>
             </div>
-            <div
-              className="dashboard-card"
-              onClick={() => setActiveTab("Reports")}
-            >
+            <div className="dashboard-card" onClick={() => setActiveTab("Reports")}>
               <h3>Reports</h3>
               <p>Generate and view detailed reports.</p>
               <button>Go to Reports</button>
@@ -1297,6 +1278,7 @@ const handleFulfillAuctionRequest = async (request) => {
           </div>
         </div>
       )}
+
 
       {activeTab === "Auction" && (
         <div>

@@ -678,22 +678,32 @@ export const getDashboardStats = async () => {
         COUNT(CASE WHEN NOT u.invitationAccepted THEN 1 ELSE null END) AS invitationsNotAccepted
     `);
 
-    // Count pending product requests (purchase)
+    // Count pending product requests
     const purchaseStats = await session.run(`
       MATCH (u:User)-[r:PURCHASED {fulfilled: false}]->(p:Product)
       RETURN COUNT(r) AS pendingPurchaseRequests
     `);
 
-    // Count pending preorder requests
     const preorderStats = await session.run(`
       MATCH (preOrder:PreOrder {status: 'pending'})
       RETURN COUNT(preOrder) AS pendingPreorderRequests
     `);
 
-    // Count pending auction requests
     const auctionStats = await session.run(`
       MATCH (u:User)-[w:WON {status: 'pending'}]->(a:Auction)
       RETURN COUNT(w) AS pendingAuctionRequests
+    `);
+
+    // Count active voucher tasks
+    const voucherTaskStats = await session.run(`
+      MATCH (v:VoucherTask {status: 'active'})
+      RETURN COUNT(v) AS activeVoucherTasks
+    `);
+
+    // Count active products
+    const productStats = await session.run(`
+      MATCH (p:Product)
+      RETURN COUNT(p) AS activeProducts
     `);
 
     // Extract the counts
@@ -704,6 +714,9 @@ export const getDashboardStats = async () => {
     const pendingPurchaseRequests = purchaseStats.records[0].get("pendingPurchaseRequests").toInt();
     const pendingPreorderRequests = preorderStats.records[0].get("pendingPreorderRequests").toInt();
     const pendingAuctionRequests = auctionStats.records[0].get("pendingAuctionRequests").toInt();
+
+    const activeVoucherTasks = voucherTaskStats.records[0].get("activeVoucherTasks").toInt();
+    const activeProducts = productStats.records[0].get("activeProducts").toInt();
 
     // Combine all stats
     return {
@@ -716,11 +729,14 @@ export const getDashboardStats = async () => {
         preorder: pendingPreorderRequests,
         auction: pendingAuctionRequests,
       },
+      activeVoucherTasks,
+      activeProducts,
     };
   } finally {
     await session.close();
   }
 };
+
 
 
 export const createBasicAdminAccount = async () => {
