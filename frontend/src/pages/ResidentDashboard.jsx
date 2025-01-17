@@ -743,7 +743,7 @@ const ResidentDashboard = () => {
               >
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
+                <option value="fulfilled">Fulfilled</option>
                 <option value="rejected">Rejected</option>
               </select>
               <button onClick={() => setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))}>

@@ -670,3 +670,33 @@ div {
   transform: scale(1.03);
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
+
+.transaction-history-table th,
+.transaction-history-table td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.transaction-history-table th {
+  background-color: #f4f4f4;
+}
+
+.status-pending {
+  color: #ffc107;
+}
+
+.status-approved {
+  color: #28a745;
+}
+
+.status-rejected {
+  color: #dc3545;
+}
+
+.search-bar,
+.sort-criteria,
+.filter-criteria {
+  margin-right: 10px;
+  padding: 8px;
+}

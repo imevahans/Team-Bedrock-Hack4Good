@@ -47,6 +47,19 @@ const AdminDashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false); // State for delete modal
   const [productToDelete, setProductToDelete] = useState(null); // Product to delete
   const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [allRequests, setAllRequests] = useState([]);
+  const [searchTermRequest, setSearchTermRequest] = useState("");
+  const [sortOrderRequest, setSortOrderRequest] = useState("asc");
+  const [sortCriteriaRequest, setSortCriteriaRequest] = useState("createdAt");
+  const [filterRequestType, setFilterRequestType] = useState("all");
+  const [purchaseRequests, setPurchaseRequests] = useState([]);
+  const [preorderRequests, setPreorderRequests] = useState([]);
+  const [searchTermPurchase, setSearchTermPurchase] = useState("");
+  const [searchTermPreorder, setSearchTermPreorder] = useState("");
+  const [sortOrderPurchase, setSortOrderPurchase] = useState("asc");
+  const [sortOrderPreorder, setSortOrderPreorder] = useState("asc");
+  const [sortCriteriaPurchase, setSortCriteriaPurchase] = useState("createdAt");
+  const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("createdAt");
 
 
   useEffect(() => {
@@ -61,6 +74,7 @@ const AdminDashboard = () => {
       fetchActions();
     } else if (activeTab === "Product Requests") {
       fetchUnfulfilledRequests();
+      fetchAllRequests();
     } else if (activeTab === "Voucher Tasks") {
       fetchVoucherTasks();
       fetchPendingApprovals();
@@ -75,6 +89,17 @@ const AdminDashboard = () => {
       setDashboardStats(response.data);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
+    }
+  };
+
+  const fetchAllRequests = async () => {
+    try {
+      const response = await api.get("/auth/requests/all");
+      setPurchaseRequests(response.data.purchaseRequests);
+      setPreorderRequests(response.data.preorderRequests);
+    } catch (error) {
+      console.error("Error fetching requests:", error.message);
+      showNotification("Failed to fetch requests.", "error");
     }
   };
 
@@ -108,8 +133,6 @@ const AdminDashboard = () => {
   
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
-  const handleFilterRole = (e) => setFilterRole(e.target.value);
-  const handleFilterInvitation = (e) => setFilterInvitation(e.target.value);
 
 
   const resetTimeToMidnight = (date) => {
@@ -651,8 +674,91 @@ const markAsFulfilled = async (requestId) => {
     }
   };
 
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
+  const filteredSortedPurchaseRequests = purchaseRequests
+  .filter((request) =>
+    request.productName.toLowerCase().includes(searchTermPurchase.toLowerCase())
+  )
+  .sort((a, b) => {
+    let fieldA = a[sortCriteriaPurchase];
+    let fieldB = b[sortCriteriaPurchase];
+
+    if (sortCriteriaPurchase === "createdAt") {
+      fieldA = new Date(a.createdAt);
+      fieldB = new Date(b.createdAt);
+    }
+
+    return sortOrderPurchase === "asc"
+      ? fieldA > fieldB
+        ? 1
+        : -1
+      : fieldA < fieldB
+      ? 1
+      : -1;
+  });
+
+  const filteredSortedPreorderRequests = preorderRequests
+  .filter((request) =>
+    request.productName.toLowerCase().includes(searchTermPreorder.toLowerCase())
+  )
+  .sort((a, b) => {
+    let fieldA = a[sortCriteriaPreorder];
+    let fieldB = b[sortCriteriaPreorder];
+
+    if (sortCriteriaPreorder === "createdAt") {
+      fieldA = new Date(a.createdAt);
+      fieldB = new Date(b.createdAt);
+    }
+
+    return sortOrderPreorder === "asc"
+      ? fieldA > fieldB
+        ? 1
+        : -1
+      : fieldA < fieldB
+      ? 1
+      : -1;
+  });
+
+  const handleApprovePurchaseRequest = async (request) => {
+    try {
+      await api.post(`/auth/requests/purchase/approve/${request.requestId}`, {
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      showNotification(`Purchase request for ${request.productName} approved.`, "success");
+      fetchAllRequests(); // Refresh the request list
+    } catch (error) {
+      console.error("Error approving purchase request:", error.message);
+      showNotification("Failed to approve purchase request.", "error");
+    }
+  };
+  
+  
+  const handleApprovePreorderRequest = async (request) => {
+    try {
+      await api.post(`/auth/requests/preorder/approve/${request.requestId}`, {
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      showNotification(`Preorder request for ${request.productName} approved.`, "success");
+      fetchAllRequests(); // Refresh the request list
+    } catch (error) {
+      console.error("Error approving preorder request:", error.message);
+      showNotification("Failed to approve preorder request.", "error");
+    }
+  };
+  
+  const handleRejectPreorderRequest = async (request) => {
+    try {
+      await api.post(`/auth/requests/preorder/reject/${request.requestId}`, {
+        adminName: user.name,
+        adminEmail: user.email,
+      });
+      showNotification(`Preorder request for ${request.productName} rejected.`, "success");
+      fetchAllRequests(); // Refresh the request list
+    } catch (error) {
+      console.error("Error rejecting preorder request:", error.message);
+      showNotification("Failed to reject preorder request.", "error");
+    }
   };
   
   
@@ -948,25 +1054,106 @@ const markAsFulfilled = async (requestId) => {
 
         {activeTab === "Product Requests" && (
           <div>
-            <h2>Manage Product Requests</h2>
-            <div className="rounded-section">
-              <h3>Unfulfilled Requests</h3>
-              {unfulfilledRequests.length > 0 ? (
-                unfulfilledRequests.map((request) => (
-                  <div key={request.requestId} className="request-card"> {/* Use requestId as the unique key */}
-                    <p><strong>User:</strong> {request.userName} ({request.userEmail})</p>
-                    <p><strong>Product:</strong> {request.productName}</p>
-                    <p><strong>Quantity:</strong> {request.quantity}</p>
-                    <p><strong>Requested At:</strong> {new Date(request.createdAt).toLocaleString()}</p>
-                    <div className="request-actions">
-                      <button onClick={() => markAsFulfilled(request.requestId)}>Mark as Fulfilled</button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p>No unfulfilled requests found.</p>
-              )}
-            </div>
+          <h2>Manage Product Requests</h2>
+
+          <h3>Purchase Requests</h3>
+          <div className="controls">
+            <input
+              type="text"
+              placeholder="Search Purchase Requests..."
+              value={searchTermPurchase}
+              onChange={(e) => setSearchTermPurchase(e.target.value)}
+              className="search-bar"
+            />
+            <select
+              value={sortCriteriaPurchase}
+              onChange={(e) => setSortCriteriaPurchase(e.target.value)}
+              className="sort-criteria"
+            >
+              <option value="productName">Product Name</option>
+              <option value="quantity">Quantity</option>
+              <option value="createdAt">Date</option>
+            </select>
+            <button onClick={() => setSortOrderPurchase((prev) => (prev === "asc" ? "desc" : "asc"))}>
+              Sort: {sortOrderPurchase === "asc" ? "Ascending" : "Descending"}
+            </button>
+          </div>
+          <table className="transaction-history-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSortedPurchaseRequests.map((request, index) => (
+                <tr key={index}>
+                  <td>{request.userName}</td>
+                  <td>{request.productName}</td>
+                  <td>{request.quantity}</td>
+                  <td>{new Date(request.createdAt).toLocaleString()}</td>
+                  <td>
+                    <button onClick={() => handleApprovePurchaseRequest(request)}>Approve</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3>Preorder Requests</h3>
+          <div className="controls">
+            <input
+              type="text"
+              placeholder="Search Preorder Requests..."
+              value={searchTermPreorder}
+              onChange={(e) => setSearchTermPreorder(e.target.value)}
+              className="search-bar"
+            />
+            <select
+              value={sortCriteriaPreorder}
+              onChange={(e) => setSortCriteriaPreorder(e.target.value)}
+              className="sort-criteria"
+            >
+              <option value="productName">Product Name</option>
+              <option value="quantity">Quantity</option>
+              <option value="createdAt">Date</option>
+            </select>
+            <button onClick={() => setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))}>
+              Sort: {sortOrderPreorder === "asc" ? "Ascending" : "Descending"}
+            </button>
+          </div>
+          <table className="transaction-history-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSortedPreorderRequests.map((request, index) => (
+                <tr key={index}>
+                  <td>{request.userName}</td>
+                  <td>{request.productName}</td>
+                  <td>{request.quantity}</td>
+                  <td className={`status-${request.status.toLowerCase()}`}>{request.status}</td>
+                  <td>{new Date(request.createdAt).toLocaleString()}</td>
+                  <td>
+                    <button onClick={() => handleApprovePreorderRequest(request)}>Approve</button>
+                    <button onClick={() => handleRejectPreorderRequest(request)}>Reject</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+
           </div>
         )}
 

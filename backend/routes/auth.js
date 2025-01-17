@@ -46,7 +46,10 @@ import {
   getPendingVoucherApprovals,
   fetchUserAttemptHistory,
   fetchPreOrderHistory,
-  fetchPurchaseHistory
+  fetchPurchaseHistory,
+  fetchAllRequests,
+  approvePreOrder,
+  rejectPreOrder
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -804,8 +807,54 @@ router.get("/transactions/preorders", async (req, res) => {
   }
 });
 
+router.get("/requests/all", async (req, res) => {
+  try {
+    const requests = await fetchAllRequests();
+    res.status(200).json(requests);
+  } catch (error) {
+    console.error("Error fetching requests:", error.message);
+    res.status(500).json({ error: "Failed to fetch requests." });
+  }
+});
 
+router.post("/requests/purchase/approve/:requestId", async (req, res) => {
+  const { requestId } = req.params;
+  const { adminName, adminEmail } = req.body;
 
+  try {
+    await markRequestAsFulfilled(requestId, adminName, adminEmail);
+    res.status(200).json({ message: "Purchase request approved." });
+  } catch (error) {
+    console.error("Error approving purchase request:", error.message);
+    res.status(500).json({ error: "Failed to approve purchase request." });
+  }
+});
+
+router.post("/requests/preorder/approve/:requestId", async (req, res) => {
+  const { requestId } = req.params;
+  const { adminName, adminEmail } = req.body;
+
+  try {
+    await approvePreOrder(requestId, adminName, adminEmail);
+    res.status(200).json({ message: "Preorder request approved." });
+  } catch (error) {
+    console.error("Error approving preorder request:", error.message);
+    res.status(500).json({ error: "Failed to approve preorder request." });
+  }
+});
+
+router.post("/requests/preorder/reject/:requestId", async (req, res) => {
+  const { requestId } = req.params;
+  const { adminName, adminEmail } = req.body;
+
+  try {
+    await rejectPreOrder(requestId, adminName, adminEmail);
+    res.status(200).json({ message: "Preorder request rejected." });
+  } catch (error) {
+    console.error("Error rejecting preorder request:", error.message);
+    res.status(500).json({ error: "Failed to reject preorder request." });
+  }
+});
 
 
 

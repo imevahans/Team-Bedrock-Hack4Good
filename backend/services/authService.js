@@ -1462,37 +1462,63 @@ export const rejectPreOrder = async (preOrderId, adminName, adminEmail) => {
   const session = driver.session();
 
   try {
-    const result = await session.run(`
+    // Fetch the preorder details
+    const preorderResult = await session.run(`
       MATCH (preOrder:PreOrder)
       WHERE elementId(preOrder) = $preOrderId
       RETURN preOrder.userEmail AS userEmail, preOrder.totalPrice AS totalPrice
     `, { preOrderId });
 
-    if (result.records.length === 0) {
+    if (preorderResult.records.length === 0) {
       throw new Error("Preorder not found.");
     }
 
-    const userEmail = result.records[0].get("userEmail");
-    const totalPrice = result.records[0].get("totalPrice");
+    const userEmail = preorderResult.records[0].get("userEmail");
+    const totalPrice = Number(preorderResult.records[0].get("totalPrice"));
 
-    // Refund balance
+    // Fetch the user's current balance
+    const userResult = await session.run(`
+      MATCH (u:User {email: $userEmail})
+      RETURN u.balance AS currentBalance
+    `, { userEmail });
+
+    if (userResult.records.length === 0) {
+      throw new Error("User not found.");
+    }
+
+    const currentBalance = Number(userResult.records[0].get("currentBalance"));
+
+    // Calculate the updated balance
+    const updatedBalance = currentBalance + totalPrice;
+
+    // Update the user's balance
     await session.run(`
       MATCH (u:User {email: $userEmail})
-      SET u.balance = u.balance + $totalPrice
-    `, { userEmail, totalPrice });
+      SET u.balance = $updatedBalance
+    `, { userEmail, updatedBalance });
 
-    // Update preorder status
+    // Update the preorder status
     await session.run(`
       MATCH (preOrder:PreOrder)
       WHERE elementId(preOrder) = $preOrderId
       SET preOrder.status = 'rejected'
     `, { preOrderId });
 
-    logAuditAction(adminName, adminEmail, "Reject PreOrder", `Rejected preorder with ID: ${preOrderId}. Refunded $${totalPrice}.`);
+    // Log the action
+    await logAuditAction(
+      adminName,
+      adminEmail,
+      "Reject PreOrder",
+      `Rejected preorder with ID: ${preOrderId}. Refunded $${totalPrice} to user with email ${userEmail}.`
+    );
+  } catch (error) {
+    console.error("Error rejecting preorder:", error.message);
+    throw error;
   } finally {
     await session.close();
   }
 };
+
 
 
 export const attemptVoucherTask = async (taskId, userEmail, imageFilePath, userName) => {
@@ -1691,6 +1717,62 @@ export const fetchPreOrderHistory = async (userEmail) => {
       status: record.get("status"),
       preorderDate: record.get("preorderDate"),
     }));
+  } finally {
+    await session.close();
+  }
+};
+
+export const fetchAllRequests = async () => {
+  const session = driver.session();
+  try {
+    // Fetch purchase requests
+    const purchaseRequests = await session.run(`
+      MATCH (u:User)-[r:PURCHASED {fulfilled: false}]->(p:Product)
+      RETURN 
+        u.name AS userName,
+        u.email AS userEmail,
+        p.name AS productName,
+        r.quantity AS quantity,
+        r.createdAt AS createdAt,
+        'Purchase' AS requestType,
+        elementId(r) AS requestId
+    `);
+
+    // Fetch preorder requests
+    const preorderRequests = await session.run(`
+      MATCH (preOrder:PreOrder {status: 'pending'})
+      OPTIONAL MATCH (u:User {email: preOrder.userEmail})
+      RETURN 
+        COALESCE(u.name, 'Unknown') AS userName,
+        preOrder.userEmail AS userEmail,
+        preOrder.productName AS productName,
+        preOrder.quantity AS quantity,
+        preOrder.createdAt AS createdAt,
+        'PreOrder' AS requestType,
+        preOrder.status AS status,
+        elementId(preOrder) AS requestId
+    `);
+
+    return {
+      purchaseRequests: purchaseRequests.records.map((record) => ({
+        userName: record.get("userName"),
+        userEmail: record.get("userEmail"),
+        productName: record.get("productName"),
+        quantity: record.get("quantity"),
+        createdAt: record.get("createdAt"),
+        requestId: record.get("requestId"),
+        status: "pending", // Default for purchase requests
+      })),
+      preorderRequests: preorderRequests.records.map((record) => ({
+        userName: record.get("userName"),
+        userEmail: record.get("userEmail"),
+        productName: record.get("productName"),
+        quantity: record.get("quantity"),
+        createdAt: record.get("createdAt"),
+        requestId: record.get("requestId"),
+        status: record.get("status"),
+      })),
+    };
   } finally {
     await session.close();
   }
