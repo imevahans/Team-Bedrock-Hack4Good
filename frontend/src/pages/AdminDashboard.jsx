@@ -56,6 +56,7 @@ const AdminDashboard = () => {
       fetchProducts();
     } else if (activeTab === "Audit Logs") {
       fetchAuditLogs();
+      fetchActions();
     } else if (activeTab === "Product Requests") {
       fetchUnfulfilledRequests();
     } else if (activeTab === "Voucher Tasks") {
@@ -80,6 +81,15 @@ const AdminDashboard = () => {
       setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error.response?.data || error.message);
+    }
+  };
+
+  const fetchActions = async () => {
+    try {
+      const response = await api.get("/auth/audit-actions");
+      setActions(response.data.actions);
+    } catch (error) {
+      console.error("Error fetching actions:", error.response?.data?.error || error.message);
     }
   };
 
