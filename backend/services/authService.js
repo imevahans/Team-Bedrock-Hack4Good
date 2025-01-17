@@ -669,7 +669,8 @@ export const addUserManually = async (email, phoneNumber, name, role, adminName,
 export const getDashboardStats = async () => {
   const session = driver.session();
   try {
-    const result = await session.run(`
+    // Count total users and invitations
+    const userStats = await session.run(`
       MATCH (u:User)
       RETURN 
         COUNT(u) AS totalUsers,
@@ -677,31 +678,50 @@ export const getDashboardStats = async () => {
         COUNT(CASE WHEN NOT u.invitationAccepted THEN 1 ELSE null END) AS invitationsNotAccepted
     `);
 
-    const voucherTasks = await session.run(`
-      MATCH (v:VoucherTask)-[c:COMPLETED_BY]->(u:User)
-      WHERE c.status = "pending"
-      RETURN COUNT(c) AS pendingTasks
-    `);
-    
-
-    const productRequests = await session.run(`
+    // Count pending product requests (purchase)
+    const purchaseStats = await session.run(`
       MATCH (u:User)-[r:PURCHASED {fulfilled: false}]->(p:Product)
-      RETURN COUNT(r) AS pendingRequests
+      RETURN COUNT(r) AS pendingPurchaseRequests
     `);
 
-    const stats = {
-      currentUsers: result.records[0].get("totalUsers").toInt(),
-      invitationsAccepted: result.records[0].get("invitationsAccepted").toInt(),
-      invitationsNotAccepted: result.records[0].get("invitationsNotAccepted").toInt(),
-      voucherTasksPending: voucherTasks.records[0].get("pendingTasks").toInt(),
-      productRequestsPending: productRequests.records[0].get("pendingRequests").toInt(),
-    };
+    // Count pending preorder requests
+    const preorderStats = await session.run(`
+      MATCH (preOrder:PreOrder {status: 'pending'})
+      RETURN COUNT(preOrder) AS pendingPreorderRequests
+    `);
 
-    return stats;
+    // Count pending auction requests
+    const auctionStats = await session.run(`
+      MATCH (u:User)-[w:WON {status: 'pending'}]->(a:Auction)
+      RETURN COUNT(w) AS pendingAuctionRequests
+    `);
+
+    // Extract the counts
+    const totalUsers = userStats.records[0].get("totalUsers").toInt();
+    const invitationsAccepted = userStats.records[0].get("invitationsAccepted").toInt();
+    const invitationsNotAccepted = userStats.records[0].get("invitationsNotAccepted").toInt();
+
+    const pendingPurchaseRequests = purchaseStats.records[0].get("pendingPurchaseRequests").toInt();
+    const pendingPreorderRequests = preorderStats.records[0].get("pendingPreorderRequests").toInt();
+    const pendingAuctionRequests = auctionStats.records[0].get("pendingAuctionRequests").toInt();
+
+    // Combine all stats
+    return {
+      totalUsers,
+      invitationsAccepted,
+      invitationsNotAccepted,
+      productRequests: {
+        total: pendingPurchaseRequests + pendingPreorderRequests + pendingAuctionRequests,
+        purchase: pendingPurchaseRequests,
+        preorder: pendingPreorderRequests,
+        auction: pendingAuctionRequests,
+      },
+    };
   } finally {
     await session.close();
   }
 };
+
 
 export const createBasicAdminAccount = async () => {
   const session = driver.session();

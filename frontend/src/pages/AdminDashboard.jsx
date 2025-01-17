@@ -1260,10 +1260,14 @@ const handleFulfillAuctionRequest = async (request) => {
               className="dashboard-card"
               onClick={() => setActiveTab("Product Requests")}
             >
-              <h3>Product Requests</h3>
-              <p>View and manage pending product requests.</p>
-              <p>Pending Requests: {dashboardStats.productRequestsPending}</p>
-              <button>Go to Product Requests</button>
+            <h3>Product Requests</h3>
+              <p>Total Requests: {dashboardStats.productRequests?.total || 0}</p>
+              <ul>
+                <li>Purchase Requests: {dashboardStats.productRequests?.purchase || 0}</li>
+                <li>Preorder Requests: {dashboardStats.productRequests?.preorder || 0}</li>
+                <li>Auction Requests: {dashboardStats.productRequests?.auction || 0}</li>
+              </ul>
+              <button onClick={() => setActiveTab("Product Requests")}>Go to Product Requests</button>
             </div>
             <div
               className="dashboard-card"
