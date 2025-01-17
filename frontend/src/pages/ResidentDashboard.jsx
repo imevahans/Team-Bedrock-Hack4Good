@@ -43,6 +43,8 @@ const ResidentDashboard = () => {
   const [sortOrderPreorder, setSortOrderPreorder] = useState("desc"); // "asc" or "desc"
   const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("preorderDate"); // Default: "purchaseDate"
   const [filterStatusPreorder, setFilterStatusPreorder] = useState("all"); // "all", "pending", "approved", "rejected"
+  const [filterStatusPurchase, setFilterStatusPurchase] = useState("all"); // "all", "fulfilled", "pending"
+
 
 
   useEffect(() => {
@@ -75,8 +77,10 @@ const ResidentDashboard = () => {
   };
 
   const filteredSortedPurchaseHistory = [...purchaseHistory]
-  .filter((purchase) =>
-    purchase.productName.toLowerCase().includes(searchTermPurchase.toLowerCase())
+  .filter(
+    (purchase) =>
+      purchase.productName?.toLowerCase().includes(searchTermPurchase.toLowerCase()) &&
+      (filterStatusPurchase === "all" || (purchase.fulfilled ? "fulfilled" : "pending") === filterStatusPurchase.toLowerCase())
   )
   .sort((a, b) => {
     let fieldA = a[sortCriteriaPurchase];
@@ -88,15 +92,21 @@ const ResidentDashboard = () => {
     }
 
     return sortOrderPurchase === "asc"
-      ? fieldA > fieldB ? 1 : -1
-      : fieldA < fieldB ? 1 : -1;
+      ? fieldA > fieldB
+        ? 1
+        : -1
+      : fieldA < fieldB
+      ? 1
+      : -1;
   });
 
 
+
   const filteredSortedPreOrderHistory = [...preOrderHistory]
-  .filter((preOrder) =>
-    preOrder.productName.toLowerCase().includes(searchTermPreorder.toLowerCase()) &&
-    (filterStatusPreorder === "all" || preOrder.status.toLowerCase() === filterStatusPreorder.toLowerCase())
+  .filter(
+    (preOrder) =>
+      preOrder.productName?.toLowerCase().includes(searchTermPreorder.toLowerCase()) &&
+      (filterStatusPreorder === "all" || preOrder.status?.toLowerCase() === filterStatusPreorder.toLowerCase())
   )
   .sort((a, b) => {
     let fieldA = a[sortCriteriaPreorder];
@@ -108,16 +118,18 @@ const ResidentDashboard = () => {
     }
 
     return sortOrderPreorder === "asc"
-      ? fieldA > fieldB ? 1 : -1
-      : fieldA < fieldB ? 1 : -1;
+      ? fieldA > fieldB
+        ? 1
+        : -1
+      : fieldA < fieldB
+      ? 1
+      : -1;
   });
-
-
 
   const handlePreOrderClick = (product) => {
     setSelectedPreOrderProduct(product);
     setPreOrderQuantity(1); // Set the initial quantity to 1
-    setPreOrderTotalPrice(1 * product.price); // Calculate total price directly from product
+    setPreOrderTotalPrice((1 * product.price).toFixed(2)); // Calculate total price directly from product
     setShowPreOrderModal(true); // Show the pre-order modal
   };
   
@@ -134,7 +146,7 @@ const ResidentDashboard = () => {
     const newQuantity = Number(e.target.value);
     setPreOrderQuantity(newQuantity);
     if (selectedPreOrderProduct) {
-      setPreOrderTotalPrice(newQuantity * selectedPreOrderProduct.price);
+      setPreOrderTotalPrice((newQuantity * selectedPreOrderProduct.price).toFixed(2));
     }
   };
 
@@ -260,12 +272,13 @@ const ResidentDashboard = () => {
   const fetchUserDetails = async () => {
     try {
       const response = await api.get(`/auth/user-details?email=${user.email}`);
-      setUserName(response.data.name); // Set the user's name
-      setUserBalance(response.data.balance); // Set the user's balance
+      setUserName(response.data.name);
+      setUserBalance(Number(response.data.balance).toFixed(2)); // Ensure balance has 2 decimal places
     } catch (error) {
       console.error("Error fetching user details:", error.message);
     }
   };
+  
 
   const handleBuyProduct = async () => {
     try {
@@ -296,7 +309,7 @@ const ResidentDashboard = () => {
   const handleOpenModal = (product) => {
     setSelectedProduct(product);
     setQuantity(1);
-    setTotalPrice(product.price);
+    setTotalPrice((product.price).toFixed(2));
     setShowModal(true);
   };
 
@@ -311,7 +324,7 @@ const ResidentDashboard = () => {
     const newQuantity = Number(e.target.value);
     setQuantity(newQuantity);
     if (selectedProduct) {
-      setTotalPrice(newQuantity * selectedProduct.price);
+      setTotalPrice((newQuantity * selectedProduct.price).toFixed(2));
     }
   };
 
@@ -685,11 +698,19 @@ const ResidentDashboard = () => {
                 <option value="totalPrice">Total Price</option>
                 <option value="purchaseDate">Date</option>
               </select>
+              <select
+                value={filterStatusPurchase}
+                onChange={(e) => setFilterStatusPurchase(e.target.value)}
+                className="status-filter"
+              >
+                <option value="all">All</option>
+                <option value="fulfilled">Fulfilled</option>
+                <option value="pending">Pending</option>
+              </select>
               <button onClick={() => setSortOrderPurchase((prev) => (prev === "asc" ? "desc" : "asc"))}>
                 Sort: {sortOrderPurchase === "asc" ? "Ascending" : "Descending"}
               </button>
             </div>
-
 
             {filteredSortedPurchaseHistory.length > 0 ? (
               <table className="transaction-history-table">
@@ -698,6 +719,7 @@ const ResidentDashboard = () => {
                     <th>Product</th>
                     <th>Quantity</th>
                     <th>Total Price</th>
+                    <th>Status</th>
                     <th>Date</th>
                   </tr>
                 </thead>
@@ -707,6 +729,9 @@ const ResidentDashboard = () => {
                       <td>{purchase.productName}</td>
                       <td>{purchase.quantity}</td>
                       <td>${purchase.totalPrice ? purchase.totalPrice.toFixed(2) : "N/A"}</td>
+                      <td className={`status-${purchase.fulfilled ? "fulfilled" : "pending"}`}>
+                        {purchase.fulfilled ? "Fulfilled" : "Pending"}
+                      </td>
                       <td>{new Date(purchase.purchaseDate).toLocaleString()}</td>
                     </tr>
                   ))}
@@ -715,6 +740,7 @@ const ResidentDashboard = () => {
             ) : (
               <p>No purchases found.</p>
             )}
+
 
 
             <h3>Preorder History</h3>
@@ -742,8 +768,8 @@ const ResidentDashboard = () => {
                 className="status-filter"
               >
                 <option value="all">All</option>
-                <option value="pending">Pending</option>
                 <option value="fulfilled">Fulfilled</option>
+                <option value="pending">Pending</option>
                 <option value="rejected">Rejected</option>
               </select>
               <button onClick={() => setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))}>
@@ -775,6 +801,7 @@ const ResidentDashboard = () => {
                   ))}
                 </tbody>
               </table>
+
             ) : (
               <p>No preorders found.</p>
             )}

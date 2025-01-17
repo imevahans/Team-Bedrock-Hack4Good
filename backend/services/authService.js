@@ -1021,17 +1021,40 @@ export const updateProductQuantity = async (productName, newQuantity) => {
 export const updateUserBalance = async (userEmail, deductionAmount) => {
   const session = driver.session();
   try {
+    const userResult = await session.run(
+      `
+      MATCH (u:User {email: $userEmail})
+      RETURN u.balance AS currentBalance
+      `,
+      { userEmail }
+    );
+
+    if (userResult.records.length === 0) {
+      throw new Error("User not found.");
+    }
+
+    // Convert balance to a number
+    const currentBalance = Number(userResult.records[0].get("currentBalance"));
+
+    if (isNaN(currentBalance)) {
+      throw new Error("Invalid balance format.");
+    }
+
+    // Calculate updated balance and round to 2 decimal places
+    const updatedBalance = Math.round((currentBalance - deductionAmount) * 100) / 100;
+
+    // Update the balance in the database
     const result = await session.run(
       `
       MATCH (u:User {email: $userEmail})
-      SET u.balance = u.balance - $deductionAmount
+      SET u.balance = $updatedBalance
       RETURN u
       `,
-      { userEmail, deductionAmount }
+      { userEmail, updatedBalance }
     );
 
     if (result.records.length === 0) {
-      throw new Error("User not found.");
+      throw new Error("Failed to update balance.");
     }
 
     return { message: "User balance updated successfully." };
@@ -1042,6 +1065,7 @@ export const updateUserBalance = async (userEmail, deductionAmount) => {
     await session.close();
   }
 };
+
 
 
 export const buyProduct = async (productName, quantity, userEmail) => {
@@ -1058,14 +1082,14 @@ export const buyProduct = async (productName, quantity, userEmail) => {
       throw new Error("Product not found.");
     }
 
-    const price = productResult.records[0].get("price");
-    const currentQuantity = productResult.records[0].get("quantity");
+    const price = Number(productResult.records[0].get("price"));
+    const currentQuantity = Number(productResult.records[0].get("quantity"));
 
     if (quantity > currentQuantity) {
       throw new Error("Requested quantity exceeds available stock.");
     }
 
-    const totalPrice = price * quantity;
+    const totalPrice = Math.round(price * quantity * 100) / 100; // Ensure 2 decimal places
 
     // Check user balance
     const userResult = await session.run(`
@@ -1077,7 +1101,7 @@ export const buyProduct = async (productName, quantity, userEmail) => {
       throw new Error("User not found.");
     }
 
-    const userBalance = userResult.records[0].get("balance");
+    const userBalance = Number(userResult.records[0].get("balance"));
     const userName = userResult.records[0].get("name");
 
     if (userBalance < totalPrice) {
@@ -1090,11 +1114,11 @@ export const buyProduct = async (productName, quantity, userEmail) => {
     // Deduct user balance
     await updateUserBalance(userEmail, totalPrice);
 
-    // Create purchase relationship
+    // Create a new purchase relationship
     await session.run(`
       MATCH (u:User {email: $userEmail}), (p:Product {name: $productName})
-      MERGE (u)-[r:PURCHASED]->(p)
-      SET r.quantity = $quantity, r.fulfilled = true, r.createdAt = $createdAt
+      CREATE (u)-[r:PURCHASED]->(p)
+      SET r.quantity = $quantity, r.fulfilled = false, r.createdAt = $createdAt
       RETURN r
     `, {
       userEmail,
@@ -1103,12 +1127,14 @@ export const buyProduct = async (productName, quantity, userEmail) => {
       createdAt: formatTimestamp(Date.now()),
     });
 
-    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} of ${productName}.`);
+    // Log the purchase
+    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} piece(s) of ${productName} for $${totalPrice}.`);
     return { message: "Product purchased successfully." };
   } finally {
     await session.close();
   }
 };
+
 
 
 export const fetchUnfulfilledRequests = async () => {
@@ -1684,7 +1710,12 @@ export const fetchPurchaseHistory = async (userEmail) => {
   try {
     const result = await session.run(`
       MATCH (u:User {email: $userEmail})-[r:PURCHASED]->(p:Product)
-      RETURN p.name AS productName, r.quantity AS quantity, r.createdAt AS purchaseDate, p.price AS price
+      RETURN 
+        p.name AS productName, 
+        r.quantity AS quantity, 
+        r.createdAt AS purchaseDate, 
+        p.price AS price, 
+        r.fulfilled AS fulfilled
       ORDER BY r.createdAt DESC
     `, { userEmail });
 
@@ -1693,11 +1724,13 @@ export const fetchPurchaseHistory = async (userEmail) => {
       quantity: record.get("quantity"),
       purchaseDate: record.get("purchaseDate"),
       totalPrice: record.get("quantity") * record.get("price"),
+      fulfilled: record.get("fulfilled"), // Include the fulfilled status
     }));
   } finally {
     await session.close();
   }
 };
+
 
 
 export const fetchPreOrderHistory = async (userEmail) => {

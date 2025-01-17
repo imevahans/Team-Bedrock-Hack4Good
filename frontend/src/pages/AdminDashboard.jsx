@@ -1096,7 +1096,7 @@ const markAsFulfilled = async (requestId) => {
                   <td>{request.quantity}</td>
                   <td>{new Date(request.createdAt).toLocaleString()}</td>
                   <td>
-                    <button onClick={() => handleApprovePurchaseRequest(request)}>Approve</button>
+                    <button onClick={() => handleApprovePurchaseRequest(request)}>Fulfilled</button>
                   </td>
                 </tr>
               ))}
