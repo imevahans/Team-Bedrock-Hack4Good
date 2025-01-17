@@ -1,6 +1,8 @@
 # **Team Bedrock Web-based Minimart and Voucher System**
 
-This project is a **Minimart and Voucher System** designed for **Muhammadiyah Welfare Home**. The application consists of two parts:
+This project is a **Minimart and Voucher System** designed for **Muhammadiyah Welfare Home** for Hack For Good 2025 hackathon. 
+
+The application consists of two parts:
 
 - **Frontend**: A React application built with Vite.
 - **Backend**: A Node.js/Express backend with JWT authentication, Twilio integration, Google OAuth, and integration with Neo4j.
