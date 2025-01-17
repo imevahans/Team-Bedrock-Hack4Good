@@ -1248,8 +1248,9 @@ export const approveVoucherTask = async (id, adminName, adminEmail) => {
   try {
     const result = await session.run(
       `
-      MATCH (v:VoucherTask {id: $id})
+      MATCH (v:VoucherTask)
       OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
+      WHERE elementId(v) = $id
       SET v.status = "approved", v.updatedAt = $updatedAt
       RETURN v, u.name AS userName, u.email AS userEmail
       `,
@@ -1278,8 +1279,9 @@ export const rejectVoucherTask = async (id, adminName, adminEmail) => {
   try {
     const result = await session.run(
       `
-      MATCH (v:VoucherTask {id: $id})
+      MATCH (v:VoucherTask)
       OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
+      WHERE elementId(v) = $id
       SET v.status = "rejected", v.updatedAt = $updatedAt
       RETURN v, u.name AS userName, u.email AS userEmail
       `,
@@ -1310,7 +1312,8 @@ export const editVoucherTask = async (id, title, description, maxAttempts, point
   try {
     const result = await session.run(
       `
-      MATCH (v:VoucherTask {id: $id})
+      MATCH (v:VoucherTask)
+      WHERE elementId(v) = $id
       SET 
         v.title = $title,
         v.description = $description,
@@ -1337,7 +1340,8 @@ export const deleteVoucherTask = async (id, adminName, adminEmail) => {
   try {
     const result = await session.run(
       `
-      MATCH (v:VoucherTask {id: $id})
+      MATCH (v:VoucherTask)
+      WHERE elementId(v) = $id
       RETURN v
       `,
       { id }
@@ -1351,7 +1355,8 @@ export const deleteVoucherTask = async (id, adminName, adminEmail) => {
 
     await session.run(
       `
-      MATCH (v:VoucherTask {id: $id})
+      MATCH (v:VoucherTask)
+      WHERE elementId(v) = $id
       DELETE v
       `,
       { id }

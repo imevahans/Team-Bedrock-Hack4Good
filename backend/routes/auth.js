@@ -39,6 +39,8 @@ import {
   markRequestAsFulfilled,
   fetchUnfulfilledRequests,
   preOrderProduct,
+  editVoucherTask,
+  deleteVoucherTask
 } from "../services/authService.js";
 
 const router = express.Router();

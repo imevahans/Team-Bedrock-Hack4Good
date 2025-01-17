@@ -558,9 +558,12 @@ const markAsFulfilled = async (requestId) => {
   };
 
   const handleEditTask = (task) => {
-    setEditTask(task);
-    setIsEditModalOpen(true);
+    setEditTask({ ...task }); // Ensure the task data is correctly set in the state
+    setIsEditModalOpen(true); // Open the modal
+    console.log("EditModal = ", isEditModalOpen);
+
   };
+  
 
   
   
@@ -759,6 +762,7 @@ const markAsFulfilled = async (requestId) => {
                     <p>Max Attempts: {task.maxAttempts}</p>
                     <p>Points: {task.points}</p>
                     <button onClick={() => handleEditTask(task)}>Edit</button>
+                    <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
                   </div>
                 ))}
             </div>
@@ -782,31 +786,85 @@ const markAsFulfilled = async (requestId) => {
 
             {/* Edit Modal */}
             {isEditModalOpen && (
-              <div className="modal">
-                <h3>Edit Voucher Task</h3>
-                <input
-                  type="text"
-                  value={editTask.title}
-                  onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
-                />
-                <textarea
-                  value={editTask.description}
-                  onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
-                ></textarea>
-                <input
-                  type="number"
-                  value={editTask.maxAttempts}
-                  onChange={(e) => setEditTask({ ...editTask, maxAttempts: e.target.value })}
-                />
-                <input
-                  type="number"
-                  value={editTask.points}
-                  onChange={(e) => setEditTask({ ...editTask, points: e.target.value })}
-                />
-                <button onClick={handleUpdateTask}>Save Changes</button>
-                <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+              <div
+                className="modal"
+                style={{
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  width: "100vw",
+                  height: "100vh",
+                  background: "rgba(0, 0, 0, 0.5)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: "1000",
+                }}
+              >
+                <div
+                  className="modal-content"
+                  style={{
+                    background: "#fff",
+                    padding: "20px",
+                    borderRadius: "10px",
+                    width: "400px",
+                    textAlign: "center",
+                  }}
+                >
+                  <h3>Edit Voucher Task</h3>
+
+                  {/* Editable Title */}
+                  <div>
+                    <label>Voucher Title:</label>
+                    <input
+                      type="text"
+                      value={editTask.title || ""}
+                      onChange={(e) => setEditTask({ ...editTask, title: e.target.value })}
+                      placeholder="Voucher Title"
+                    />
+                  </div>
+
+                  {/* Editable Description */}
+                  <div>
+                    <label>Task Description:</label>
+                    <textarea
+                      value={editTask.description || ""}
+                      onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
+                      placeholder="Task Description"
+                    ></textarea>
+                  </div>
+
+                  {/* Editable Max Attempts */}
+                  <div>
+                    <label>Max Attempts:</label>
+                    <input
+                      type="number"
+                      value={editTask.maxAttempts || 0}
+                      onChange={(e) => setEditTask({ ...editTask, maxAttempts: e.target.value })}
+                      placeholder="Max Attempts"
+                    />
+                  </div>
+
+                  {/* Editable Points */}
+                  <div>
+                    <label>Points:</label>
+                    <input
+                      type="number"
+                      value={editTask.points || 0}
+                      onChange={(e) => setEditTask({ ...editTask, points: e.target.value })}
+                      placeholder="Points"
+                    />
+                  </div>
+
+                  <div>
+                    <button onClick={handleUpdateTask}>Save</button>
+                    <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                  </div>
+                </div>
               </div>
             )}
+
+
           </div>
         )}
 
