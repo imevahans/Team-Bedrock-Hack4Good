@@ -467,12 +467,12 @@ const handleResetPassword = async (email, name) => {
       const response = await api.post("/auth/bulk-add-users", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      showNotification(response.data.message, "success");
+      showNotification("Bulk upload successful.", "success");
       setUsers((prev) => [...prev, ...response.data.users]);
       setFailedEntries(response.data.failedEntries); // Store failed entries
     } catch (error) {
       console.error("Error during bulk upload:", error);
-      showNotification(error.response?.data?.error || "Failed to upload users.", "error");
+      showNotification(`Bulk upload failed: ${error.message}`, "error");
     }
   };
 
@@ -1098,7 +1098,7 @@ const handleCreateAuction = async () => {
   const { itemName, description, startingBid, endTime } = auctionDetails;
 
   if (!itemName || !description || !startingBid || !endTime || !imageFile) {
-    alert('All fields and an image are required.');
+    showNotification('All fields and an image are required.', "error");
     return;
   }
 
@@ -1115,12 +1115,13 @@ const handleCreateAuction = async () => {
     await api.post('/auth/auctions/create', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    alert('Auction created successfully.');
+    showNotification('Auction created successfully.', "success");
     fetchAuctions();
     setAuctionDetails({ itemName: '', description: '', startingBid: '', endTime: '' });
     setImageFile(null);
   } catch (error) {
     console.error('Error creating auction:', error.message);
+    showNotification(`Error creating auction: ${error.message}`, "success");
   }
 };
 
@@ -1131,10 +1132,11 @@ const handleEndAuction = async (auctionId) => {
       adminName: user.name,
       adminEmail: user.email,
     });
-    alert('Auction ended successfully.');
+    showNotification('Auction ended successfully.', "success");
     fetchAuctions();
   } catch (error) {
     console.error('Error ending auction:', error.message);
+    showNotification(`Error ending auction: ${error.message}`, "success");
   }
 };
 

@@ -890,7 +890,7 @@ export const editProduct = async (originalName, name, price, quantity, imageUrl,
       await logAuditAction(
         adminName,
         adminEmail,
-        "Edit",
+        "Edit Product",
         `Edited product ${originalName}: updated name to ${name}, price to $${price}, quantity to ${quantity}, and image URL.`
       );
 
@@ -912,7 +912,6 @@ export const createProduct = async (name, price, quantity, imageFilePath, adminN
   const session = driver.session();
   try {
     // Upload image to Cloudinary
-
     const imageUrl = await uploadImageToCloudinary(imageFilePath);
     console.log("imageURL created = ", imageUrl);
 
@@ -935,7 +934,7 @@ export const createProduct = async (name, price, quantity, imageFilePath, adminN
       { name, price, quantity, imageUrl, createdAt, updatedAt }
     );
 
-    logAuditAction(adminName, adminEmail, "Create", `created ${quantity} piece(s) of product ${name} at ${price} dollars each.`);
+    logAuditAction(adminName, adminEmail, "Create Product", `created ${quantity} piece(s) of product ${name} at ${price} dollars each.`);
     return result.records[0].get('p').properties;
   } finally {
     await session.close();
@@ -952,7 +951,7 @@ export const deleteProduct = async (productName, adminName, adminEmail) => {
     `, { productName });
 
     if (result.records.length > 0) {
-      logAuditAction(adminName, adminEmail, "Delete", `deleted product ${productName}.`);
+      logAuditAction(adminName, adminEmail, "Delete Product", `deleted product ${productName}.`);
       return { message: "Product deleted successfully." };
     } else {
       return { error: "Product not found." };
@@ -998,7 +997,7 @@ export const getAuditActions = async () => {
   
   try {
     const result = await session.run(
-      "MATCH (a:Audit) RETURN DISTINCT a.action AS action"
+      "MATCH (a:Audit) RETURN DISTINCT a.action AS action ORDER BY a.action ASC"
     );
     
     const actions = result.records.map((record) => record.get("action"));
@@ -1167,7 +1166,7 @@ export const buyProduct = async (productName, quantity, userEmail) => {
     });
 
     // Log the purchase
-    logAuditAction(userName, userEmail, "Buy", `Purchased ${quantity} piece(s) of ${productName} for $${totalPrice}.`);
+    logAuditAction(userName, userEmail, "Buy Product", `Purchased ${quantity} piece(s) of ${productName} for $${totalPrice}.`);
     return { message: "Product purchased successfully." };
   } finally {
     await session.close();
@@ -1500,7 +1499,7 @@ export const preOrderProduct = async (productName, quantity, userEmail, price, u
       updatedAt,
     });
 
-    logAuditAction(userName, userEmail, "PreOrder", `Preordered ${quantity} of ${productName}.`);
+    logAuditAction(userName, userEmail, "PreOrder Product", `Preordered ${quantity} of ${productName}.`);
     return { message: "Preorder placed successfully." };
   } finally {
     await session.close();
@@ -1650,7 +1649,7 @@ export const attemptVoucherTask = async (taskId, userEmail, imageFilePath, userN
       { userEmail, taskId, createdAt, updatedAt, imageUrl, status }
     );
 
-    logAuditAction(userName, userEmail, "Voucher", `has attempted ${taskTitle} (${taskDescription} for ${taskPoints} points.)`);
+    logAuditAction(userName, userEmail, "Voucher Task", `has attempted ${taskTitle} (${taskDescription} for ${taskPoints} points.)`);
     return { message: "Task marked as complete. Awaiting admin approval." };
   } catch (error) {
     console.error("Error attempting voucher task:", error.message);

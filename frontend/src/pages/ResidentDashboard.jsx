@@ -207,13 +207,14 @@ const ResidentDashboard = () => {
         userName: user.name,
       });
   
-      showNotification(response.data.message, "success");
+      showNotification("Pre-order placed successfully.", "success");
       handleClosePreOrderModal(); // Close the pre-order modal
       fetchProducts(); // Refresh the product list
       fetchUserDetails(); // Update the user balance
     } catch (error) {
       console.error("Error pre-ordering product:", error.message);
-      showNotification("Failed to place pre-order.", "error");
+      showNotification(`Failed to place pre-order: ${error.message}`, "error");
+
     }
   };
 
@@ -418,13 +419,13 @@ const ResidentDashboard = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
   
-      showNotification(response.data.message, "success");
+      showNotification("Task marked as complete. Awaiting admin approval.", "success");
       setUploadedImage(null); // Reset uploaded image
       setSelectedTask(null); // Reset selected task
       fetchVoucherTasks(); // Refresh tasks
       fetchAttemptHistory();
     } catch (error) {
-      showNotification("Failed to mark task as complete.", "error");
+      showNotification(`Failed to mark task as complete: ${error.message}`, "error");
     }
   };
 
@@ -441,7 +442,7 @@ const ResidentDashboard = () => {
   const handlePlaceBid = async (auctionId) => {
     const bidAmount = parseFloat(userBid[auctionId]);
     if (!bidAmount || isNaN(bidAmount)) {
-      alert('Please enter a valid bid amount.');
+      showNotification("Please enter a valid bid amount.", "error");
       return;
     }
   
@@ -452,11 +453,12 @@ const ResidentDashboard = () => {
         bidAmount,
         userName: user.name,
       });
-      alert('Bid placed successfully.');
+      showNotification("Bid placed successfully.", "success");
       fetchAuctions();
       setUserBid({ ...userBid, [auctionId]: '' });
     } catch (error) {
       console.error('Error placing bid:', error.message);
+      showNotification(`Failed to place bid: ${error.message}`, "error");
     }
   };
   
