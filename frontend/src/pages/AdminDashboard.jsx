@@ -46,6 +46,8 @@ const AdminDashboard = () => {
   const [unfulfilledRequests, setUnfulfilledRequests] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false); // State for delete modal
   const [productToDelete, setProductToDelete] = useState(null); // Product to delete
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+
 
   useEffect(() => {
     if (activeTab === "Dashboard") {
@@ -61,6 +63,7 @@ const AdminDashboard = () => {
       fetchUnfulfilledRequests();
     } else if (activeTab === "Voucher Tasks") {
       fetchVoucherTasks();
+      fetchPendingApprovals();
     }
   
   }, [activeTab]);
@@ -92,6 +95,17 @@ const AdminDashboard = () => {
       console.error("Error fetching actions:", error.response?.data?.error || error.message);
     }
   };
+
+  const fetchPendingApprovals = async () => {
+    try {
+      const response = await api.get("/auth/vouchers/pending-approvals");
+      setPendingApprovals(response.data);
+    } catch (error) {
+      console.error("Error fetching pending approvals:", error);
+      showNotification("Failed to fetch pending approvals.", "error");
+    }
+  };
+  
 
   const handleSearch = (e) => setSearchTerm(e.target.value);
   const handleFilterRole = (e) => setFilterRole(e.target.value);
@@ -577,31 +591,35 @@ const markAsFulfilled = async (requestId) => {
 
   
   
-  const handleApproveTask = async (taskId) => {
+  const handleApproveAttempt = async (attemptId) => {
     try {
-      await api.post(`/auth/vouchers/approve/${taskId}`, {
+      await api.post(`/auth/vouchers/approve-attempt/${attemptId}`, {
         adminName: user.name,
         adminEmail: user.email,
       });
-      showNotification("Task approved successfully.", "success");
-      fetchVoucherTasks();
+      showNotification("Attempt approved successfully.", "success");
+      fetchPendingApprovals();
     } catch (error) {
-      showNotification("Failed to approve task.", "error");
+      console.error("Error approving attempt:", error);
+      showNotification("Failed to approve attempt.", "error");
     }
   };
   
-  const handleRejectTask = async (taskId) => {
+  const handleRejectAttempt = async (attemptId) => {
     try {
-      await api.post(`/auth/vouchers/reject/${taskId}`, {
+      await api.post(`/auth/vouchers/reject-attempt/${attemptId}`, {
         adminName: user.name,
         adminEmail: user.email,
       });
-      showNotification("Task rejected successfully.", "success");
-      fetchVoucherTasks();
+      showNotification("Attempt rejected successfully.", "success");
+      fetchPendingApprovals();
     } catch (error) {
-      showNotification("Failed to reject task.", "error");
+      console.error("Error rejecting attempt:", error);
+      showNotification("Failed to reject attempt.", "error");
     }
   };
+  
+  
   
   const handleUpdateTask = async () => {
     try {
@@ -780,18 +798,23 @@ const markAsFulfilled = async (requestId) => {
             {/* Pending Approvals */}
             <div>
               <h3>Pending Approvals</h3>
-              {voucherTasks
-                .filter((task) => task.status === "pending")
-                .map((task) => (
-                  <div key={task.id} className="voucher-task-card">
-                    <p><strong>{task.title}</strong></p>
-                    <p>{task.description}</p>
-                    <p>Resident: {task.userName}</p>
-                    <img src={task.imageProofUrl} alt="Proof" />
-                    <button onClick={() => handleApproveTask(task.id)}>Approve</button>
-                    <button onClick={() => handleRejectTask(task.id)}>Reject</button>
+              {pendingApprovals.length === 0 ? (
+                <p>No pending approvals.</p>
+              ) : (
+                pendingApprovals.map((attempt) => (
+                  <div key={attempt.attemptId} className="voucher-approval-card">
+                    <p><strong>Task Title:</strong> {attempt.taskTitle}</p>
+                    <p><strong>Description:</strong> {attempt.taskDescription}</p>
+                    <p><strong>Points:</strong> {attempt.taskPoints}</p>
+                    <p><strong>Resident:</strong> {attempt.userName} ({attempt.userEmail})</p>
+                    <img src={attempt.imageProofUrl} alt="Proof" style={{ maxWidth: "100%", borderRadius: "5px" }} />
+                    <div className="approval-buttons">
+                      <button onClick={() => handleApproveAttempt(attempt.attemptId)}>Approve</button>
+                      <button onClick={() => handleRejectAttempt(attempt.attemptId)}>Reject</button>
+                    </div>
                   </div>
-                ))}
+                ))
+              )}
             </div>
 
             {/* Edit Modal */}

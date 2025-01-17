@@ -42,7 +42,8 @@ import {
   editVoucherTask,
   deleteVoucherTask,
   attemptVoucherTask,
-  fetchUserAttempts
+  fetchUserAttempts,
+  getPendingVoucherApprovals
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -620,6 +621,7 @@ router.post("/requests/mark-fulfilled/:requestId", async (req, res) => {
 router.get("/vouchers/tasks", async (req, res) => {
   try {
     const tasks = await getAllVoucherTasks();
+    console.log("tasks.attempts = ",tasks.attempts);
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch voucher tasks." });
@@ -636,27 +638,30 @@ router.post("/vouchers/create", async (req, res) => {
   }
 });
 
-router.post("/vouchers/approve/:id", async (req, res) => {
-  const { id } = req.params;
+router.post("/vouchers/approve-attempt/:id", async (req, res) => {
+  const { id } = req.params; // attemptId
   const { adminName, adminEmail } = req.body;
   try {
     await approveVoucherTask(id, adminName, adminEmail);
-    res.status(200).json({ message: "Task approved." });
+    res.status(200).json({ message: "Attempt approved successfully." });
   } catch (error) {
-    res.status(500).json({ error: "Failed to approve task." });
+    console.error("Error approving attempt:", error.message);
+    res.status(500).json({ error: "Failed to approve attempt." });
   }
 });
 
-router.post("/vouchers/reject/:id", async (req, res) => {
-  const { id } = req.params;
+router.post("/vouchers/reject-attempt/:id", async (req, res) => {
+  const { id } = req.params; // attemptId
   const { adminName, adminEmail } = req.body;
   try {
     await rejectVoucherTask(id, adminName, adminEmail);
-    res.status(200).json({ message: "Task rejected." });
+    res.status(200).json({ message: "Attempt rejected successfully." });
   } catch (error) {
-    res.status(500).json({ error: "Failed to reject task." });
+    console.error("Error rejecting attempt:", error.message);
+    res.status(500).json({ error: "Failed to reject attempt." });
   }
 });
+
 
 router.post("/vouchers/edit/:id", async (req, res) => {
   const { id } = req.params;
@@ -739,6 +744,15 @@ router.get("/vouchers/attempts", async (req, res) => {
 });
 
 
+router.get("/vouchers/pending-approvals", async (req, res) => {
+  try {
+    const pendingApprovals = await getPendingVoucherApprovals();
+    res.status(200).json(pendingApprovals);
+  } catch (error) {
+    console.error("Error fetching pending approvals:", error.message);
+    res.status(500).json({ error: "Failed to fetch pending approvals." });
+  }
+});
 
 
 

@@ -675,9 +675,11 @@ export const getDashboardStats = async () => {
     `);
 
     const voucherTasks = await session.run(`
-      MATCH (v:VoucherTask)
-      RETURN COUNT(v) AS pendingTasks
+      MATCH (v:VoucherTask)-[c:COMPLETED_BY]->(u:User)
+      WHERE c.status = "pending"
+      RETURN COUNT(c) AS pendingTasks
     `);
+    
 
     const productRequests = await session.run(`
       MATCH (u:User)-[r:PURCHASED {fulfilled: false}]->(p:Product)
@@ -1178,7 +1180,7 @@ export const getAllVoucherTasks = async () => {
   try {
     const result = await session.run(`
       MATCH (v:VoucherTask)
-      OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
+      OPTIONAL MATCH (v)-[c:COMPLETED_BY]->(u:User)
       RETURN 
         v.title AS title,
         v.description AS description,
@@ -1188,8 +1190,14 @@ export const getAllVoucherTasks = async () => {
         v.updatedAt AS updatedAt,
         v.status AS status,
         elementId(v) AS id,
-        COLLECT(u.name) AS userNames,
-        v.imageProofUrl AS imageProofUrl
+        COLLECT({
+          userName: u.name,
+          userEmail: u.email,
+          imageProofUrl: c.imageProofUrl,
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+          status: c.status
+        }) AS attempts
     `);
 
     return result.records.map((record) => ({
@@ -1201,15 +1209,12 @@ export const getAllVoucherTasks = async () => {
       createdAt: record.get("createdAt"),
       updatedAt: record.get("updatedAt"),
       status: record.get("status"),
-      userNames: record.get("userNames") || [],
-      imageProofUrl: record.get("imageProofUrl") || null,
+      attempts: record.get("attempts") || [], // List of attempts for this task
     }));
   } finally {
     await session.close();
   }
 };
-
-
 
 
 export const createVoucherTask = async (title, description, maxAttempts, points, adminName, adminEmail) => {
@@ -1242,67 +1247,108 @@ export const createVoucherTask = async (title, description, maxAttempts, points,
 };
 
 
-export const approveVoucherTask = async (id, adminName, adminEmail) => {
+export const approveVoucherTask = async (attemptId, adminName, adminEmail) => {
   const session = driver.session();
   const updatedAt = formatTimestamp(Date.now());
 
   try {
+    // Step 1: Retrieve the task, user, and attempt details
     const result = await session.run(
       `
-      MATCH (v:VoucherTask)
-      OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
-      WHERE elementId(v) = $id
-      SET v.status = "approved", v.updatedAt = $updatedAt
-      RETURN v, u.name AS userName, u.email AS userEmail
+      MATCH (v:VoucherTask)-[c:COMPLETED_BY]->(u:User)
+      WHERE elementId(c) = $attemptId
+      SET c.status = "approved", c.updatedAt = $updatedAt
+      RETURN v.title AS taskTitle, v.description AS taskDescription, v.points AS taskPoints,
+             u.name AS userName, u.email AS userEmail, c.imageProofUrl AS imageProofUrl, u.balance AS currentBalance
       `,
-      { id, updatedAt }
+      { attemptId, updatedAt }
     );
 
-    const voucher = result.records[0].get("v").properties;
+    if (result.records.length === 0) {
+      throw new Error("Attempt not found.");
+    }
+
+    const taskTitle = result.records[0].get("taskTitle");
+    const taskDescription = result.records[0].get("taskDescription");
+    const taskPoints = result.records[0].get("taskPoints");
     const userName = result.records[0].get("userName");
     const userEmail = result.records[0].get("userEmail");
+    const imageProofUrl = result.records[0].get("imageProofUrl");
+    const currentBalance = result.records[0].get("currentBalance");
 
+    // Convert the balance and add points
+    const newBalance = Number(currentBalance) + Number(taskPoints);
+
+    // Step 2: Update the user's balance
+    await session.run(
+      `
+      MATCH (u:User {email: $userEmail})
+      SET u.balance = $newBalance
+      `,
+      { userEmail, newBalance }
+    );
+
+    // Step 3: Log the action
     await logAuditAction(
       adminName,
       adminEmail,
       "Approve Voucher Task",
-      `Approved voucher task: ${JSON.stringify(voucher)} for user: ${userName} (${userEmail}).`
+      `Approved voucher task "${taskTitle}" (${taskDescription}, ${taskPoints} points) for user ${userName} (${userEmail}). Proof: ${imageProofUrl}. New Balance: ${newBalance}.`
     );
+
+    return {
+      message: `Task approved and ${taskPoints} points credited to ${userName}'s balance.`,
+      newBalance,
+    };
+  } catch (error) {
+    console.error("Error approving voucher task:", error.message);
+    throw error;
   } finally {
     await session.close();
   }
 };
 
-export const rejectVoucherTask = async (id, adminName, adminEmail) => {
+
+
+
+export const rejectVoucherTask = async (attemptId, adminName, adminEmail) => {
   const session = driver.session();
   const updatedAt = formatTimestamp(Date.now());
 
   try {
     const result = await session.run(
       `
-      MATCH (v:VoucherTask)
-      OPTIONAL MATCH (v)-[:COMPLETED_BY]->(u:User)
-      WHERE elementId(v) = $id
-      SET v.status = "rejected", v.updatedAt = $updatedAt
-      RETURN v, u.name AS userName, u.email AS userEmail
+      MATCH (v:VoucherTask)-[c:COMPLETED_BY]->(u:User)
+      WHERE elementId(c) = $attemptId
+      SET c.status = "rejected", c.updatedAt = $updatedAt
+      RETURN v.title AS taskTitle, v.description AS taskDescription, v.points AS taskPoints,
+             u.name AS userName, u.email AS userEmail, c.imageProofUrl AS imageProofUrl
       `,
-      { id, updatedAt }
+      { attemptId, updatedAt }
     );
 
-    const voucher = result.records[0].get("v").properties;
+    if (result.records.length === 0) {
+      throw new Error("Attempt not found.");
+    }
+
+    const taskTitle = result.records[0].get("taskTitle");
+    const taskDescription = result.records[0].get("taskDescription");
+    const taskPoints = result.records[0].get("taskPoints").low || 0; // Handle Neo4j integers
     const userName = result.records[0].get("userName");
     const userEmail = result.records[0].get("userEmail");
+    const imageProofUrl = result.records[0].get("imageProofUrl");
 
     await logAuditAction(
       adminName,
       adminEmail,
       "Reject Voucher Task",
-      `Rejected voucher task: ${JSON.stringify(voucher)} for user: ${userName} (${userEmail}).`
+      `Rejected voucher task "${taskTitle}" (${taskDescription}, ${taskPoints} points) for user ${userName} (${userEmail}). Proof: ${imageProofUrl}.`
     );
   } finally {
     await session.close();
   }
 };
+
 
 
 
@@ -1418,6 +1464,7 @@ export const preOrderProduct = async (productName, quantity, userEmail, price, u
 
 export const attemptVoucherTask = async (taskId, userEmail, imageFilePath, userName) => {
   const session = driver.session();
+  const createdAt = formatTimestamp(Date.now());
   const updatedAt = formatTimestamp(Date.now());
 
   try {
@@ -1456,6 +1503,7 @@ export const attemptVoucherTask = async (taskId, userEmail, imageFilePath, userN
     const taskTitle = taskResult.records[0].get("title");
     const taskDescription = taskResult.records[0].get("description");
     const taskPoints = taskResult.records[0].get("points");
+    const status = "pending";
 
     console.log("attemptCount = ", attemptCount);
     console.log("maxAttempts = ", maxAttempts);
@@ -1473,10 +1521,9 @@ export const attemptVoucherTask = async (taskId, userEmail, imageFilePath, userN
       `
       MATCH (v:VoucherTask), (u:User {email: $userEmail})
       WHERE elementId(v) = $taskId
-      CREATE (v)-[:COMPLETED_BY {createdAt: $updatedAt, imageProofUrl: $imageUrl}]->(u)
-      SET v.updatedAt = $updatedAt
+      CREATE (v)-[:COMPLETED_BY {createdAt: $createdAt, updatedAt: $updatedAt, imageProofUrl: $imageUrl, status: $status}]->(u)
       `,
-      { taskId, userEmail, imageUrl, updatedAt }
+      { userEmail, taskId, createdAt, updatedAt, imageUrl, status }
     );
 
     logAuditAction(userName, userEmail, "Voucher", `has attempted ${taskTitle} (${taskDescription} for ${taskPoints} points.)`);
@@ -1507,6 +1554,37 @@ export const fetchUserAttempts = async (email) => {
     });
 
     return attempts;
+  } finally {
+    await session.close();
+  }
+};
+
+export const getPendingVoucherApprovals = async () => {
+  const session = driver.session();
+  try {
+    const result = await session.run(`
+      MATCH (v:VoucherTask)-[c:COMPLETED_BY {status: "pending"}]->(u:User)
+      RETURN 
+        elementId(c) AS attemptId,
+        v.title AS taskTitle,
+        v.description AS taskDescription,
+        v.points AS taskPoints,
+        u.name AS userName,
+        u.email AS userEmail,
+        c.imageProofUrl AS imageProofUrl,
+        c.createdAt AS attemptCreatedAt
+    `);
+
+    return result.records.map((record) => ({
+      attemptId: record.get("attemptId"),
+      taskTitle: record.get("taskTitle"),
+      taskDescription: record.get("taskDescription"),
+      taskPoints: record.get("taskPoints"),
+      userName: record.get("userName"),
+      userEmail: record.get("userEmail"),
+      imageProofUrl: record.get("imageProofUrl"),
+      attemptCreatedAt: record.get("attemptCreatedAt"),
+    }));
   } finally {
     await session.close();
   }
