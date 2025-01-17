@@ -189,6 +189,12 @@ After that, please proceed to login at `http://localhost:5173/`.
 - **No Password Exposure**: Passwords are never sent through email or mobile phone, ensuring they remain secure and are not vulnerable to leakage.
 - **OTP for Invitation**: Even the invitation process requires an OTP to prevent unauthorized access.
 - **Admin Controls**: Only admins can add users, ensuring that only legitimate residents can log in. Admins can add users either one by one or in bulk for ease of use.
+- **Audit Log**: Every action taken by users and admins is logged in the system and cannot be edited, ensuring full transparency and accountability.
+- **Reports**:
+  - **Weekly Requests**: Tracks the total number of product requests made by residents each week.
+  - **Weekly Item Purchases**: Summarizes the items purchased by residents, including quantities and total spend, for the week.
+  - **Inventory Summary**: Provides an overview of available inventory, including current stock levels and restocking needs.
+  - **Voucher Insights**: Displays insights on voucher usage, task completions, the number of active voucher tasks, and statistics on pending, approved, rejected tasks and total points distributed. This report is visualized in a chart format for easier analysis.
 
 ---
 
