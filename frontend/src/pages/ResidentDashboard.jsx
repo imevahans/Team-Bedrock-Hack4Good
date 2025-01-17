@@ -11,7 +11,7 @@ import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
 const ResidentDashboard = () => {
   const { user } = useAuth(); // Access the user's details
   const { showNotification } = useNotification();
-  const [activeTab, setActiveTab] = useState("Products");
+  const [activeTab, setActiveTab] = useState("Dashboard");
   const [products, setProducts] = useState([]);
   const [userName, setUserName] = useState([]);
   const [userBalance, setUserBalance] = useState([]);
@@ -350,6 +350,12 @@ const ResidentDashboard = () => {
           <p>Your Balance: ${userBalance}</p> {/* Display user balance */}
         </div>
         <button
+          className={`sidebar-button ${activeTab === "Dashboard" ? "active" : ""}`}
+          onClick={() => setActiveTab("Dashboard")}
+        >
+          Dashboard
+        </button>
+        <button
           className={`sidebar-button ${activeTab === "Products" ? "active" : ""}`}
           onClick={() => setActiveTab("Products")}
         >
@@ -385,6 +391,58 @@ const ResidentDashboard = () => {
             <img src={food} className="dashboard-image" />
           </h1>
         </div>
+
+        {activeTab === "Dashboard" && (
+          <div className="dashboard">
+            <h2>Welcome, {userName}!</h2>
+            <p>Your Current Balance: <strong>${userBalance}</strong></p>
+
+            <div className="dashboard-grid">
+              <div className="dashboard-card">
+                <h3>Pending Voucher Task Attempts</h3>
+                <p>
+                  You have{" "}
+                  <strong>{attemptHistory.filter((a) => a.attemptStatus === "pending").length}</strong>{" "}
+                  pending voucher task attempt(s).
+                </p>
+                <button onClick={() => setActiveTab("Voucher Tasks")}>
+                  View Voucher Tasks
+                </button>
+              </div>
+
+              <div className="dashboard-card">
+                <h3>Approved Voucher Task Attempts</h3>
+                <p>
+                  You have{" "}
+                  <strong>{attemptHistory.filter((a) => a.attemptStatus === "approved").length}</strong>{" "}
+                  approved voucher task attempt(s).
+                </p>
+                <button onClick={() => setActiveTab("Voucher Tasks")}>
+                  View Voucher Tasks
+                </button>
+              </div>
+
+              <div className="dashboard-card">
+                <h3>Rejected Voucher Task Attempts</h3>
+                <p>
+                  You have{" "}
+                  <strong>{attemptHistory.filter((a) => a.attemptStatus === "rejected").length}</strong>{" "}
+                  rejected voucher task attempt(s).
+                </p>
+                <button onClick={() => setActiveTab("Voucher Tasks")}>
+                  View Voucher Tasks
+                </button>
+              </div>
+
+              <div className="dashboard-card">
+                <h3>Shop Products</h3>
+                <p>Explore and buy products with your balance.</p>
+                <button onClick={() => setActiveTab("Products")}>Go to Products</button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Conditional Rendering for Active Tab */}
         {activeTab === "Voucher Tasks" && (
