@@ -47,9 +47,6 @@ The application consists of two parts:
 
 4. Create a `.env` file in the `frontend` folder with the following content:
    ```plaintext
-   NEO4J_URI="neo4j+s://your-neo4j-uri"
-   NEO4J_USER="neo4j"
-   NEO4J_PASSWORD="your-neo4j-password"
    JWT_SECRET="your-jwt-secret"
    VITE_API_URL=http://localhost:3000/api
    ```
@@ -84,9 +81,6 @@ The application consists of two parts:
    TWILIO_ACCOUNT_SID=your-twilio-sid
    TWILIO_AUTH_TOKEN=your-twilio-auth-token
    TWILIO_SERVICE_SID=your-twilio-service-sid
-   GOOGLE_CLIENT_ID=your-google-client-id
-   GOOGLE_CLIENT_SECRET=your-google-client-secret
-   GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
    SESSION_SECRET="your-session-secret"
    NODE_ENV="dev"
    FRONTEND_URL=http://localhost:5173
@@ -112,9 +106,6 @@ The application consists of two parts:
 The frontend `.env` file contains important environment variables that connect your frontend to the backend and the database. Example:
 
 ```plaintext
-NEO4J_URI="neo4j+s://your-neo4j-uri"
-NEO4J_USER="neo4j"
-NEO4J_PASSWORD="your-neo4j-password"
 JWT_SECRET="your-jwt-secret"
 VITE_API_URL=http://localhost:3000/api
 ```
@@ -130,9 +121,6 @@ JWT_SECRET="your-jwt-secret"
 TWILIO_ACCOUNT_SID=your-twilio-sid
 TWILIO_AUTH_TOKEN=your-twilio-auth-token
 TWILIO_SERVICE_SID=your-twilio-service-sid
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
 SESSION_SECRET="your-session-secret"
 NODE_ENV="dev"
 FRONTEND_URL=http://localhost:5173
@@ -173,7 +161,7 @@ To create the first admin account, go to `http://localhost:5173/createadmin` and
 
 This will allow you to start adding other users, as our app only allows **admins** to add users to prevent non-residents from gaining access to the system.
 
-After that, please proceed to login at `http://localhost:5173/createadmin`.
+After that, please proceed to login at `http://localhost:5173/`.
 
 ---
 
