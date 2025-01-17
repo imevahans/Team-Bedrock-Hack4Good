@@ -1174,6 +1174,22 @@ const handleFulfillAuctionRequest = async (request) => {
     <div className="dashboard-container">
       {/* Sidebar */}
       <div className="sidebar">
+        {/* User Info Section */}
+        <div className="user-info">
+          <div className="user-avatar">
+            {/* You can add an avatar placeholder or image */}
+            <img
+              src="/admin.png" // Replace with actual avatar URL if available
+              alt="User Avatar"
+            />
+          </div>
+          <div className="user-details">
+            <p className="user-name">{user.name}</p>
+            <p className="user-email">{user.email}</p>
+          </div>
+        </div>
+
+        {/* Sidebar Buttons */}
         <button
           className={`sidebar-button ${activeTab === "Dashboard" ? "active" : ""}`}
           onClick={() => setActiveTab("Dashboard")}
@@ -1230,6 +1246,8 @@ const handleFulfillAuctionRequest = async (request) => {
           <FontAwesomeIcon icon={faFileAlt} className="sidebar-icon" />
           Reports
         </button>
+
+        {/* Logout Button */}
         <div className="logout-container">
           <button
             className="logout-button"
@@ -1240,6 +1258,7 @@ const handleFulfillAuctionRequest = async (request) => {
           </button>
         </div>
       </div>
+
 
 
       {/* Main Content */}
@@ -2231,8 +2250,6 @@ const handleFulfillAuctionRequest = async (request) => {
             </div>
           </div>
         )}
-
-
 
         {activeTab === "Products" && (
           <div className="product-management-container">

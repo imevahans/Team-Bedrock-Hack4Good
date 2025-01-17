@@ -64,6 +64,37 @@ body {
   font-size: 1.2em;
 }
 
+/* User Info Section */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.user-avatar img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%; /* Circular avatar */
+  margin-bottom: 10px;
+  border: 2px solid #3498db; /* Optional border for avatar */
+}
+
+.user-details {
+  text-align: center;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ecf0f1;
+}
+
+.user-email {
+  font-size: 14px;
+  color: #bdc3c7;
+}
+
 .logout {
   margin-top: auto;
   background-color: #e74c3c;
