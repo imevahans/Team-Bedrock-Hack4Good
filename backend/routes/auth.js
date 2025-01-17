@@ -56,7 +56,7 @@ import {
   endAuction,
   getActiveAuctions,
   getWonAuctions,
-  fulfillAuction
+  fulfillAuctionRequest
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -962,21 +962,23 @@ router.get("/auctions/won", async (req, res) => {
 });
 
 
-router.post("/auctions/fulfill", async (req, res) => {
-  const { auctionId, adminName, adminEmail } = req.body;
+router.post("/requests/auction/fulfill/:requestId", async (req, res) => {
+  const { requestId } = req.params;
+  const { adminName, adminEmail } = req.body;
 
-  if (!auctionId) {
-    return res.status(400).json({ error: "Auction ID is required." });
+  if (!requestId) {
+    return res.status(400).json({ error: "Request ID is required." });
   }
 
   try {
-    await fulfillAuction(auctionId, adminName, adminEmail);
-    res.status(200).json({ message: "Auction fulfilled successfully." });
+    await fulfillAuctionRequest(requestId, adminName, adminEmail);
+    res.status(200).json({ message: "Auction request fulfilled successfully." });
   } catch (error) {
-    console.error("Error fulfilling auction:", error.message);
-    res.status(500).json({ error: "Failed to fulfill auction." });
+    console.error("Error fulfilling auction request:", error.message);
+    res.status(500).json({ error: "Failed to fulfill auction request." });
   }
 });
+
 
 
 

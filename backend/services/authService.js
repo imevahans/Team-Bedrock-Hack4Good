@@ -1770,6 +1770,7 @@ export const fetchAllRequests = async () => {
         p.name AS productName,
         r.quantity AS quantity,
         r.createdAt AS createdAt,
+        'pending' AS status,
         'Purchase' AS requestType,
         elementId(r) AS requestId
     `);
@@ -1784,9 +1785,23 @@ export const fetchAllRequests = async () => {
         preOrder.productName AS productName,
         preOrder.quantity AS quantity,
         preOrder.createdAt AS createdAt,
-        'PreOrder' AS requestType,
         preOrder.status AS status,
+        'PreOrder' AS requestType,
         elementId(preOrder) AS requestId
+    `);
+
+    // Fetch auction requests
+    const auctionRequests = await session.run(`
+      MATCH (u:User)-[w:WON {status: 'pending'}]->(a:Auction)
+      RETURN 
+        u.name AS userName,
+        u.email AS userEmail,
+        a.itemName AS productName,
+        1 AS quantity,
+        w.wonAt AS createdAt,
+        w.status AS status,
+        'Auction' AS requestType,
+        elementId(w) AS requestId
     `);
 
     return {
@@ -1796,8 +1811,8 @@ export const fetchAllRequests = async () => {
         productName: record.get("productName"),
         quantity: record.get("quantity"),
         createdAt: record.get("createdAt"),
+        status: record.get("status"), // Explicitly include status
         requestId: record.get("requestId"),
-        status: "pending", // Default for purchase requests
       })),
       preorderRequests: preorderRequests.records.map((record) => ({
         userName: record.get("userName"),
@@ -1805,14 +1820,25 @@ export const fetchAllRequests = async () => {
         productName: record.get("productName"),
         quantity: record.get("quantity"),
         createdAt: record.get("createdAt"),
-        requestId: record.get("requestId"),
         status: record.get("status"),
+        requestId: record.get("requestId"),
+      })),
+      auctionRequests: auctionRequests.records.map((record) => ({
+        userName: record.get("userName"),
+        userEmail: record.get("userEmail"),
+        productName: record.get("productName"),
+        quantity: record.get("quantity"),
+        createdAt: record.get("createdAt"),
+        status: record.get("status"),
+        requestId: record.get("requestId"),
       })),
     };
   } finally {
     await session.close();
   }
 };
+
+
 
 export const getVoucherInsights = async () => {
   const session = driver.session();
@@ -2039,16 +2065,26 @@ export const getWonAuctions = async (userEmail) => {
   }
 };
 
-export const fulfillAuction = async (auctionId, adminName, adminEmail) => {
+export const fulfillAuctionRequest = async (requestId, adminName, adminEmail) => {
   const session = driver.session();
   try {
-    await session.run(`
+    const result = await session.run(`
       MATCH (u:User)-[w:WON]->(a:Auction)
-      WHERE elementId(a) = $auctionId
-      SET w.status = "fulfilled"
-    `, { auctionId });
+      WHERE elementId(w) = $requestId
+      SET w.status = 'fulfilled'
+      RETURN w
+    `, { requestId });
 
-    logAuditAction(adminName, adminEmail, "Fulfill Auction", `Auction ${auctionId} marked as fulfilled.`);
+    if (result.records.length === 0) {
+      throw new Error("Request not found.");
+    }
+
+    await logAuditAction(
+      adminName,
+      adminEmail,
+      "Fulfill Auction",
+      `Fulfilled auction request ${requestId}.`
+    );
   } finally {
     await session.close();
   }

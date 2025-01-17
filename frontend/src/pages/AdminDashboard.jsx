@@ -53,6 +53,7 @@ const AdminDashboard = () => {
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [purchaseRequests, setPurchaseRequests] = useState([]);
   const [preorderRequests, setPreorderRequests] = useState([]);
+  const [auctionRequests, setAuctionRequests] = useState([]);
   const [searchTermPurchase, setSearchTermPurchase] = useState("");
   const [searchTermPreorder, setSearchTermPreorder] = useState("");
   const [sortOrderPurchase, setSortOrderPurchase] = useState("asc");
@@ -217,11 +218,13 @@ const fetchAuctions = async () => {
       const response = await api.get("/auth/requests/all");
       setPurchaseRequests(response.data.purchaseRequests);
       setPreorderRequests(response.data.preorderRequests);
+      setAuctionRequests(response.data.auctionRequests);
     } catch (error) {
       console.error("Error fetching requests:", error.message);
       showNotification("Failed to fetch requests.", "error");
     }
   };
+  
 
   const fetchUsers = async () => {
     try {
@@ -1136,6 +1139,21 @@ const handleEndAuction = async (auctionId) => {
 };
 
 
+const handleFulfillAuctionRequest = async (request) => {
+  try {
+    await api.post(`/auth/requests/auction/fulfill/${request.requestId}`, {
+      adminName: user.name,
+      adminEmail: user.email,
+    });
+    showNotification(`Auction request for ${request.productName} fulfilled.`, "success");
+    fetchAllRequests(); // Refresh the request list
+  } catch (error) {
+    console.error("Error fulfilling auction request:", error.message);
+    showNotification("Failed to fulfill auction request.", "error");
+  }
+};
+
+
 
 
   return (
@@ -1719,6 +1737,33 @@ const handleEndAuction = async (auctionId) => {
               ))}
             </tbody>
           </table>
+
+          <h3>Auction Requests</h3>
+          <table className="transaction-history-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Item</th>
+                <th>Status</th>
+                <th>Winning Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {auctionRequests.map((request, index) => (
+                <tr key={index}>
+                  <td>{request.userName}</td>
+                  <td>{request.productName}</td>
+                  <td className={`status-${request.status.toLowerCase()}`}>{request.status}</td>
+                  <td>{new Date(request.createdAt).toLocaleString()}</td>
+                  <td>
+                    <button onClick={() => handleFulfillAuctionRequest(request)}>Fulfill</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
 
 
           </div>
