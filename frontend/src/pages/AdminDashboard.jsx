@@ -1294,7 +1294,7 @@ const exportReportPDFWithChart = async (chartRef, data, title, headers, dateRang
             ) : (
               <p>No data available. Please generate a report.</p>
             )}
-          </div>;
+          </div>
         </div>
       )}
 
@@ -1647,33 +1647,44 @@ const exportReportPDFWithChart = async (chartRef, data, title, headers, dateRang
 
 
             <h3>Audit Logs</h3>
-            <div className="audit-log-table">
-              {filteredLogs.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>User Name</th>
-                      <th>Email</th>
-                      <th>Action</th>
-                      <th>Details</th>
-                      <th>Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLogs.map((log, index) => (
-                      <tr key={index}>
-                        <td>{log.userName}</td>
-                        <td>{log.userEmail}</td>
-                        <td>{log.action}</td>
-                        <td>{log.details}</td>
-                        <td>{log.timestamp}</td>
+            <div className="audit-log-table-wrapper">
+              <div className="audit-log-table">
+                {filteredLogs.length > 0 ? (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>User Name</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Timestamp</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p>No audit logs found matching the criteria.</p>
-              )}
+                    </thead>
+                    <tbody>
+                      {filteredLogs.map((log, index) => (
+                        <tr key={index}>
+                          <td>{log.userName}</td>
+                          <td>{log.userEmail}</td>
+                          <td>{log.action}</td>
+                          <td
+                            className="details-column"
+                            data-full-text={log.details}
+                            title={log.details} // Fallback for browsers without `data-full-text` support
+                          >
+                            {log.details.length > 50
+                              ? `${log.details.substring(0, 50)}...`
+                              : log.details}
+                          </td>
+
+                          <td>{log.timestamp}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p>No audit logs found matching the criteria.</p>
+                )}
+              </div>
             </div>
           </div>
         )}

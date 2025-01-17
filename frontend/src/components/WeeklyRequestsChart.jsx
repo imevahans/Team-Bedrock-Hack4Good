@@ -1,8 +1,31 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import { Bar } from "react-chartjs-2";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
+// Register required components for Chart.js
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const WeeklyRequestsChart = ({ data, onExportPDF }) => {
   const chartRef = useRef();
+
+  useEffect(() => {
+    // Cleanup existing chart instance to avoid canvas reuse issues
+    return () => {
+      if (chartRef.current && chartRef.current.chartInstance) {
+        chartRef.current.chartInstance.destroy();
+      }
+    };
+  }, []);
 
   // Aggregate purchases by product
   const aggregatedData = data.reduce((acc, item) => {
@@ -24,12 +47,25 @@ const WeeklyRequestsChart = ({ data, onExportPDF }) => {
     ],
   };
 
+  // Export chart to PDF
+  const handleExportPDF = async () => {
+    if (chartRef.current) {
+      const canvas = await html2canvas(chartRef.current.firstChild); // Capture the chart as an image
+      const chartImage = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF();
+      pdf.text("Weekly Requests Report", 14, 10);
+      pdf.addImage(chartImage, "PNG", 10, 20, 190, 90); // Adjust dimensions as needed
+      pdf.save("weekly_requests_report.pdf");
+    }
+  };
+
   return (
     <div>
       <div ref={chartRef}>
         <Bar data={chartData} />
       </div>
-      <button onClick={() => onExportPDF(chartRef)}>Export Chart to PDF</button>
+      <button onClick={handleExportPDF}>Export Chart to PDF</button>
     </div>
   );
 };

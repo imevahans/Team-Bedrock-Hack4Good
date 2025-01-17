@@ -268,14 +268,13 @@ body {
   background-color: #F44336; /* Red for error */
 }
 
-/* Admin Dashboard Styles */
 .audit-log-table {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: auto; /* Allow horizontal scrolling if needed */
 }
 
 .audit-log-table table {
-  width: 100%;
+  width: 100%; /* Ensure table uses full width */
   border-collapse: collapse;
 }
 
@@ -283,11 +282,67 @@ body {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .audit-log-table th {
   background-color: #f2f2f2;
 }
+
+.audit-log-table td {
+  word-break: keep-all; /* Prevent breaking words in cells */
+}
+
+.audit-log-table-wrapper {
+  max-width: 100%; /* Ensure wrapper fits the viewport */
+  overflow-x: auto; /* Add horizontal scrolling for narrow screens */
+  margin-bottom: 20px;
+}
+
+.audit-log-table td {
+  white-space: nowrap; /* Prevent wrapping of text */
+  overflow: hidden; /* Hide overflowing text */
+  text-overflow: ellipsis; /* Add ellipsis (...) for overflowed text */
+}
+
+.audit-log-table td.details-column {
+  max-width: 250px; /* Adjust this width to fit your design */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audit-log-table td.details-column:hover {
+  overflow: visible; /* Allow full text to show on hover */
+  white-space: normal; /* Allow wrapping when hovered */
+  background-color: #f9f9f9; /* Optional: Highlight the cell on hover */
+  z-index: 1; /* Ensure it appears above other content */
+}
+
+.details-column {
+  max-width: 250px; /* Limit the column width */
+  white-space: nowrap; /* Prevent text wrapping */
+  overflow: hidden; /* Hide overflowing text */
+  text-overflow: ellipsis; /* Show ellipsis (...) for overflowed text */
+  position: relative;
+}
+
+.details-column:hover::after {
+  content: attr(data-full-text); /* Display the full text on hover */
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  z-index: 100;
+  max-width: 300px; /* Adjust to fit your design */
+  top: 100%;
+  left: 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
 
 .filter-section {
   margin-bottom: 20px;
