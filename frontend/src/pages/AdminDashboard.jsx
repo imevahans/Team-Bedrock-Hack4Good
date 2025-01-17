@@ -730,20 +730,64 @@ const markAsFulfilled = async (requestId) => {
 
       {/* Main Content */}
       <div className="main-content">
-        {activeTab === "Dashboard" && (
-          <div>
-            <h2>Admin Dashboard</h2>
-            <div className="rounded-section">
-              <h3>Statistics</h3>
-              <p>Users using Minimart: {dashboardStats.currentUsers}</p>
-              <p>Invitations Sent: {dashboardStats.invitationsAccepted + dashboardStats.invitationsNotAccepted}</p>
-              <p>Invitations Accepted: {dashboardStats.invitationsAccepted}</p>
-              <p>Invitations Not Accepted: {dashboardStats.invitationsNotAccepted}</p>
-              <p>Pending Voucher Approvals: {dashboardStats.voucherTasksPending}</p>
-              <p>Pending Product Requests: {dashboardStats.productRequestsPending}</p>
+      {activeTab === "Dashboard" && (
+        <div className="dashboard">
+          <h2>Admin Dashboard</h2>
+          <div className="dashboard-grid">
+            <div
+              className="dashboard-card"
+              onClick={() => setActiveTab("Users")}
+            >
+              <h3>Users</h3>
+              <p>Manage user accounts, invitations, and roles.</p>
+              <button>Go to Users</button>
+            </div>
+            <div
+              className="dashboard-card"
+              onClick={() => setActiveTab("Products")}
+            >
+              <h3>Products</h3>
+              <p>Manage products in the Minimart.</p>
+              <button>Go to Products</button>
+            </div>
+            <div
+              className="dashboard-card"
+              onClick={() => setActiveTab("Product Requests")}
+            >
+              <h3>Product Requests</h3>
+              <p>View and manage pending product requests.</p>
+              <p>Pending Requests: {dashboardStats.productRequestsPending}</p>
+              <button>Go to Product Requests</button>
+            </div>
+            <div
+              className="dashboard-card"
+              onClick={() => setActiveTab("Voucher Tasks")}
+            >
+              <h3>Voucher Tasks</h3>
+              <p>Create and manage voucher tasks.</p>
+              <p>Pending Approvals: {dashboardStats.voucherTasksPending}</p>
+              <button>Go to Voucher Tasks</button>
+            </div>
+            <div
+              className="dashboard-card"
+              onClick={() => setActiveTab("Audit Logs")}
+            >
+              <h3>Audit Logs</h3>
+              <p>Review system actions and logs.</p>
+              <button>Go to Audit Logs</button>
+            </div>
+            <div
+              className="dashboard-card"
+              onClick={() => setActiveTab("Reports")}
+            >
+              <h3>Reports</h3>
+              <p>Generate and view detailed reports.</p>
+              <button>Go to Reports</button>
             </div>
           </div>
-        )}
+        </div>
+      )}
+
 
         {activeTab === "Voucher Tasks" && (
           <div>
