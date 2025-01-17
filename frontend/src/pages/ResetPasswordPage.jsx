@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useNotification } from "../context/NotificationContext";
+import "../styles/ResetPasswordPage.css";
 
 const ResetPasswordPage = () => {
   const [contact, setContact] = useState(""); // For email or phone

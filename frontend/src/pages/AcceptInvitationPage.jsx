@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useNotification } from "../context/NotificationContext";
+import "../styles/AcceptInvitationPage.css";
 
 const AcceptInvitationPage = () => {
   const [password, setPassword] = useState("");

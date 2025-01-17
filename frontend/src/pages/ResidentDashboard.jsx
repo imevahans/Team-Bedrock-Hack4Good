@@ -1,12 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { act, useEffect, useState } from "react";
 import api from "../services/api";
 import "../styles/ResidentDashboard.css";
-import profile from "../assets/profile.png";
-import logout from "../assets/logout.png";
 import minimart from "../assets/minimart.png";
 import food from "../assets/food.png";
 import { useNotification } from "../context/NotificationContext";
 import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"; // FontAwesome for icons
+import {
+  faHome,
+  faBox,
+  faGavel,
+  faTasks,
+  faClipboardList,
+  faSignOutAlt,
+} from "@fortawesome/free-solid-svg-icons"; // Specific icons from FontAwesome
 
 const ResidentDashboard = () => {
   const { user } = useAuth(); // Access the user's details
@@ -455,6 +462,7 @@ const ResidentDashboard = () => {
       });
       showNotification("Bid placed successfully.", "success");
       fetchAuctions();
+      fetchUserDetails();
       setUserBid({ ...userBid, [auctionId]: '' });
     } catch (error) {
       console.error('Error placing bid:', error.message);
@@ -466,140 +474,171 @@ const ResidentDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <div className="profile-section">
-          <button style={{ marginBottom: "10px" }}>
-            <img src={profile} className="profile-image" />
-          </button>
-          {/* Display User Name below profile */}
-          <p style={{ textAlign: "center", fontWeight: "bold", color: "white" }}>
-            {userName || "User"} {/* Display the user's name */}
-          </p>
+
+    {/* Sidebar */}
+    <div className="sidebar">
+      {/* Profile Section */}
+      <div className="profile-section">
+        <div className="profile-image-container">
+          <img
+            src={"/user.png"} // Local path to resident profile image
+            alt="User Profile"
+            className="profile-image"
+          />
         </div>
-        <div className="balance-container">
-          <p>Your Balance: ${userBalance}</p> {/* Display user balance */}
-        </div>
-        <button
-          className={`sidebar-button ${activeTab === "Dashboard" ? "active" : ""}`}
-          onClick={() => setActiveTab("Dashboard")}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`sidebar-button ${activeTab === "Products" ? "active" : ""}`}
-          onClick={() => setActiveTab("Products")}
-        >
-          Products
-        </button>
-        <button
-          className={`sidebar-button ${activeTab === "Auction" ? "active" : ""}`}
-          onClick={() => setActiveTab("Auction")}
-        >
-          Auction
-        </button>
-        <button
-          className={`sidebar-button ${activeTab === "Voucher Tasks" ? "active" : ""}`}
-          onClick={() => setActiveTab("Voucher Tasks")}
-        >
-          Voucher Tasks
-        </button>
-        <button
-          className={`sidebar-button ${activeTab === "Transaction History" ? "active" : ""}`}
-          onClick={() => setActiveTab("Transaction History")}
-        >
-          Transaction History
-        </button>
-        <div className="logout-container">
-          <button className="logout-button" onClick={handleLogout}>
-            Log Out
-            <img src={logout} className="logout-image" />
-          </button>
-        </div>
+        <p className="user-name">{userName || "User"}</p>
+        <p className="user-email">{user.email}</p>
+        <p className="user-balance">Your Balance: ${userBalance || "0.00"}</p>
       </div>
 
-      {/* Main Content */}
-      <div className="main-content">
-        <div className="header-container">
-          <h1>
-            <img src={minimart} className="dashboard-image" />
-            Muhammadiyah MiniMart
-            <img src={food} className="dashboard-image" />
-          </h1>
-        </div>
+      {/* Sidebar Buttons */}
+      <button
+        className={`sidebar-button ${activeTab === "Dashboard" ? "active" : ""}`}
+        onClick={() => setActiveTab("Dashboard")}
+      >
+        <FontAwesomeIcon icon={faHome} className="sidebar-icon" />
+        Dashboard
+      </button>
+      <button
+        className={`sidebar-button ${activeTab === "Products" ? "active" : ""}`}
+        onClick={() => setActiveTab("Products")}
+      >
+        <FontAwesomeIcon icon={faBox} className="sidebar-icon" />
+        Products
+      </button>
+      <button
+        className={`sidebar-button ${activeTab === "Auction" ? "active" : ""}`}
+        onClick={() => setActiveTab("Auction")}
+      >
+        <FontAwesomeIcon icon={faGavel} className="sidebar-icon" />
+        Auction
+      </button>
+      <button
+        className={`sidebar-button ${activeTab === "Voucher Tasks" ? "active" : ""}`}
+        onClick={() => setActiveTab("Voucher Tasks")}
+      >
+        <FontAwesomeIcon icon={faTasks} className="sidebar-icon" />
+        Voucher Tasks
+      </button>
+      <button
+        className={`sidebar-button ${activeTab === "Transaction History" ? "active" : ""}`}
+        onClick={() => setActiveTab("Transaction History")}
+      >
+        <FontAwesomeIcon icon={faClipboardList} className="sidebar-icon" />
+        Transaction History
+      </button>
 
-        {activeTab === "Dashboard" && (
-          <div className="dashboard">
-            <h2>Welcome, {userName}!</h2>
-            <p>Your Current Balance: <strong>${userBalance}</strong></p>
+      {/* Logout Button */}
+      <div className="logout-container">
+        <button className="logout-button" onClick={handleLogout}>
+          <FontAwesomeIcon icon={faSignOutAlt} className="sidebar-icon" />
+          Log Out
+        </button>
+      </div>
+    </div>
 
-            <div className="dashboard-grid">
-              <div className="dashboard-card">
-                <h3>Pending Voucher Task Attempts</h3>
-                <p>
-                  You have{" "}
-                  <strong>{attemptHistory.filter((a) => a.attemptStatus === "pending").length}</strong>{" "}
-                  pending voucher task attempt(s).
-                </p>
-                <button onClick={() => setActiveTab("Voucher Tasks")}>
-                  View Voucher Tasks
-                </button>
-              </div>
 
-              <div className="dashboard-card">
-                <h3>Approved Voucher Task Attempts</h3>
-                <p>
-                  You have{" "}
-                  <strong>{attemptHistory.filter((a) => a.attemptStatus === "approved").length}</strong>{" "}
-                  approved voucher task attempt(s).
-                </p>
-                <button onClick={() => setActiveTab("Voucher Tasks")}>
-                  View Voucher Tasks
-                </button>
-              </div>
+    {/* Main Content */}
+    <div className="main-content">
+      <div className="header-container">
+        <h1 className="main-title">
+          <img src={minimart} className="dashboard-image" alt="MiniMart" />
+          Muhammadiyah Minimart - {activeTab}
+          <img src={food} className="dashboard-image" alt="Food Icon" />
+        </h1>
+        <p className="subtitle">
+          Your one-stop shop for fresh produce, groceries, and exclusive deals!
+        </p>
+      </div>
 
-              <div className="dashboard-card">
-                <h3>Rejected Voucher Task Attempts</h3>
-                <p>
-                  You have{" "}
-                  <strong>{attemptHistory.filter((a) => a.attemptStatus === "rejected").length}</strong>{" "}
-                  rejected voucher task attempt(s).
-                </p>
-                <button onClick={() => setActiveTab("Voucher Tasks")}>
-                  View Voucher Tasks
-                </button>
-              </div>
 
-              <div className="dashboard-card">
-                <h3>Shop Products</h3>
-                <p>Explore and buy products with your balance.</p>
-                <button onClick={() => setActiveTab("Products")}>Go to Products</button>
-              </div>
+      {activeTab === "Dashboard" && (
+        <div className="dashboard">
+          <h2 className="dashboard-welcome">Welcome, {userName}!</h2>
+          <p className="dashboard-balance">
+            Your Current Balance: <strong>${userBalance}</strong>
+          </p>
+          <div className="dashboard-grid">
+            {/* Products Card */}
+            <div className="dashboard-card">
+              <h3>Products</h3>
+              <p>Explore our wide range of products and spend your balance.</p>
+              <button onClick={() => setActiveTab("Products")}>Go to Products</button>
+            </div>
+
+            {/* Auction Card */}
+            <div className="dashboard-card">
+              <h3>Auction</h3>
+              <p>Bid for exclusive items and win amazing deals!</p>
+              <button onClick={() => setActiveTab("Auction")}>View Auctions</button>
+            </div>
+
+            {/* Transaction History Card */}
+            <div className="dashboard-card">
+              <h3>Transaction History</h3>
+              <p>Track your purchases and voucher usage in detail.</p>
+              <button onClick={() => setActiveTab("Transaction History")}>
+                View History
+              </button>
+            </div>
+
+            {/* Voucher Tasks Card */}
+            <div className="dashboard-card">
+              <h3>Voucher Tasks</h3>
+              <p>
+                Pending:{" "}
+                <strong>
+                  {attemptHistory.filter((a) => a.attemptStatus === "pending").length}
+                </strong>
+              </p>
+              <p>
+                Approved:{" "}
+                <strong>
+                  {attemptHistory.filter((a) => a.attemptStatus === "approved").length}
+                </strong>
+              </p>
+              <p>
+                Rejected:{" "}
+                <strong>
+                  {attemptHistory.filter((a) => a.attemptStatus === "rejected").length}
+                </strong>
+              </p>
+              <button onClick={() => setActiveTab("Voucher Tasks")}>
+                View Voucher Tasks
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
+
         
-        {activeTab === "Auction" && (
-          <div>
-            <h2>Participate in Auctions</h2>
+      {activeTab === "Auction" && (
+        <div className="auction-section">
+          <h2 className="auction-title">Participate in Auctions</h2>
+
+          <div className="auction-list">
             {auctions.map((auction) => (
-              <div key={auction.id}>
-                <img src={auction.imageUrl} alt={auction.itemName} />
-                <p><strong>{auction.itemName}</strong></p>
-                <p>{auction.description}</p>
-                <p>Current Bid: {auction.currentBid}</p>
+              <div className="auction-card">
+                <img src={auction.imageUrl} alt={auction.itemName} className="auction-image" />
+                <p className="auction-item-name"><strong>{auction.itemName}</strong></p>
+                <p className="auction-description">{auction.description}</p>
+                <p className="auction-current-bid">Current Bid: <strong>${auction.currentBid}</strong></p>
                 <input
                   type="number"
                   placeholder="Your Bid"
+                  className="auction-bid-input"
                   value={userBid[auction.id] || ''}
                   onChange={(e) => setUserBid({ ...userBid, [auction.id]: e.target.value })}
                 />
-                <button onClick={() => handlePlaceBid(auction.id)}>Place Bid</button>
+                <button className="place-bid-button" onClick={() => handlePlaceBid(auction.id)}>
+                  Place Bid
+                </button>
               </div>
             ))}
+          </div>
 
-            <h3>Your Won Auctions</h3>
-            <table className="won-auctions-table">
+          <h3 className="won-auctions-title">Your Won Auctions</h3>
+          <table className="won-auctions-table">
             <thead>
               <tr>
                 <th>#</th>
@@ -613,175 +652,178 @@ const ResidentDashboard = () => {
                 <tr key={auction.id || index}>
                   <td>{index + 1}</td>
                   <td>{auction.itemName}</td>
-                  {/* Apply conditional styling for the status */}
                   <td className={auction.status === "fulfilled" ? "status-fulfilled" : "status-pending"}>
-                    {auction.status.charAt(0).toUpperCase() + auction.status.slice(1)} {/* Capitalize */}
+                    {auction.status.charAt(0).toUpperCase() + auction.status.slice(1)}
                   </td>
                   <td>${auction.winningBid}</td>
                 </tr>
               ))}
             </tbody>
-</table>
+          </table>
+        </div>
+      )}
 
+      {activeTab === "Voucher Tasks" && (
+        <div className="voucher-tasks-container">
+          <h2>Available Voucher Tasks</h2>
 
-          </div>
-        )}
-
-
-        {/* Conditional Rendering for Active Tab */}
-        {activeTab === "Voucher Tasks" && (
-          <div>
-            <h2>Available Voucher Tasks</h2>
-            <div className="controls">
-              <div className="search-bar">
-                <input
-                  type="text"
-                  placeholder="Search voucher tasks..."
-                  value={searchTermVoucher}
-                  onChange={(e) => setSearchTermVoucher(e.target.value)}
-                />
-              </div>
-
-              <div className="sort-controls">
-                <select
-                  value={sortCriteriaVoucher}
-                  onChange={(e) => setSortCriteriaVoucher(e.target.value)}
-                >
-                  <option value="title">Title</option>
-                  <option value="points">Points</option>
-                  <option value="attempts">Number of Attempts</option>
-                </select>
-                <button onClick={() => setSortOrderVoucher((prev) => (prev === "asc" ? "desc" : "asc"))}>
-                  Sort: {sortOrderVoucher === "asc" ? "Ascending" : "Descending"}
-                </button>
-              </div>
-            </div>
-            {filteredVoucherTasks.length === 0 ? (
-              <p>No voucher tasks available.</p>
-            ) : (
-              filteredVoucherTasks.map((task) => {
-                const remainingAttempts = task.maxAttempts - task.attempts;
-                return (
-                  <div key={task.id} className="voucher-task-card">
-                    <p><strong>{task.title}</strong></p>
-                    <p>{task.description}</p>
-                    <p>Points: {task.points}</p>
-                    <p>Remaining Attempts: {remainingAttempts}</p>
-                    <p>Attempts Made: {task.attempts}</p> {/* Display attempts */}
-                    <button
-                      onClick={() => {
-                        // console.log("Selected Task:", task); // Debugging
-                        setSelectedTask(task);
-                      }}
-                      disabled={remainingAttempts <= 0}
-                    >
-                      Attempt Task
-                    </button>
-                  </div>
-                );
-              })
-            )}
-
-            {/* Users' Voucher Tasks History */}
-            <div>
-              <h2>Your Attempt History</h2>
-              <div className="filter-controls">
-                <label>Status:</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                >
-                  <option value="all">Show All</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </div>
-              {filteredAttemptHistory.length === 0 ? (
-                <p>No attempts found.</p>
-              ) : (
-                <table className="attempt-history-table">
-                  <thead>
-                    <tr>
-                      <th>Task</th>
-                      <th>Description</th>
-                      <th>Status</th>
-                      <th>Updated At</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAttemptHistory.map((attempt) => (
-                      <tr key={attempt.attemptId}>
-                        <td>{attempt.taskTitle}</td>
-                        <td>{attempt.taskDescription}</td>
-                        <td>
-                          <span
-                            className={`status-${attempt.attemptStatus.toLowerCase()}`}
-                          >
-                            {attempt.attemptStatus}
-                          </span>
-                        </td>
-                        <td>{new Date(attempt.updatedAt).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+          {/* Controls Section */}
+          <div className="controls">
+            {/* Search Bar */}
+            <div className="search-bar">
+              <input
+                type="text"
+                placeholder="Search voucher tasks..."
+                value={searchTermVoucher}
+                onChange={(e) => setSearchTermVoucher(e.target.value)}
+              />
             </div>
 
-
-            {/* Modal for Attempt Task */}
-            {selectedTask && (
-              <div
-                className="modal"
-                style={{
-                  position: "fixed",
-                  top: "0",
-                  left: "0",
-                  width: "100vw",
-                  height: "100vh",
-                  background: "rgba(0, 0, 0, 0.5)",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  zIndex: "1000",
-                }}
+            {/* Sort Controls */}
+            <div className="sort-controls">
+              <select
+                value={sortCriteriaVoucher}
+                onChange={(e) => setSortCriteriaVoucher(e.target.value)}
               >
-                <div
-                  className="modal-content"
-                  style={{
-                    background: "#fff",
-                    padding: "20px",
-                    borderRadius: "10px",
-                    width: "400px",
-                    textAlign: "center",
-                  }}
-                >
-                  <h3>Attempt Task: {selectedTask.title}</h3>
-                  <p>{selectedTask.description}</p>
+                <option value="title">Title</option>
+                <option value="points">Points</option>
+                <option value="attempts">Number of Attempts</option>
+              </select>
+              <button
+                onClick={() =>
+                  setSortOrderVoucher((prev) => (prev === "asc" ? "desc" : "asc"))
+                }
+              >
+                Sort: {sortOrderVoucher === "asc" ? "Ascending" : "Descending"}
+              </button>
+            </div>
+          </div>
 
-                  {/* File Upload */}
-                  <div>
-                    <label>Upload Proof:</label>
-                    <input type="file" onChange={handleUploadProof} accept="image/*" />
-                  </div>
+          {/* Voucher Tasks */}
+          {filteredVoucherTasks.length === 0 ? (
+            <p>No voucher tasks available.</p>
+          ) : (
+            filteredVoucherTasks.map((task) => {
+              const remainingAttempts = task.maxAttempts - task.attempts;
+              return (
+                <div key={task.id} className="voucher-task-card">
+                  <p>
+                    <strong>{task.title}</strong>
+                  </p>
+                  <p>{task.description}</p>
+                  <p>Points: {task.points}</p>
+                  <p>Remaining Attempts: {remainingAttempts}</p>
+                  <p>Attempts Made: {task.attempts}</p>
+                  <button
+                    onClick={() => setSelectedTask(task)}
+                    disabled={remainingAttempts <= 0}
+                  >
+                    Attempt Task
+                  </button>
+                </div>
+              );
+            })
+          )}
 
-                  <div style={{ marginTop: "20px" }}>
-                    <button onClick={handleAttemptTask} style={{ marginRight: "10px" }}>
-                      Submit Proof
-                    </button>
-                    <button onClick={() => setSelectedTask(null)}>Cancel</button>
-                  </div>
+          {/* Attempt History */}
+          <div>
+            <h2>Your Attempt History</h2>
+            <div className="filter-controls">
+              <label>Status:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">Show All</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            {filteredAttemptHistory.length === 0 ? (
+              <p>No attempts found.</p>
+            ) : (
+              <table className="attempt-history-table">
+                <thead>
+                  <tr>
+                    <th>Task</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Updated At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAttemptHistory.map((attempt) => (
+                    <tr key={attempt.attemptId}>
+                      <td>{attempt.taskTitle}</td>
+                      <td>{attempt.taskDescription}</td>
+                      <td>
+                        <span
+                          className={`status-${attempt.attemptStatus.toLowerCase()}`}
+                        >
+                          {attempt.attemptStatus}
+                        </span>
+                      </td>
+                      <td>{new Date(attempt.updatedAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Modal for Attempt Task */}
+          {selectedTask && (
+            <div
+              className="modal"
+              style={{
+                position: "fixed",
+                top: "0",
+                left: "0",
+                width: "100vw",
+                height: "100vh",
+                background: "rgba(0, 0, 0, 0.5)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: "1000",
+              }}
+            >
+              <div className="modal-content">
+                <h3>Attempt Task: {selectedTask.title}</h3>
+                <p>{selectedTask.description}</p>
+
+                {/* File Upload */}
+                <div>
+                  <label>Upload Proof:</label>
+                  <input
+                    type="file"
+                    onChange={handleUploadProof}
+                    accept="image/*"
+                  />
+                </div>
+
+                <div style={{ marginTop: "20px" }}>
+                  <button
+                    onClick={handleAttemptTask}
+                    style={{ marginRight: "10px" }}
+                  >
+                    Submit Proof
+                  </button>
+                  <button onClick={() => setSelectedTask(null)}>Cancel</button>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
-        {activeTab === "Transaction History" && (
-          <div>
-            <h2>Your Transaction History</h2>
-            
+
+      {activeTab === "Transaction History" && (
+        <div className="transaction-history-container">
+
+          {/* Purchase History Section */}
+          <div className="history-section">
             <h3>Purchase History</h3>
             <div className="controls">
               <input
@@ -810,11 +852,14 @@ const ResidentDashboard = () => {
                 <option value="fulfilled">Fulfilled</option>
                 <option value="pending">Pending</option>
               </select>
-              <button onClick={() => setSortOrderPurchase((prev) => (prev === "asc" ? "desc" : "asc"))}>
+              <button
+                onClick={() =>
+                  setSortOrderPurchase((prev) => (prev === "asc" ? "desc" : "asc"))
+                }
+              >
                 Sort: {sortOrderPurchase === "asc" ? "Ascending" : "Descending"}
               </button>
             </div>
-
             {filteredSortedPurchaseHistory.length > 0 ? (
               <table className="transaction-history-table">
                 <thead>
@@ -831,8 +876,17 @@ const ResidentDashboard = () => {
                     <tr key={index}>
                       <td>{purchase.productName}</td>
                       <td>{purchase.quantity}</td>
-                      <td>${purchase.totalPrice ? purchase.totalPrice.toFixed(2) : "N/A"}</td>
-                      <td className={`status-${purchase.fulfilled ? "fulfilled" : "pending"}`}>
+                      <td>
+                        $
+                        {purchase.totalPrice
+                          ? purchase.totalPrice.toFixed(2)
+                          : "N/A"}
+                      </td>
+                      <td
+                        className={`status-${
+                          purchase.fulfilled ? "fulfilled" : "pending"
+                        }`}
+                      >
                         {purchase.fulfilled ? "Fulfilled" : "Pending"}
                       </td>
                       <td>{new Date(purchase.purchaseDate).toLocaleString()}</td>
@@ -843,9 +897,10 @@ const ResidentDashboard = () => {
             ) : (
               <p>No purchases found.</p>
             )}
+          </div>
 
-
-
+          {/* Preorder History Section */}
+          <div className="history-section">
             <h3>Preorder History</h3>
             <div className="controls">
               <input
@@ -875,12 +930,14 @@ const ResidentDashboard = () => {
                 <option value="pending">Pending</option>
                 <option value="rejected">Rejected</option>
               </select>
-              <button onClick={() => setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))}>
+              <button
+                onClick={() =>
+                  setSortOrderPreorder((prev) => (prev === "asc" ? "desc" : "asc"))
+                }
+              >
                 Sort: {sortOrderPreorder === "asc" ? "Ascending" : "Descending"}
               </button>
             </div>
-
-
             {filteredSortedPreOrderHistory.length > 0 ? (
               <table className="transaction-history-table">
                 <thead>
@@ -897,71 +954,92 @@ const ResidentDashboard = () => {
                     <tr key={index}>
                       <td>{preOrder.productName}</td>
                       <td>{preOrder.quantity}</td>
-                      <td>${preOrder.totalPrice ? preOrder.totalPrice.toFixed(2) : "N/A"}</td>
-                      <td className={`status-${preOrder.status.toLowerCase()}`}>{preOrder.status}</td>
+                      <td>
+                        $
+                        {preOrder.totalPrice
+                          ? preOrder.totalPrice.toFixed(2)
+                          : "N/A"}
+                      </td>
+                      <td className={`status-${preOrder.status.toLowerCase()}`}>
+                        {preOrder.status}
+                      </td>
                       <td>{new Date(preOrder.preorderDate).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
             ) : (
               <p>No preorders found.</p>
             )}
-
-
           </div>
-        )}
+        </div>
+      )}
 
 
-        {activeTab === "Products" && (
-          <section className="rounded-section">
-            <h2>Available Products</h2>
-            <div className="product-controls">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchTermProduct}
-                onChange={handleSearchChange}
-                className="search-bar"
-              />
-              <div className="sort-controls">
-                <select value={sortCriteria} onChange={handleSortCriteriaChange} className="sort-criteria">
-                  <option value="name">Name</option>
-                  <option value="price">Price</option>
-                  <option value="quantity">Quantity</option>
-                </select>
-                <button onClick={toggleSortOrder} className="sort-button">
-                  Sort: {sortOrder === "asc" ? "Ascending" : "Descending"}
-                </button>
-              </div>
+      {activeTab === "Products" && (
+        <section className="products-section">
+          <h2>Available Products</h2>
+          <div className="product-controls">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchTermProduct}
+              onChange={handleSearchChange}
+              className="search-bar"
+            />
+            <div className="sort-controls">
+              <select
+                value={sortCriteria}
+                onChange={handleSortCriteriaChange}
+                className="sort-criteria"
+              >
+                <option value="name">Name</option>
+                <option value="price">Price</option>
+                <option value="quantity">Quantity</option>
+              </select>
+              <button onClick={toggleSortOrder} className="sort-button">
+                Sort: {sortOrder === "asc" ? "Ascending" : "Descending"}
+              </button>
             </div>
-            {filteredProducts.length > 0 ? (
-              <div className="product-grid">
-                {filteredProducts.map((product) => (
-                  <div className="product-card" key={product.name}>
-                    <div className="product-image">
-                      <img src={product.imageUrl} alt={product.name} />
-                    </div>
-                    <p><strong>Name:</strong> {product.name}</p>
-                    <p><strong>Price:</strong> ${product.price}</p>
-                    <p><strong>Quantity:</strong> {product.quantity}</p>
-                    <div className="product-actions">
-                      {product.quantity === 0 ? (
-                        <p style={{ color: "red" }}>Out of Stock</p>
-                      ) : (
-                        <button onClick={() => handleOpenModal(product)}>Buy</button>
-                      )}
-                      {product.quantity === 0 && <button onClick={() => handlePreOrderClick(product)}>Pre Order</button>}
-                    </div>
+          </div>
+          {filteredProducts.length > 0 ? (
+            <div className="product-grid">
+              {filteredProducts.map((product) => (
+                <div className="product-card" key={product.name}>
+                  <div className="product-image">
+                    <img src={product.imageUrl} alt={product.name} />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p>No products available.</p>
-            )}
-          </section>
-        )}
+                  <p><strong>Name:</strong> {product.name}</p>
+                  <p><strong>Price:</strong> ${product.price}</p>
+                  <p><strong>Quantity:</strong> {product.quantity}</p>
+                  <div className="product-actions">
+                    {product.quantity === 0 ? (
+                      <p style={{ color: "red" }}>Out of Stock</p>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenModal(product)}
+                        className="buy-button"
+                      >
+                        Buy
+                      </button>
+                    )}
+                    {product.quantity === 0 && (
+                      <button
+                        onClick={() => handlePreOrderClick(product)}
+                        className="preorder-button"
+                      >
+                        Pre Order
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No products available.</p>
+          )}
+        </section>
+      )}
       </div>
 
       {/* Pre-order Modal */ }
