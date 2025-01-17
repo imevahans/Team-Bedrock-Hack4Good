@@ -486,7 +486,7 @@ export const bulkAddUsers = async (filePath, adminName, adminEmail) => {
         // Save user to database
         const createdAt = formatTimestamp(Date.now());
         const updatedAt = createdAt;
-
+        const balance = 100;
         const result = await session.run(
           `
           CREATE (u:User {
@@ -496,11 +496,12 @@ export const bulkAddUsers = async (filePath, adminName, adminEmail) => {
             role: $role,
             invitationAccepted: false,
             createdAt: $createdAt,
-            updatedAt: $updatedAt
+            updatedAt: $updatedAt,
+            balance: $balance
           })
           RETURN u
           `,
-          { name, email, phoneNumber, role, createdAt, updatedAt }
+          { name, email, phoneNumber, role, createdAt, updatedAt, balance }
         );
 
         const user = result.records[0].get("u").properties;
@@ -635,6 +636,7 @@ export const addUserManually = async (email, phoneNumber, name, role, adminName,
   try {
     const createdAt = formatTimestamp(Date.now());
     const updatedAt = createdAt;
+    const balance = 100; // Give each user $100 first
     const result = await session.run(
       `
       CREATE (u:User {
@@ -644,16 +646,17 @@ export const addUserManually = async (email, phoneNumber, name, role, adminName,
         role: $role,
         invitationAccepted: false,
         createdAt: $createdAt,
-        updatedAt: $updatedAt
+        updatedAt: $updatedAt,
+        balance: $balance
       })
       RETURN u
       `,
-      { email, phoneNumber, name, role, createdAt, updatedAt }
+      { email, phoneNumber, name, role, createdAt, updatedAt, balance }
     );
     const user = result.records[0].get("u").properties;
     
     // Log audit action
-    await logAuditAction(adminName, adminEmail, "User Creation", `created user with email ${email} as ${role}.`);
+    await logAuditAction(adminName, adminEmail, "User Creation", `created user with email ${email} as ${role} and balance of ${balance}.`);
 
     await sendInvitationEmail(email, name);
     return user;

@@ -43,15 +43,9 @@ const AdminDashboard = () => {
   const [voucherTasks, setVoucherTasks] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editTask, setEditTask] = useState({});
-  const [unfulfilledRequests, setUnfulfilledRequests] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false); // State for delete modal
   const [productToDelete, setProductToDelete] = useState(null); // Product to delete
   const [pendingApprovals, setPendingApprovals] = useState([]);
-  const [allRequests, setAllRequests] = useState([]);
-  const [searchTermRequest, setSearchTermRequest] = useState("");
-  const [sortOrderRequest, setSortOrderRequest] = useState("asc");
-  const [sortCriteriaRequest, setSortCriteriaRequest] = useState("createdAt");
-  const [filterRequestType, setFilterRequestType] = useState("all");
   const [purchaseRequests, setPurchaseRequests] = useState([]);
   const [preorderRequests, setPreorderRequests] = useState([]);
   const [searchTermPurchase, setSearchTermPurchase] = useState("");
@@ -60,6 +54,9 @@ const AdminDashboard = () => {
   const [sortOrderPreorder, setSortOrderPreorder] = useState("asc");
   const [sortCriteriaPurchase, setSortCriteriaPurchase] = useState("createdAt");
   const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("createdAt");
+  const [showDeleteVoucherModal, setShowDeleteVoucherModal] = useState(false);
+  const [voucherTaskToDelete, setVoucherTaskToDelete] = useState(null);
+
 
 
   useEffect(() => {
@@ -553,30 +550,6 @@ const handleSaveProduct = async () => {
     });
 
 
-  // Fetch unfulfilled product requests
-const fetchUnfulfilledRequests = async () => {
-  try {
-    const response = await api.get("/auth/requests/unfulfilled");
-    setUnfulfilledRequests(response.data.requests);
-  } catch (error) {
-    showNotification("Failed to fetch unfulfilled requests.", "error");
-  }
-};
-
-// Mark request as fulfilled
-const markAsFulfilled = async (requestId) => {
-  try {
-    await api.post(`/auth/requests/mark-fulfilled/${requestId}`, {
-      adminName: user.name,
-      adminEmail: user.email,
-    });
-    showNotification("Request marked as fulfilled.", "success");
-    fetchUnfulfilledRequests(); // Refresh the list
-  } catch (error) {
-    showNotification("Failed to mark request as fulfilled.", "error");
-  }
-};
-
   const fetchVoucherTasks = async () => {
     try {
       const response = await api.get("/auth/vouchers/tasks");
@@ -610,9 +583,6 @@ const markAsFulfilled = async (requestId) => {
     console.log("EditModal = ", isEditModalOpen);
 
   };
-  
-
-  
   
   const handleApproveAttempt = async (attemptId) => {
     try {
@@ -659,20 +629,25 @@ const markAsFulfilled = async (requestId) => {
     }
   };
   
-  const handleDeleteTask = async (taskId) => {
+  const deleteVoucherTask = async (taskId) => {
     try {
       await api.delete(`/auth/vouchers/delete/${taskId}`, {
-        data: {
-          adminName: user.name,
-          adminEmail: user.email,
-        },
+        data: { adminName: user.name, adminEmail: user.email },
       });
-      showNotification("Task deleted successfully.", "success");
-      fetchVoucherTasks();
+      showNotification("Voucher task deleted successfully.", "success");
+      fetchVoucherTasks(); // Refresh the list of voucher tasks
     } catch (error) {
-      showNotification("Failed to delete task.", "error");
+      console.error("Error deleting voucher task:", error.message);
+      showNotification("Failed to delete voucher task.", "error");
     }
   };
+  
+
+  const handleDeleteTask = (task) => {
+    setVoucherTaskToDelete(task); // Set the task to delete
+    setShowDeleteVoucherModal(true); // Show the delete confirmation modal
+  };
+  
 
   const filteredSortedPurchaseRequests = purchaseRequests
   .filter((request) =>
@@ -940,7 +915,7 @@ const markAsFulfilled = async (requestId) => {
                     <p>Max Attempts: {task.maxAttempts}</p>
                     <p>Points: {task.points}</p>
                     <button onClick={() => handleEditTask(task)}>Edit</button>
-                    <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
+                    <button onClick={() => handleDeleteTask(task)}>Delete</button>
                   </div>
                 ))}
             </div>
@@ -1042,6 +1017,49 @@ const markAsFulfilled = async (requestId) => {
                   <div>
                     <button onClick={handleUpdateTask}>Save</button>
                     <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+            {showDeleteVoucherModal && voucherTaskToDelete && (
+              <div
+                className="modal"
+                style={{
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  width: "100vw",
+                  height: "100vh",
+                  background: "rgba(0, 0, 0, 0.5)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: "1000",
+                }}
+              >
+                <div
+                  className="modal-content"
+                  style={{
+                    background: "#fff",
+                    padding: "20px",
+                    borderRadius: "10px",
+                    width: "400px",
+                    textAlign: "center",
+                  }}
+                >
+                  <h4>Are you sure you want to delete the voucher task: "{voucherTaskToDelete.title}"?</h4>
+                  <div>
+                    <button
+                      onClick={() => {
+                        deleteVoucherTask(voucherTaskToDelete.id); // Perform the delete action
+                        setShowDeleteVoucherModal(false); // Close the modal
+                      }}
+                    >
+                      Confirm
+                    </button>
+                    <button onClick={() => setShowDeleteVoucherModal(false)}>Cancel</button>
                   </div>
                 </div>
               </div>
