@@ -191,10 +191,6 @@ This will run the backend at `http://localhost:3000`.
 
 ---
 
-## **Contributing**
-
-We welcome contributions! Feel free to fork the repository, create a feature branch, and submit a pull request.
-
 ### **Contributors**:
 - [imevahans](https://github.com/imevahans)
 - [ItsPeeko](https://github.com/ItsPeeko)
