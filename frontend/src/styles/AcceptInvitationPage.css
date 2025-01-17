@@ -1,0 +1,149 @@
+/* General Page Styling */
+.accept-invitation-page {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  /* Header Container */
+  .header-container {
+    background: linear-gradient(135deg, #3498db, #2ecc71);
+    padding: 40px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: #ffffff;
+    text-align: center;
+    margin: 20px 0;
+  }
+  
+  .main-title {
+    font-size: 36px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .dashboard-image {
+    width: 50px;
+    height: auto;
+    border-radius: 8px;
+  }
+  
+  .subtitle {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 10px;
+  }
+  
+  /* Invitation Container */
+  .invitation-container {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+  }
+  
+  .invitation-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 15px;
+  }
+  
+  .invitation-greeting,
+  .invitation-email {
+    font-size: 16px;
+    color: #34495e;
+    margin-bottom: 20px;
+  }
+  
+  /* OTP Section */
+  .otp-section {
+    margin-bottom: 20px;
+  }
+  
+  .otp-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+  
+/* OTP Select Input */
+.otp-select {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9; /* Light background color */
+    color: #2c3e50; /* Text color */
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle inner shadow */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .otp-select:focus {
+    border-color: #3498db; /* Highlight border color on focus */
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.4); /* Blue focus shadow */
+    outline: none; /* Remove default outline */
+  }
+  
+  .otp-select:hover {
+    border-color: #95a5a6; /* Slightly darker border on hover */
+  }
+  
+  
+  /* Input Fields */
+  .invitation-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    color: #2c3e50;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .invitation-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.4);
+    outline: none;
+  }
+  
+  /* Buttons */
+  .otp-button,
+  .invitation-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #3498db;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .otp-button:hover,
+  .invitation-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+  }
+  
+  /* Redirect Message */
+  .redirect-message {
+    font-size: 14px;
+    color: #e74c3c;
+    margin-top: 20px;
+  }
+  

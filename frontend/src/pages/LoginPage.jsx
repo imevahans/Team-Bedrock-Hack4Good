@@ -5,8 +5,8 @@ import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import { useNotification } from "../context/NotificationContext";
 import "../styles/LoginPage.css";
-import minimart from "../assets/minimart.png"; // Replace with actual path
-import food from "../assets/food.png"; // Replace with actual path
+import minimart from "../assets/minimart.png";
+import food from "../assets/food.png";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");

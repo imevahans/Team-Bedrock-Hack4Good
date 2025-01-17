@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useNotification } from "../context/NotificationContext";
 import "../styles/AcceptInvitationPage.css";
+import minimart from "../assets/minimart.png";
+import food from "../assets/food.png";
 
 const AcceptInvitationPage = () => {
   const [password, setPassword] = useState("");
@@ -78,49 +80,80 @@ const AcceptInvitationPage = () => {
   };
 
   return (
-    <div>
-      <h2>Accept Invitation</h2>
-      <p style={{ color: "white" }}>Hello, {name}!</p>
-      <p style={{ color: "white" }}>Email: {email}</p>
+    <div className="accept-invitation-page">
+      {/* Header Section */}
+      <div className="header-container">
+        <h1 className="main-title">
+          <img src={minimart} className="dashboard-image" alt="MiniMart" />
+          Muhammadiyah Minimart
+          <img src={food} className="dashboard-image" alt="Food Icon" />
+        </h1>
+        <p className="subtitle">
+          Your one-stop shop for fresh produce, groceries, and exclusive deals!
+        </p>
+      </div>
 
-      {!otpSent ? (
-        <div>
-          <label>
-            OTP Delivery Method:
-            <select
-              value={contactMethod}
-              onChange={(e) => setContactMethod(e.target.value)}
+      {/* Main Content */}
+      <div className="invitation-container">
+        <h2 className="invitation-title">Accept Invitation</h2>
+        <p className="invitation-greeting">Hello, {name}!</p>
+        <p className="invitation-email">Email: {email}</p>
+
+        {!otpSent ? (
+          <div className="otp-section">
+            <label className="otp-label">
+              OTP Delivery Method:
+              <select
+                value={contactMethod}
+                onChange={(e) => setContactMethod(e.target.value)}
+                className="otp-select"
+              >
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+              </select>
+            </label>
+            <button className="otp-button" onClick={handleSendOtp}>
+              Send OTP
+            </button>
+          </div>
+        ) : (
+          <div className="password-section">
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="invitation-input"
+            />
+            <input
+              type="password"
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="invitation-input"
+            />
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="invitation-input"
+            />
+            <button
+              className="invitation-button"
+              onClick={handleAcceptInvitation}
             >
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-            </select>
-          </label>
-          <button onClick={handleSendOtp}>Send OTP</button>
-        </div>
-      ) : (
-        <div>
-          <input
-            type="text"
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Confirm password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-          <button onClick={handleAcceptInvitation}>Set Password</button>
-        </div>
-      )}
-      {redirecting && <p>Redirecting to login in {redirectCountdown} seconds...</p>}
+              Set Password
+            </button>
+          </div>
+        )}
+
+        {redirecting && (
+          <p className="redirect-message">
+            Redirecting to login in {redirectCountdown} seconds...
+          </p>
+        )}
+      </div>
     </div>
   );
 };
