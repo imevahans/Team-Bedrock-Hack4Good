@@ -40,7 +40,9 @@ import {
   fetchUnfulfilledRequests,
   preOrderProduct,
   editVoucherTask,
-  deleteVoucherTask
+  deleteVoucherTask,
+  attemptVoucherTask,
+  fetchUserAttempts
 } from "../services/authService.js";
 
 const router = express.Router();
@@ -702,5 +704,52 @@ router.post("/products/preorder", async (req, res) => {
     }
   }
 });
+
+router.post("/resident/vouchers/attempt", upload.single("image"), async (req, res) => {
+  const { taskId, userEmail, userName } = req.body;
+  const image = req.file;
+
+  if (!taskId || !userEmail || !image) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  try {
+    const result = await attemptVoucherTask(taskId, userEmail, image.path, userName);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error attempting voucher task:", error.message);
+    res.status(500).json({ error: "Failed to attempt voucher task." });
+  }
+});
+
+router.get("/vouchers/attempts", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "User email is required." });
+  }
+
+  try {
+    const result = await fetchUserAttempts(email);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching attempts:", error.message);
+    res.status(500).json({ error: "Failed to fetch attempts." });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default router;

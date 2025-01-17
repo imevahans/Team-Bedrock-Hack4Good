@@ -1188,7 +1188,7 @@ export const getAllVoucherTasks = async () => {
         v.updatedAt AS updatedAt,
         v.status AS status,
         elementId(v) AS id,
-        u.name AS userName,
+        COLLECT(u.name) AS userNames,
         v.imageProofUrl AS imageProofUrl
     `);
 
@@ -1201,13 +1201,14 @@ export const getAllVoucherTasks = async () => {
       createdAt: record.get("createdAt"),
       updatedAt: record.get("updatedAt"),
       status: record.get("status"),
-      userName: record.get("userName") || null,
+      userNames: record.get("userNames") || [],
       imageProofUrl: record.get("imageProofUrl") || null,
     }));
   } finally {
     await session.close();
   }
 };
+
 
 
 
@@ -1410,6 +1411,102 @@ export const preOrderProduct = async (productName, quantity, userEmail, price, u
     return { message: "Pre-order placed successfully." };
   } catch (error) {
     throw error;
+  } finally {
+    await session.close();
+  }
+};
+
+export const attemptVoucherTask = async (taskId, userEmail, imageFilePath, userName) => {
+  const session = driver.session();
+  const updatedAt = formatTimestamp(Date.now());
+
+  try {
+    // Step 1: Upload the image to Cloudinary to get the URL
+    const imageUrl = await uploadImageToCloudinary(imageFilePath);
+    console.log("Image URL created:", imageUrl);
+
+    // Step 2: Fetch the current number of attempts for the user
+    const attemptResult = await session.run(
+      `
+      MATCH (v:VoucherTask)-[c:COMPLETED_BY]->(u:User {email: $userEmail})
+      WHERE elementId(v) = $taskId
+      RETURN COUNT(c) AS attemptCount
+      `,
+      { taskId, userEmail }
+    );
+
+    const attemptCount = attemptResult.records[0].get("attemptCount");
+    
+
+    // Step 3: Fetch the max attempts for the task
+    const taskResult = await session.run(
+      `
+      MATCH (v:VoucherTask)
+      WHERE elementId(v) = $taskId
+      RETURN v.maxAttempts AS maxAttempts, v.title AS title, v.description AS description, v.points AS points
+      `,
+      { taskId }
+    );
+
+    if (taskResult.records.length === 0) {
+      throw new Error("Task not found.");
+    }
+
+    const maxAttempts = taskResult.records[0].get("maxAttempts");
+    const taskTitle = taskResult.records[0].get("title");
+    const taskDescription = taskResult.records[0].get("description");
+    const taskPoints = taskResult.records[0].get("points");
+
+    console.log("attemptCount = ", attemptCount);
+    console.log("maxAttempts = ", maxAttempts);
+    console.log("taskTitle = ", taskTitle);
+    console.log("taskDescription = ", taskDescription);
+    console.log("taskPoints = ", taskPoints);
+
+    // Step 4: Check if the user has exceeded the max attempts
+    if (attemptCount >= maxAttempts) {
+      throw new Error("You have exceeded the maximum number of attempts for this task.");
+    }
+
+    // Step 5: Mark the task as attempted
+    await session.run(
+      `
+      MATCH (v:VoucherTask), (u:User {email: $userEmail})
+      WHERE elementId(v) = $taskId
+      CREATE (v)-[:COMPLETED_BY {createdAt: $updatedAt, imageProofUrl: $imageUrl}]->(u)
+      SET v.updatedAt = $updatedAt
+      `,
+      { taskId, userEmail, imageUrl, updatedAt }
+    );
+
+    logAuditAction(userName, userEmail, "Voucher", `has attempted ${taskTitle} (${taskDescription} for ${taskPoints} points.)`);
+    return { message: "Task marked as complete. Awaiting admin approval." };
+  } catch (error) {
+    console.error("Error attempting voucher task:", error.message);
+    throw error;
+  } finally {
+    await session.close();
+  }
+};
+
+
+export const fetchUserAttempts = async (email) => {
+  const session = driver.session();
+  try {
+    const result = await session.run(
+      `
+      MATCH (v:VoucherTask)-[c:COMPLETED_BY]->(u:User {email: $email})
+      RETURN elementId(v) AS taskId, COUNT(c) AS attemptCount
+      `,
+      { email }
+    );
+
+    const attempts = {};
+    result.records.forEach((record) => {
+      attempts[record.get("taskId")] = record.get("attemptCount").low;
+    });
+
+    return attempts;
   } finally {
     await session.close();
   }

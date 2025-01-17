@@ -13,7 +13,6 @@ const ResidentDashboard = () => {
   const { showNotification } = useNotification();
   const [activeTab, setActiveTab] = useState("Products");
   const [products, setProducts] = useState([]);
-  const [vouchers, setVouchers] = useState([]);
   const [userName, setUserName] = useState([]);
   const [userBalance, setUserBalance] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -27,6 +26,10 @@ const ResidentDashboard = () => {
   const [preOrderQuantity, setPreOrderQuantity] = useState(1);
   const [selectedPreOrderProduct, setSelectedPreOrderProduct] = useState(null);
   const [preOrderTotalPrice, setPreOrderTotalPrice] = useState(0);
+  const [voucherTasks, setVoucherTasks] = useState([]);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  
   
   const handlePreOrderClick = (product) => {
     setSelectedPreOrderProduct(product);
@@ -96,8 +99,8 @@ const ResidentDashboard = () => {
   useEffect(() => {
     if (activeTab === "Products") {
       fetchProducts();
-    } else if (activeTab === "Vouchers") {
-      fetchVouchers();
+    } else if (activeTab === "Voucher Tasks") {
+      fetchVoucherTasks();
     }
     fetchUserDetails(); // Fetch both user name and balance
   }, [activeTab]); // Re-fetch products, vouchers, and user details when active tab changes
@@ -118,14 +121,35 @@ const ResidentDashboard = () => {
     }
   };
 
-  const fetchVouchers = async () => {
+
+  const fetchVoucherTasks = async () => {
     try {
-      const response = await api.get("/resident/vouchers");
-      setVouchers(response.data);
+      // Fetch tasks and attempts
+      const tasksResponse = await api.get("/auth/vouchers/tasks");
+      const attemptsResponse = await api.get(`/auth/vouchers/attempts?email=${user.email}`);
+  
+      // console.log("Tasks Response:", tasksResponse.data); // Debugging
+      // console.log("Attempts Response:", attemptsResponse.data); // Debugging
+  
+      // Filter only active tasks
+      const activeTasks = tasksResponse.data.filter(task => task.status === "active");
+  
+      // Combine task data with attempt counts
+      const tasksWithAttempts = activeTasks.map(task => ({
+        ...task,
+        attempts: attemptsResponse.data[task.id] || 0,
+      }));
+  
+      setVoucherTasks(tasksWithAttempts);
+      // console.log("Tasks With Attempts:", tasksWithAttempts); // Debugging
     } catch (error) {
-      console.error("Error fetching vouchers:", error.message);
+      console.error("Error fetching voucher tasks:", error); // Log the error for debugging
+      showNotification("Failed to fetch voucher tasks.", "error");
     }
   };
+  
+  
+  
 
   // Function to fetch both user details (name and balance) at once
   const fetchUserDetails = async () => {
@@ -230,6 +254,38 @@ const ResidentDashboard = () => {
     return fieldA < fieldB ? 1 : -1;
   });
 
+  
+  const handleUploadProof = (e) => {
+    const file = e.target.files[0];
+    if (file) setUploadedImage(file);
+  };
+  
+  const handleAttemptTask = async () => {
+    if (!uploadedImage || !selectedTask) {
+      showNotification("Please upload proof before completing the task.", "error");
+      return;
+    }
+  
+    const formData = new FormData();
+    formData.append("taskId", selectedTask.id);
+    formData.append("userEmail", user.email);
+    formData.append("image", uploadedImage);
+    formData.append("userName", user.name);
+  
+    try {
+      const response = await api.post("/auth/resident/vouchers/attempt", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+  
+      showNotification(response.data.message, "success");
+      setUploadedImage(null); // Reset uploaded image
+      setSelectedTask(null); // Reset selected task
+      fetchVoucherTasks(); // Refresh tasks
+    } catch (error) {
+      showNotification("Failed to mark task as complete.", "error");
+    }
+  };
+
 
   return (
     <div className="dashboard-container">
@@ -254,10 +310,10 @@ const ResidentDashboard = () => {
           Products
         </button>
         <button
-          className={`sidebar-button ${activeTab === "Vouchers" ? "active" : ""}`}
-          onClick={() => setActiveTab("Vouchers")}
+          className={`sidebar-button ${activeTab === "Voucher Tasks" ? "active" : ""}`}
+          onClick={() => setActiveTab("Voucher Tasks")}
         >
-          Vouchers
+          Voucher Tasks
         </button>
         <button
           className={`sidebar-button ${activeTab === "Transaction History" ? "active" : ""}`}
@@ -285,22 +341,86 @@ const ResidentDashboard = () => {
         </div>
 
         {/* Conditional Rendering for Active Tab */}
-        {activeTab === "Vouchers" && (
-          <section className="rounded-section">
-            <h2>Your Vouchers</h2>
-            <ul>
-              {vouchers.length === 0 ? (
-                <li>No vouchers available</li>
-              ) : (
-                vouchers.map((voucher) => (
-                  <li key={voucher.id}>
-                    Voucher ID: {voucher.id}, Balance: {voucher.balance} points
-                  </li>
-                ))
-              )}
-            </ul>
-          </section>
+        {activeTab === "Voucher Tasks" && (
+          <div>
+            <h2>Available Voucher Tasks</h2>
+            {voucherTasks.length === 0 ? (
+              <p>No voucher tasks available.</p>
+            ) : (
+              voucherTasks.map((task) => {
+                const remainingAttempts = task.maxAttempts - task.attempts;
+                return (
+                  <div key={task.id} className="voucher-task-card">
+                    <p><strong>{task.title}</strong></p>
+                    <p>{task.description}</p>
+                    <p>Points: {task.points}</p>
+                    <p>Remaining Attempts: {remainingAttempts}</p>
+                    <p>Attempts Made: {task.attempts}</p> {/* Display attempts */}
+                    <button
+                      onClick={() => {
+                        // console.log("Selected Task:", task); // Debugging
+                        setSelectedTask(task);
+                      }}
+                      disabled={remainingAttempts <= 0}
+                    >
+                      Attempt Task
+                    </button>
+                  </div>
+                );
+              })
+            )}
+
+
+            {/* Modal for Attempt Task */}
+            {selectedTask && (
+              <div
+                className="modal"
+                style={{
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  width: "100vw",
+                  height: "100vh",
+                  background: "rgba(0, 0, 0, 0.5)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: "1000",
+                }}
+              >
+                <div
+                  className="modal-content"
+                  style={{
+                    background: "#fff",
+                    padding: "20px",
+                    borderRadius: "10px",
+                    width: "400px",
+                    textAlign: "center",
+                  }}
+                >
+                  <h3>Attempt Task: {selectedTask.title}</h3>
+                  <p>{selectedTask.description}</p>
+
+                  {/* File Upload */}
+                  <div>
+                    <label>Upload Proof:</label>
+                    <input type="file" onChange={handleUploadProof} accept="image/*" />
+                  </div>
+
+                  <div style={{ marginTop: "20px" }}>
+                    <button onClick={handleAttemptTask} style={{ marginRight: "10px" }}>
+                      Submit Proof
+                    </button>
+                    <button onClick={() => setSelectedTask(null)}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
+
+
+
 
         {activeTab === "Products" && (
           <section className="rounded-section">
