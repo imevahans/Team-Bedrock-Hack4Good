@@ -11,9 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import TokenHandler from "./components/TokenHandler"; // Import the TokenHandler
 import 'bootstrap/dist/css/bootstrap.min.css';
-import AdminVoucher from "./pages/AdminVoucher";
 import TestPage from "./pages/testPage";
-import AdminProduct from "./pages/AdminProduct";
 import { NotificationProvider, useNotification } from "./context/NotificationContext";
 import NotificationBar from "./components/NotificationBar";  // Import NotificationBar
 
@@ -44,8 +42,6 @@ const MainContent = () => {
         <Route path="/admin-dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
         <Route path="/logout" element={<LogoutPage />} />
         <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-        <Route path="/admin-voucher" element={<AdminVoucher />} />
-        <Route path="/admin-product" element={<AdminProduct />} />
         <Route path="/testpage" element={<TestPage />} />
       </Routes>
     </AuthProvider>
