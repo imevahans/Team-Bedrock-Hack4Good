@@ -37,11 +37,11 @@ const ResidentDashboard = () => {
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [preOrderHistory, setPreOrderHistory] = useState([]);
   const [searchTermPurchase, setSearchTermPurchase] = useState("");
-  const [sortOrderPurchase, setSortOrderPurchase] = useState("asc"); // "asc" or "desc"
+  const [sortOrderPurchase, setSortOrderPurchase] = useState("desc"); // "asc" or "desc"
   const [sortCriteriaPurchase, setSortCriteriaPurchase] = useState("purchaseDate"); // Default: "purchaseDate"
   const [searchTermPreorder, setSearchTermPreorder] = useState("");
-  const [sortOrderPreorder, setSortOrderPreorder] = useState("asc"); // "asc" or "desc"
-  const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("purchaseDate"); // Default: "purchaseDate"
+  const [sortOrderPreorder, setSortOrderPreorder] = useState("desc"); // "asc" or "desc"
+  const [sortCriteriaPreorder, setSortCriteriaPreorder] = useState("preorderDate"); // Default: "purchaseDate"
   const [filterStatusPreorder, setFilterStatusPreorder] = useState("all"); // "all", "pending", "approved", "rejected"
 
 
@@ -117,9 +117,10 @@ const ResidentDashboard = () => {
   const handlePreOrderClick = (product) => {
     setSelectedPreOrderProduct(product);
     setPreOrderQuantity(1); // Set the initial quantity to 1
+    setPreOrderTotalPrice(1 * product.price); // Calculate total price directly from product
     setShowPreOrderModal(true); // Show the pre-order modal
-    setPreOrderTotalPrice(preOrderQuantity * selectedPreOrderProduct.price);
-  };  
+  };
+  
   
   // Handle Pre-order modal close
   const handleClosePreOrderModal = () => {
@@ -781,8 +782,6 @@ const ResidentDashboard = () => {
 
           </div>
         )}
-
-
 
 
         {activeTab === "Products" && (
