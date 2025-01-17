@@ -5,11 +5,12 @@ import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import { useNotification } from "../context/NotificationContext";
 import "../styles/LoginPage.css";
+import minimart from "../assets/minimart.png"; // Replace with actual path
+import food from "../assets/food.png"; // Replace with actual path
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState(""); // Error/Success message
   const [error, setError] = useState(false); // Error state
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
@@ -53,39 +54,50 @@ const LoginPage = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleLogin}>
-        <h2>Login</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button type="submit">Login</button>
-        {/* Display error or success message */}
-        {message && (
-          <p style={{ color: error ? "red" : "green", marginTop: "10px" }}>
-            {message}
-          </p>
-        )}
-      </form>
-      <p>
-        Forgot your password?{" "}
-        <button
-          onClick={() => navigate("/reset-password")}
-          style={{ color: "blue", cursor: "pointer", border: "none", background: "none" }}
-        >
-          Reset it here
-        </button>
-      </p>
-      <hr />
+    <div className="login-page">
+      {/* Header Section */}
+      <div className="header-container">
+        <h1 className="main-title">
+          <img src={minimart} className="dashboard-image" alt="MiniMart" />
+          Muhammadiyah Minimart
+          <img src={food} className="dashboard-image" alt="Food Icon" />
+        </h1>
+        <p className="subtitle">
+          Your one-stop shop for fresh produce, groceries, and exclusive deals!
+        </p>
+      </div>
+
+      {/* Login Form */}
+      <div className="login-container">
+        <form onSubmit={handleLogin} className="login-form">
+          <h2 className="login-title">Login</h2>
+          {error && <p className="login-error">Invalid email or password. Please try again.</p>}
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="login-input"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="login-input"
+          />
+          <button type="submit" className="login-button">Login</button>
+        </form>
+        <p className="login-reset">
+          Forgot your password?{" "}
+          <button
+            onClick={() => navigate("/reset-password")}
+            className="reset-link"
+          >
+            Reset it here
+          </button>
+        </p>
+      </div>
     </div>
   );
 };
