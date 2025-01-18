@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173, // Frontend port
     proxy: {
       "/api": {
-        target: "http://localhost:3000", // Backend server
+        target: "https://teambedrock-hack4good-2af7420de7ed.herokuapp.com/", // Backend server
         changeOrigin: true,
       },
     },
