@@ -4,14 +4,14 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"  // The directory to output the built files
+        "distDir": "dist"
       }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/index.html"  // This ensures Vercel serves your single-page app correctly
+      "dest": "/index.html"
     }
   ]
 }
