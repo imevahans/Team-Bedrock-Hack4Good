@@ -6,6 +6,7 @@ export default defineConfig({
   build: {
     outDir: 'dist', // Ensure output is placed in the `dist` folder for Vercel
   },
+  base: './',
   server: {
     port: 5173, // Frontend port for local development
     proxy: {
